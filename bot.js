@@ -9,7 +9,8 @@ const
   wait = require('wait.for');
 
 const
-  DB_RECORDS = "records";
+  DB_RECORDS = "records",
+  DB_VOTERS = "voters";
 
 var
   MIN_SP;
@@ -136,6 +137,19 @@ function doProcess(startAtBlockNum, callback) {
 
               numSelfVotesToProcess++;
 
+              // update db with this voter info
+              var voterInfos = wait.for(getVoterFromDb, opDetail.voter);
+              if (voterInfos === null || voterInfos === undefined) {
+                voterInfos = {
+                  voter: opDetail.voter,
+                  selfvotes: 1
+                };
+              } else {
+                voterInfos.selfvotes = voterInfos.selfvotes + 1;
+              }
+              wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
+              console.log("* voter updated: "+JSON.stringify(voterInfos));
+
               var abs_need_rshares = Math.abs(voteDetail.rshares);
               var vp = recalcVotingPower();
               // note, these constants are not fully understood
@@ -175,8 +189,14 @@ function doProcess(startAtBlockNum, callback) {
       ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
       " are comments out of " + totalVotes + " total votes");
     mLastInfos.lastBlock = mProperties.head_block_number;
-    wait.for(mongoSave_wrapper, mLastInfos);
+    wait.for(mongoSave_wrapper, DB_RECORDS, mLastInfos);
     callback();
+  });
+}
+
+function getVoterFromDb(voter, callback) {
+  db.collection(DB_RECORDS).find({voter: voter}).toArray(function(err, data) {
+    callback(err, data !== null && data.length > 0 ? data[0] : null);
   });
 }
 
@@ -285,8 +305,8 @@ function steem_getContent_wrapper(author, permlink, callback) {
 }
 
 
-function mongoSave_wrapper(obj, callback) {
-  db.collection(DB_RECORDS).save(obj, function (err, data) {
+function mongoSave_wrapper(collection, obj, callback) {
+  db.collection(collection).save(obj, function (err, data) {
     callback(err, data);
   });
 }
