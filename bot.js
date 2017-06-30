@@ -93,7 +93,16 @@ function doProcess(startAtBlockNum, callback) {
               console.log("- self vote at b " + i + ":t " + j + ":op " +
                 k + ", detail:" + JSON.stringify(opDetail));
 
-              // FIRST THINGS FIRST, check their SP
+              // FIRST, screen for comments only
+              var permlinkParts = opDetail.permlink.split("-");
+              if (permlinkParts.length === 0
+                || !moment(permlinkParts[permlinkParts.length - 1], "YYYYMMDDtHHmmssSSSz").isValid()) {
+                console.log("Not a comment, skipping")
+                continue;
+              }
+              numSelfComments++;
+
+              // SECOND, check their SP
               // TODO : cache user accounts
               var accounts = wait.for(steem_getAccounts_wrapper, opDetail.voter);
               var voterAccount = accounts[0];
@@ -104,15 +113,6 @@ function doProcess(startAtBlockNum, callback) {
                   +", skipping");
                 continue;
               }
-
-              // SECOND, screen for comments only
-              var permlinkParts = opDetail.permlink.split("-");
-              if (permlinkParts.length === 0
-                  || !moment(permlinkParts[permlinkParts.length - 1], "YYYYMMDDtHHmmssSSSz").isValid()) {
-                console.log("Not a comment, skipping")
-                continue;
-              }
-              numSelfComments++;
 
               // THIRD, get rshares of vote from post
               var content;
