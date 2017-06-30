@@ -66,6 +66,7 @@ function doProcess(startAtBlockNum, callback) {
   wait.launchFiber(function() {
     var totalVotes = 0;
     var numSelfVotes = 0;
+    var numSelfComments = 0;
     var numSelfVotesToProcess = 0;
     for (var i = startAtBlockNum; i <= mProperties.head_block_number; i++) {
       var block = wait.for(steem_getBlock_wrapper, i);
