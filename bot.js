@@ -76,7 +76,7 @@ function doProcess(startAtBlockNum, callback) {
         for (var k = 0 ; k < transaction.operations.length ; k++) {
           var opName = transaction.operations[k][0];
           var opDetail = transaction.operations[k][1];
-          try {
+          //try {
             if (opName !== undefined && opName !== null
               && opName.localeCompare("vote") == 0) {
 
@@ -137,7 +137,7 @@ function doProcess(startAtBlockNum, callback) {
 
               var abs_need_rshares = Math.abs(voteDetail.rshares);
               var vp = recalcVotingPower();
-              // note, these constants are not fully understoof
+              // note, these constants are not fully understood
               // the _50_ constant was 200, and could possibly be better at 40
               // TODO : confirm constants are correct
               // TODO : take delegated stake into consideration?
@@ -159,11 +159,13 @@ function doProcess(startAtBlockNum, callback) {
                 console.log("Bot not in active state, not voting");
               }
             }
+            /*
           } catch (err) {
             console.log("Couldn't process operation, continuing. Error: "
               + JSON.stringify(err));
             continue;
           }
+          */
         }
       }
     }
