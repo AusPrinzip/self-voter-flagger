@@ -103,7 +103,16 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // SECOND, get rshares of vote from post
+              // SECOND, screen for comments only
+              var permlinkParts = opDetail.permlink.split("-");
+              if (permlinkParts.length === 0
+                  || !moment(permlinkParts[permlinkParts.length - 1], "YYYYMMDDtHHmmssSSSz").isValid()) {
+                console.log("Not a comment, skipping")
+                continue;
+              }
+              numSelfComments++;
+
+              // THIRD, get rshares of vote from post
               var content;
               // TODO : cache posts
               content = wait.for(steem_getContent_wrapper, opDetail.author,
@@ -160,7 +169,8 @@ function doProcess(startAtBlockNum, callback) {
     }
     console.log("NUM SELF VOTES from block "+startAtBlockNum+" to " +
       mProperties.head_block_number + " is "+numSelfVotes +
-      "("+numSelfVotesToProcess+" processed) out of " + totalVotes + " total");
+      ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
+      " are comments out of " + totalVotes + " total votes");
     mLastInfos.lastBlock = mProperties.head_block_number;
     wait.for(mongoSave_wrapper, mLastInfos);
     callback();
