@@ -72,7 +72,7 @@ function doProcess(startAtBlockNum, callback) {
     for (var i = startAtBlockNum; i <= mProperties.head_block_number; i++) {
       var block = wait.for(steem_getBlock_wrapper, i);
       // create current time moment from block infos
-      var latestBlockMoment = moment(timestamp, moment.ISO_8601);
+      var latestBlockMoment = moment(block. timestamp, moment.ISO_8601);
       //console.log("block info: "+JSON.stringify(block));
       var transactions = block.transactions;
       for (var j = 0; j < transactions.length; j++) {
