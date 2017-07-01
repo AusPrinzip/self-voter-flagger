@@ -103,19 +103,6 @@ function doProcess(startAtBlockNum, callback) {
                 console.log("Not a comment, skipping")
                 continue;
               }
-              numSelfComments++;
-
-              // SECOND, check their SP
-              // TODO : cache user accounts
-              var accounts = wait.for(steem_getAccounts_wrapper, opDetail.voter);
-              var voterAccount = accounts[0];
-              // TODO : take delegated stake into consideration?
-              var steemPower = getSteemPowerFromVest(voterAccount.vesting_shares);
-              if (steemPower < MIN_SP) {
-                console.log("SP of "+opDetail.voter+" < min of "+MIN_SP
-                  +", skipping");
-                continue;
-              }
 
               // THIRD, get rshares of vote from post
               var content;
@@ -146,6 +133,22 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
+              // is a self voted comment
+              numSelfComments++;
+
+              // SECOND, check their SP
+              // TODO : cache user accounts
+              var accounts = wait.for(steem_getAccounts_wrapper, opDetail.voter);
+              var voterAccount = accounts[0];
+              // TODO : take delegated stake into consideration?
+              var steemPower = getSteemPowerFromVest(voterAccount.vesting_shares);
+              if (steemPower < MIN_SP) {
+                console.log("SP of "+opDetail.voter+" < min of "+MIN_SP
+                  +", skipping");
+                continue;
+              }
+
+              // has enough SP to be of interest
               numSelfVotesToProcess++;
 
               // update db with this voter info
