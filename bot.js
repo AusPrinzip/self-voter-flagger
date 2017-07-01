@@ -71,6 +71,8 @@ function doProcess(startAtBlockNum, callback) {
     var numSelfVotesToProcess = 0;
     for (var i = startAtBlockNum; i <= mProperties.head_block_number; i++) {
       var block = wait.for(steem_getBlock_wrapper, i);
+      // create current time moment from block infos
+      var latestBlockMoment = moment(timestamp, moment.ISO_8601);
       //console.log("block info: "+JSON.stringify(block));
       var transactions = block.transactions;
       for (var j = 0; j < transactions.length; j++) {
@@ -150,20 +152,26 @@ function doProcess(startAtBlockNum, callback) {
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
 
+              console.log("--DEBUG CALC VOTE PERCENTAGE--");
               var abs_need_rshares = Math.abs(voteDetail.rshares);
-              var vp = recalcVotingPower();
+              console.log(" - abs_need_rshares: "+abs_need_rshares);
+              var vp = recalcVotingPower(latestBlockMoment);
+              console.log(" - vp: "+vp);
               // note, these constants are not fully understood
               // the _50_ constant was 200, and could possibly be better at 40
               // TODO : confirm constants are correct
               // TODO : take delegated stake into consideration?
               var abs_percentage = (abs_need_rshares * 10000 * 100 * 50 / vp / mAccount.vesting_shares);
+              console.log(" - abs_percentage: "+abs_percentage);
               if (abs_percentage > 100) {
                 abs_percentage = 100;
               }
+              console.log(" - abs_percentage(corrected) : "+abs_percentage);
               var percentage = abs_percentage;
               if (voteDetail.rshares < 0) {
                 percentage = -percentage;
               }
+              console.log(" - percentage(corrected) : "+percentage);
               console.log("countering percentage: "+percentage);
               if (process.env.ACTIVE !== undefined
                 && process.env.ACTIVE !== null
@@ -222,21 +230,30 @@ function getLastInfos(callback) {
   });
 }
 
-function recalcVotingPower(latestBlockTimestamp) {
+function recalcVotingPower(latestBlockMoment) {
   // update account
   var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
   mAccount = accounts[0];
+  if (mAccount === null || mAccount === undefined) {
+    console.log("Could not get bot account detail")
+  }
   var vp = mAccount.voting_power;
+  console.log(" - - bot vp: "+vp);
   //last_vote_time = Time.parse(r["last_vote_time"] + 'Z')
   var lastVoteTime = moment(mAccount.last_vote_time);
+  console.log(" - - lastVoteTime: "+lastVoteTime);
   //now_time = Time.parse(@latest_block["timestamp"] + 'Z')
-  var nowTime = moment(latestBlockTimestamp);
-  var secondsDiff = nowTime.seconds() - lastVoteTime.seconds();
+  console.log(" - - latestBlockMoment(supplied): "+latestBlockMoment);
+  var secondsDiff = latestBlockMoment.seconds() - lastVoteTime.seconds();
+  console.log(" - - secondsDiff: "+secondsDiff);
   var vpRegenerated = secondsDiff * 10000 / 86400 / 5;
+  console.log(" - - vpRegenerated: "+vpRegenerated);
   vp += vpRegenerated;
+  console.log(" - - new vp: "+vp);
   if (vp > 10000) {
     vp = 10000;
   }
+  console.log(" - - new vp(corrected): "+vp);
   return vp;
 }
 
