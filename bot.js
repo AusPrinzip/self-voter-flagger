@@ -13,6 +13,9 @@ const
   DB_VOTERS = "voters",
   DB_RUNS = "runs";
 
+const
+  VOTE_POWER_1_PC = 100;
+
 var
   MIN_SP;
 
@@ -132,6 +135,10 @@ function doProcess(startAtBlockNum, callback) {
                 console.log("self vote negated, well done! skipping");
                 continue;
               }
+              if (voteDetail.rshares < 0) {
+                console.log("self flag?! skipping");
+                continue;
+              }
 
               // is a self voted comment
               numSelfComments++;
@@ -186,17 +193,33 @@ function doProcess(startAtBlockNum, callback) {
                 abs_percentage = 100;
               }
               console.log(" - abs_percentage(corrected) : "+abs_percentage);
-              var percentage = abs_percentage;
-              if (voteDetail.rshares < 0) {
-                percentage = -percentage;
+
+              var abs_counter_percentage = voterInfos.selfvotes;
+              console.log(" - abs_counter_percentage: "+abs_counter_percentage);
+              if (abs_counter_percentage > 100) {
+                abs_counter_percentage = 100;
+                console.log(" - abs_counter_percentage(fixed): "+abs_counter_percentage);
               }
-              console.log(" - percentage(corrected) : "+percentage);
-              console.log("countering percentage: "+percentage);
+              if (abs_counter_percentage > abs_percentage) {
+                console.log(" - abs_counter_percentage(bounded): "+abs_counter_percentage);
+              }
+              var counter_percentage = -abs_counter_percentage;
+              console.log("countering percentage: "+counter_percentage);
               if (process.env.ACTIVE !== undefined
                 && process.env.ACTIVE !== null
                 && process.env.ACTIVE.localeCompare("true") == 0) {
-                // TODO : cast vote!
-                console.log("BOT WOULD VOTE NOW");
+                console.log("Voting...");
+                try {
+                  var voteResult = wait.for(steem.broadcast.vote,
+                    process.env.POSTING_KEY_PRV,
+                    process.env.STEEM_USER,
+                    content.author,
+                    content.permlink,
+                    (counter_percentage * VOTE_POWER_1_PC)); // adjust pc to Steem scaling
+                  console.log("Vote result: "+JSON.stringify(voteResult));
+                } catch(err) {
+                  console.log("Error voting: "+JSON.stringify(err));
+                }
               } else {
                 console.log("Bot not in active state, not voting");
               }
