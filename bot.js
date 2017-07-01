@@ -146,13 +146,11 @@ function doProcess(startAtBlockNum, callback) {
                 voterInfos = {
                   voter: opDetail.voter,
                   selfvotes: 1,
-                  selfvotes_report: 1,
-                  rshares_report: voteDetail.rshares
+                  selfvotes_permlinks: [voteDetail.permlink]
                 };
               } else {
                 voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                voterInfos.selfvotes_report = voterInfos.selfvotes_report + 1;
-                voterInfos.rshares_report = voterInfos.rshares_report + voteDetail.rshares;
+                voterInfos.selfvotes_permlinks.push(voteDetail.permlink);
               }
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
