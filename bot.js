@@ -135,6 +135,14 @@ function doProcess(startAtBlockNum, callback) {
                 }
               }
               if (voteDetail === null) {
+                console.log("vote details null, cannot process, skip");
+                continue;
+              }
+
+              // FOURTH, check if vote rshares are > 0, cancelled self votes
+              // have rshares == 0
+              if (voteDetail.rshares === 0) {
+                console.log("self vote negated, well done! skipping");
                 continue;
               }
 
@@ -146,11 +154,11 @@ function doProcess(startAtBlockNum, callback) {
                 voterInfos = {
                   voter: opDetail.voter,
                   selfvotes: 1,
-                  selfvotes_permlinks: [content.author+":"+content.permlink]
+                  selfvotes_permlinks: [content.permlink]
                 };
               } else {
                 voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                voterInfos.selfvotes_permlinks.push(content.author+":"+content.permlink);
+                voterInfos.selfvotes_permlinks.push(content.permlink);
               }
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
