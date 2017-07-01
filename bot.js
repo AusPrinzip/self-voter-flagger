@@ -161,6 +161,8 @@ function doProcess(startAtBlockNum, callback) {
               // the _50_ constant was 200, and could possibly be better at 40
               // TODO : confirm constants are correct
               // TODO : take delegated stake into consideration?
+              console.log(" - abs_percentage calc");
+              console.log(" - - mAccount.vesting_shares: "+mAccount.vesting_shares);
               var abs_percentage = (abs_need_rshares * 10000 * 100 * 50 / vp / mAccount.vesting_shares);
               console.log(" - abs_percentage: "+abs_percentage);
               if (abs_percentage > 100) {
@@ -246,10 +248,14 @@ function recalcVotingPower(latestBlockMoment) {
   console.log(" - - latestBlockMoment(supplied): "+latestBlockMoment);
   var secondsDiff = latestBlockMoment.seconds() - lastVoteTime.seconds();
   console.log(" - - secondsDiff: "+secondsDiff);
-  var vpRegenerated = secondsDiff * 10000 / 86400 / 5;
-  console.log(" - - vpRegenerated: "+vpRegenerated);
-  vp += vpRegenerated;
-  console.log(" - - new vp: "+vp);
+  if (secondsDiff > 0) {
+    var vpRegenerated = secondsDiff * 10000 / 86400 / 5;
+    console.log(" - - vpRegenerated: "+vpRegenerated);
+    vp += vpRegenerated;
+    console.log(" - - new vp: "+vp);
+  } else {
+    console.log(" - - - negative seconds diff, do not use");
+  }
   if (vp > 10000) {
     vp = 10000;
   }
