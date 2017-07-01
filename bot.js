@@ -10,7 +10,8 @@ const
 
 const
   DB_RECORDS = "records",
-  DB_VOTERS = "voters";
+  DB_VOTERS = "voters",
+  DB_RUNS = "runs";
 
 var
   MIN_SP;
@@ -144,10 +145,14 @@ function doProcess(startAtBlockNum, callback) {
               if (voterInfos === null || voterInfos === undefined) {
                 voterInfos = {
                   voter: opDetail.voter,
-                  selfvotes: 1
+                  selfvotes: 1,
+                  selfvotes_report: 1,
+                  rshares_report: voteDetail.rshares
                 };
               } else {
                 voterInfos.selfvotes = voterInfos.selfvotes + 1;
+                voterInfos.selfvotes_report = voterInfos.selfvotes_report + 1;
+                voterInfos.rshares_report = voterInfos.rshares_report + voteDetail.rshares;
               }
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
@@ -201,6 +206,15 @@ function doProcess(startAtBlockNum, callback) {
       mProperties.head_block_number + " is "+numSelfVotes +
       ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
       " are comments out of " + totalVotes + " total votes");
+    wait.for(mongoSave_wrapper, DB_RUNS,
+      {
+        start_block: startAtBlockNum,
+        end_block: mProperties.head_block_number,
+        votes_total: totalVotes,
+        selfvotes_total: numSelfVotes,
+        selfvotes_comments: numSelfComments,
+        selfvotes_high_sp_comments: numSelfVotesToProcess
+      });
     mLastInfos.lastBlock = mProperties.head_block_number;
     wait.for(mongoSave_wrapper, DB_RECORDS, mLastInfos);
     callback();
