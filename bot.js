@@ -25,7 +25,7 @@ var db;
 var mAccount = null;
 var mProperties = null;
 var mLastInfos = null;
-
+var mTestAuthorList = null;
 
 // Connect to the database first
 mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, database) {
@@ -62,6 +62,15 @@ function init(callback) {
     console.log("account: "+JSON.stringify(mAccount));
     // set up some vars
     MIN_SP = Number(process.env.MIN_SP);
+    // get test list, if any
+    if (process.env.TEST_AUTHOR_LIST !== undefined
+      && process.env.TEST_AUTHOR_LIST !== null
+      && process.env.TEST_AUTHOR_LIST.localeCompare("null") != 0) {
+      mTestAuthorList = process.env.TEST_AUTHOR_LIST.split(",");
+      for (var i = 0 ; i < mTestAuthorList.length ; i++) {
+        mTestAuthorList[i] = mTestAuthorList[i].toLowerCase().trim();
+      }
+    }
     callback();
   });
 }
@@ -209,16 +218,33 @@ function doProcess(startAtBlockNum, callback) {
                 && process.env.ACTIVE !== null
                 && process.env.ACTIVE.localeCompare("true") == 0) {
                 console.log("Voting...");
-                try {
-                  var voteResult = wait.for(steem.broadcast.vote,
-                    process.env.POSTING_KEY_PRV,
-                    process.env.STEEM_USER,
-                    content.author,
-                    content.permlink,
-                    (counter_percentage * VOTE_POWER_1_PC)); // adjust pc to Steem scaling
-                  console.log("Vote result: "+JSON.stringify(voteResult));
-                } catch(err) {
-                  console.log("Error voting: "+JSON.stringify(err));
+                var restricted = false;
+                if (mTestAuthorList !== null
+                    && mTestAuthorList !== undefined
+                    && mTestAuthorList.length > 0) {
+                  restricted = true;
+                  for (var m = 0 ; m < mTestAuthorList.length ; m++) {
+                    if (opDetail.voter.localeCompare(mTestAuthorList[m]) === 0) {
+                      restricted = false;
+                      break;
+                    }
+                  }
+                }
+                if (!restricted) {
+                  try {
+                    var voteResult = wait.for(steem.broadcast.vote,
+                      process.env.POSTING_KEY_PRV,
+                      process.env.STEEM_USER,
+                      content.author,
+                      content.permlink,
+                      (counter_percentage * VOTE_POWER_1_PC)); // adjust pc to Steem scaling
+                    console.log("Vote result: "+JSON.stringify(voteResult));
+                  } catch(err) {
+                    console.log("Error voting: "+JSON.stringify(err));
+                  }
+                } else {
+                  console.log("Not voting, author restriction list not" +
+                    " met");
                 }
               } else {
                 console.log("Bot not in active state, not voting");
