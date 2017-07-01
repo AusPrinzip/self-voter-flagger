@@ -203,8 +203,8 @@ function doProcess(startAtBlockNum, callback) {
 }
 
 function getVoterFromDb(voter, callback) {
-  db.collection(DB_VOTERS).findOne({voter: voter})(function(err, data) {
-    callback(err, data !== null ? data : null);
+  db.collection(DB_VOTERS).find({voter: voter}).toArray(function(err, data) {
+    callback(err, data !== null && data.length > 0 ? data[0] : null);
   });
 }
 
