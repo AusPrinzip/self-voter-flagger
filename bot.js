@@ -219,23 +219,23 @@ function doProcess(startAtBlockNum, callback) {
               }
               var counter_percentage = -abs_counter_percentage;
               console.log("countering percentage: "+counter_percentage);
-              if (process.env.ACTIVE !== undefined
-                && process.env.ACTIVE !== null
-                && process.env.ACTIVE.localeCompare("true") == 0) {
-                console.log("Voting...");
-                var restricted = false;
-                if (mTestAuthorList !== null
-                    && mTestAuthorList !== undefined
-                    && mTestAuthorList.length > 0) {
-                  restricted = true;
-                  for (var m = 0 ; m < mTestAuthorList.length ; m++) {
-                    if (opDetail.voter.localeCompare(mTestAuthorList[m]) === 0) {
-                      restricted = false;
-                      break;
-                    }
+              console.log("Voting...");
+              var restricted = false;
+              if (mTestAuthorList !== null
+                  && mTestAuthorList !== undefined
+                  && mTestAuthorList.length > 0) {
+                restricted = true;
+                for (var m = 0 ; m < mTestAuthorList.length ; m++) {
+                  if (opDetail.voter.localeCompare(mTestAuthorList[m]) === 0) {
+                    restricted = false;
+                    break;
                   }
                 }
-                if (!restricted) {
+              }
+              if (!restricted) {
+                if (process.env.ACTIVE !== undefined
+                  && process.env.ACTIVE !== null
+                  && process.env.ACTIVE.localeCompare("true") == 0) {
                   try {
                     var voteResult = wait.for(steem.broadcast.vote,
                       process.env.POSTING_KEY_PRV,
@@ -248,11 +248,11 @@ function doProcess(startAtBlockNum, callback) {
                     console.log("Error voting: "+JSON.stringify(err));
                   }
                 } else {
-                  console.log("Not voting, author restriction list not" +
-                    " met");
+                  console.log("Bot not in active state, not voting");
                 }
               } else {
-                console.log("Bot not in active state, not voting");
+                console.log("Not voting, author restriction list not" +
+                  " met");
               }
             }
             /*
