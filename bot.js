@@ -41,7 +41,7 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, database) {
 });
 
 function main() {
-  //steem.config.set('websocket','wss://steemd.steemit.com');
+  steem.config.set('websocket','wss://gtg.steem.house:8090');
   init(function () {
     getLastInfos(function () {
       doProcess(mLastInfos.lastBlock + 1, function () {
