@@ -244,6 +244,10 @@ function doProcess(startAtBlockNum, callback) {
                       content.permlink,
                       (counter_percentage * VOTE_POWER_1_PC)); // adjust pc to Steem scaling
                     console.log("Vote result: "+JSON.stringify(voteResult));
+                    console.log("Wait 3.5 seconds to allow vote limit to" +
+                      " reset");
+                    var timeoutResult = wait.for(timeout_wrapper, 3500);
+                    console.log("Finished waiting");
                   } catch(err) {
                     console.log("Error voting: "+JSON.stringify(err));
                   }
@@ -282,6 +286,12 @@ function doProcess(startAtBlockNum, callback) {
     wait.for(mongoSave_wrapper, DB_RECORDS, mLastInfos);
     callback();
   });
+}
+
+function timeout_wrapper(delay, callback) {
+  setTimeout(function() {
+    callback(null, true);
+  }, delay);
 }
 
 function getVoterFromDb(voter, callback) {
