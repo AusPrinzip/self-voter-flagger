@@ -44,7 +44,7 @@ function main() {
   //steem.config.set('websocket','wss://steemd.steemit.com');
   init(function () {
     getLastInfos(function () {
-      doProcess(mLastInfos.lastBlock, function () {
+      doProcess(mLastInfos.lastBlock + 1, function () {
         console.log("Finished");
       });
     });
