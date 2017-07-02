@@ -193,10 +193,15 @@ function doProcess(startAtBlockNum, callback) {
               // TODO : take delegated stake into consideration?
               console.log(" - abs_percentage calc");
               console.log(" - - mAccount.vesting_shares: "+mAccount.vesting_shares);
+              console.log(" - - mAccount.received_vesting_shares" +
+                " (delegated from others): "+mAccount.received_vesting_shares);
               var vestingSharesParts = mAccount.vesting_shares.split(" ");
               var vestingSharesNum = Number(vestingSharesParts[0]);
               console.log(" - - vesting_shares num: "+vestingSharesNum);
-              var abs_percentage = (abs_need_rshares * 10000 * 100 * 50 / vp / vestingSharesNum);
+              var receivedSharesParts = mAccount.received_vesting_shares.split(" ");
+              var receivedSharesNum = Number(receivedSharesParts[0]);
+              console.log(" - - received_vesting_shares num: "+receivedSharesNum);
+              var abs_percentage = (abs_need_rshares * 10000 * 100 * 50 / vp / (vestingSharesNum + receivedSharesNum));
               console.log(" - abs_percentage: "+abs_percentage);
               if (abs_percentage > 100) {
                 abs_percentage = 100;
