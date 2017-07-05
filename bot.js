@@ -54,7 +54,7 @@ function main() {
 function init(callback) {
   wait.launchFiber(function() {
     // get steem global properties first, needed for SP calc
-    mProperties = wait.for(steem_getSteemGlobaleProperties_wrapper);
+    mProperties = wait.for(steem_getSteemGlobalProperties_wrapper);
     console.log("global properties: "+JSON.stringify(mProperties));
     // get Steem Power of bot account
     var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
@@ -288,12 +288,6 @@ function doProcess(startAtBlockNum, callback) {
   });
 }
 
-function timeout_wrapper(delay, callback) {
-  setTimeout(function() {
-    callback(null, true);
-  }, delay);
-}
-
 function getVoterFromDb(voter, callback) {
   db.collection(DB_VOTERS).find({voter: voter}).toArray(function(err, data) {
     callback(err, data !== null && data.length > 0 ? data[0] : null);
@@ -387,7 +381,7 @@ function steem_getDiscussionsByCreated_wrapper(query, callback) {
   });
 }
 
-function steem_getSteemGlobaleProperties_wrapper(callback) {
+function steem_getSteemGlobalProperties_wrapper(callback) {
   steem.api.getDynamicGlobalProperties(function(err, properties) {
     callback(err, properties);
   });
@@ -422,4 +416,10 @@ function mongoSave_wrapper(collection, obj, callback) {
   db.collection(collection).save(obj, function (err, data) {
     callback(err, data);
   });
+}
+
+function timeout_wrapper(delay, callback) {
+  setTimeout(function() {
+    callback(null, true);
+  }, delay);
 }
