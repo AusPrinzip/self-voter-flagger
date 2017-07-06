@@ -82,6 +82,7 @@ function doProcess(startAtBlockNum, callback) {
     var numSelfVotes = 0;
     var numSelfComments = 0;
     var numSelfVotesToProcess = 0;
+    var numFlagsToCancel = 0;
     for (var i = startAtBlockNum; i <= mProperties.head_block_number; i++) {
       var block = wait.for(steem_getBlock_wrapper, i);
       // create current time moment from block infos
@@ -140,17 +141,14 @@ function doProcess(startAtBlockNum, callback) {
 
               // FOURTH, check if vote rshares are > 0, cancelled self votes
               // have rshares == 0
-              if (voteDetail.rshares === 0) {
-                console.log("self vote negated, well done! skipping");
-                continue;
-              }
               if (voteDetail.rshares < 0) {
                 console.log("self flag?! skipping");
-                continue;
+              } else if (voteDetail.rshares === 0) {
+                console.log("self vote negated, well done! skipping");
+              } else {
+                // is a self voted comment
+                numSelfComments++;
               }
-
-              // is a self voted comment
-              numSelfComments++;
 
               // SECOND, check their SP
               // TODO : cache user accounts
@@ -164,20 +162,79 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // has enough SP to be of interest
-              numSelfVotesToProcess++;
-
-              // update db with this voter info
+              // check voter db for same vote
               var voterInfos = wait.for(getVoterFromDb, opDetail.voter);
+
+              var toCancelFlag = false;
+              var toContinue = false;
+
+              // check if we already have a record of this
               if (voterInfos === null || voterInfos === undefined) {
-                voterInfos = {
-                  voter: opDetail.voter,
-                  selfvotes: 1,
-                  selfvotes_permlinks: [content.permlink]
-                };
+                if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
+                  && voterInfos.selfvotes_detail_daily.length > 0) {
+                  for (var m = 0; m < voterInfos.selfvotes_detail.length; m++) {
+                    if (content.permlink.localeCompare(voterInfos.selfvotes_detail_daily[m].permlink) === 0) {
+                      console.log(" - permlink " + content.permlink + " already voted on");
+                      console.log(" - rshares changed from "+voteDetail.rshares+" to "+
+                        voterInfos.selfvotes_detail_daily[m].rshares);
+                      voterInfos.selfvotes_detail_daily[m].rshares = voteDetail.rshares;
+                      // already exists, figure out what the update is
+                      if (voterInfos.selfvotes_detail_daily[m].permlink > 0
+                        && voteDetail.rshares === 0) {
+                        // user canceled a self vote
+                        // cancel our flag
+                        toCancelFlag = true;
+                        console.log(" - - should cancel flag");
+                      } else if (voteDetail.rshares >= 0) {
+                        // self vote
+                        console.log(" - - change our vote to flag");
+                      } else {
+                        // we don't care, they probably flagged themselves
+                        // don't even keep a record of it
+                        console.log(" - - skipping, not of interest");
+                        toContinue = true;
+                      }
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (toContinue) {
+                continue;
+              }
+
+              // has enough SP to be of interest
+              if (!toCancelFlag) {
+                numSelfVotesToProcess++;
               } else {
-                voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                voterInfos.selfvotes_permlinks.push(content.permlink);
+                numFlagsToCancel++;
+              }
+
+              // update voter info
+              if (!toCancelFlag) {
+                if (voterInfos === null || voterInfos === undefined) {
+                  voterInfos = {
+                    voter: opDetail.voter,
+                    selfvotes: 1,
+                    selfvotes_detail_daily: [
+                      {
+                        permlink: content.permlink,
+                        rshares: opDetail.rshares
+                      }
+                    ],
+                    selfvotes_detail_weekly: [] //to be filled with daily
+                    // when finished daily report
+                  };
+                } else {
+                  voterInfos.selfvotes = voterInfos.selfvotes + 1;
+                  voterInfos.selfvotes_detail_daily.push(
+                    {
+                      permlink: content.permlink,
+                      rshares: opDetail.rshares
+                    }
+                  );
+                }
               }
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
@@ -201,7 +258,7 @@ function doProcess(startAtBlockNum, callback) {
               var receivedSharesParts = mAccount.received_vesting_shares.split(" ");
               var receivedSharesNum = Number(receivedSharesParts[0]);
               console.log(" - - received_vesting_shares num: "+receivedSharesNum);
-              var abs_percentage = (abs_need_rshares * 10000 * 100 * 50 / vp / (vestingSharesNum + receivedSharesNum));
+              var abs_percentage = (abs_need_rshares * 10000 * 100 * 200 / vp / (vestingSharesNum + receivedSharesNum));
               console.log(" - abs_percentage: "+abs_percentage);
               if (abs_percentage > 100) {
                 abs_percentage = 100;
@@ -217,7 +274,7 @@ function doProcess(startAtBlockNum, callback) {
               if (abs_counter_percentage > abs_percentage) {
                 console.log(" - abs_counter_percentage(bounded): "+abs_counter_percentage);
               }
-              var counter_percentage = -abs_counter_percentage;
+              var counter_percentage = !toCancelFlag ? -abs_counter_percentage : abs_counter_percentage;
               console.log("countering percentage: "+counter_percentage);
               console.log("Voting...");
               var restricted = false;
@@ -273,6 +330,7 @@ function doProcess(startAtBlockNum, callback) {
       mProperties.head_block_number + " is "+numSelfVotes +
       ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
       " are comments out of " + totalVotes + " total votes");
+    console.log(" - "+numFlagsToCancel+" previous flags cancelled");
     wait.for(mongoSave_wrapper, DB_RUNS,
       {
         start_block: startAtBlockNum,
@@ -280,7 +338,8 @@ function doProcess(startAtBlockNum, callback) {
         votes_total: totalVotes,
         selfvotes_total: numSelfVotes,
         selfvotes_comments: numSelfComments,
-        selfvotes_high_sp_comments: numSelfVotesToProcess
+        selfvotes_high_sp_comments: numSelfVotesToProcess,
+        flags_cancelled: numFlagsToCancel
       });
     mLastInfos.lastBlock = mProperties.head_block_number;
     wait.for(mongoSave_wrapper, DB_RECORDS, mLastInfos);
