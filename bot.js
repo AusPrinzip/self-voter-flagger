@@ -208,7 +208,7 @@ function doProcess(startAtBlockNum, callback) {
                   selfvotes_detail_daily: [
                     {
                       permlink: content.permlink,
-                      rshares: opDetail.rshares
+                      rshares: voteDetail.rshares
                     }
                   ],
                   selfvotes_detail_weekly: [] //to be filled with daily
@@ -219,7 +219,7 @@ function doProcess(startAtBlockNum, callback) {
                 voterInfos.selfvotes_detail_daily.push(
                   {
                     permlink: content.permlink,
-                    rshares: opDetail.rshares
+                    rshares: voteDetail.rshares
                   }
                 );
               }
