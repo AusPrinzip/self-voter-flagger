@@ -168,7 +168,7 @@ function doProcess(startAtBlockNum, callback) {
               var toContinue = false;
 
               // check if we already have a record of this
-              if (voterInfos === null || voterInfos === undefined) {
+              if (voterInfos !== null && voterInfos !== undefined) {
                 // TODO : check self vote negation against week long list
                 if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
                   && voterInfos.selfvotes_detail_daily.length > 0) {
