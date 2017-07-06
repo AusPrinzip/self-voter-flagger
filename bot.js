@@ -172,7 +172,7 @@ function doProcess(startAtBlockNum, callback) {
                 // TODO : check self vote negation against week long list
                 if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
                   && voterInfos.selfvotes_detail_daily.length > 0) {
-                  for (var m = 0; m < voterInfos.selfvotes_detail.length; m++) {
+                  for (var m = 0; m < voterInfos.selfvotes_detail_daily.length; m++) {
                     if (content.permlink.localeCompare(voterInfos.selfvotes_detail_daily[m].permlink) === 0) {
                       console.log(" - permlink " + content.permlink + " already noted as self vote");
                       console.log(" - rshares changed from "+voteDetail.rshares+" to "+
