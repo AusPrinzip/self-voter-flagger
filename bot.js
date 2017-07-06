@@ -165,33 +165,27 @@ function doProcess(startAtBlockNum, callback) {
               // check voter db for same vote
               var voterInfos = wait.for(getVoterFromDb, opDetail.voter);
 
-              var toCancelFlag = false;
               var toContinue = false;
 
               // check if we already have a record of this
               if (voterInfos === null || voterInfos === undefined) {
+                // TODO : check self vote negation against week long list
                 if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
                   && voterInfos.selfvotes_detail_daily.length > 0) {
                   for (var m = 0; m < voterInfos.selfvotes_detail.length; m++) {
                     if (content.permlink.localeCompare(voterInfos.selfvotes_detail_daily[m].permlink) === 0) {
-                      console.log(" - permlink " + content.permlink + " already voted on");
+                      console.log(" - permlink " + content.permlink + " already noted as self vote");
                       console.log(" - rshares changed from "+voteDetail.rshares+" to "+
                         voterInfos.selfvotes_detail_daily[m].rshares);
                       voterInfos.selfvotes_detail_daily[m].rshares = voteDetail.rshares;
                       // already exists, figure out what the update is
-                      if (voterInfos.selfvotes_detail_daily[m].permlink > 0
-                        && voteDetail.rshares === 0) {
+                      if (voterInfos.selfvotes_detail_daily[m].rshares > 0
+                        && voteDetail.rshares <= 0) {
                         // user canceled a self vote
-                        // cancel our flag
-                        toCancelFlag = true;
-                        console.log(" - - should cancel flag");
-                      } else if (voteDetail.rshares >= 0) {
-                        // self vote
-                        console.log(" - - change our vote to flag");
-                      } else {
-                        // we don't care, they probably flagged themselves
-                        // don't even keep a record of it
-                        console.log(" - - skipping, not of interest");
+                        // remove self vote from db
+                        console.log(" - - remove this post from db, no" +
+                          " longer self vote");
+                        voterInfos.selfvotes_detail_daily = voterInfos.selfvotes_detail_daily.splice(m, 1);
                         toContinue = true;
                       }
                       break;
@@ -200,45 +194,41 @@ function doProcess(startAtBlockNum, callback) {
                 }
               }
 
-              if (toContinue) {
+              if (toContinue || voteDetail.rshares <= 0) {
                 continue;
               }
 
-              // has enough SP to be of interest
-              if (!toCancelFlag) {
-                numSelfVotesToProcess++;
-              } else {
-                numFlagsToCancel++;
-              }
+              numSelfVotesToProcess++;
 
               // update voter info
-              if (!toCancelFlag) {
-                if (voterInfos === null || voterInfos === undefined) {
-                  voterInfos = {
-                    voter: opDetail.voter,
-                    selfvotes: 1,
-                    selfvotes_detail_daily: [
-                      {
-                        permlink: content.permlink,
-                        rshares: opDetail.rshares
-                      }
-                    ],
-                    selfvotes_detail_weekly: [] //to be filled with daily
-                    // when finished daily report
-                  };
-                } else {
-                  voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                  voterInfos.selfvotes_detail_daily.push(
+              if (voterInfos === null || voterInfos === undefined) {
+                voterInfos = {
+                  voter: opDetail.voter,
+                  selfvotes: 1,
+                  selfvotes_detail_daily: [
                     {
                       permlink: content.permlink,
                       rshares: opDetail.rshares
                     }
-                  );
-                }
+                  ],
+                  selfvotes_detail_weekly: [] //to be filled with daily
+                  // when finished daily report
+                };
+              } else {
+                voterInfos.selfvotes = voterInfos.selfvotes + 1;
+                voterInfos.selfvotes_detail_daily.push(
+                  {
+                    permlink: content.permlink,
+                    rshares: opDetail.rshares
+                  }
+                );
               }
+
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
 
+              // TODO : move this to flagging rountine
+              /*
               console.log("--DEBUG CALC VOTE PERCENTAGE--");
               var abs_need_rshares = Math.abs(voteDetail.rshares);
               console.log(" - abs_need_rshares: "+abs_need_rshares);
@@ -315,6 +305,7 @@ function doProcess(startAtBlockNum, callback) {
                 console.log("Not voting, author restriction list not" +
                   " met");
               }
+              */
             }
             /*
           } catch (err) {
