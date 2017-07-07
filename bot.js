@@ -175,8 +175,9 @@ function doProcess(startAtBlockNum, callback) {
                   for (var m = 0; m < voterInfos.selfvotes_detail_daily.length; m++) {
                     if (content.permlink.localeCompare(voterInfos.selfvotes_detail_daily[m].permlink) === 0) {
                       console.log(" - permlink " + content.permlink + " already noted as self vote");
-                      console.log(" - rshares changed from "+voteDetail.rshares+" to "+
-                        voterInfos.selfvotes_detail_daily[m].rshares);
+                      console.log(" - rshares changed from "
+                        + voterInfos.selfvotes_detail_daily[m].rshares
+                        +" to "+ voteDetail.rshares);
                       voterInfos.selfvotes_detail_daily[m].rshares = voteDetail.rshares;
                       // already exists, figure out what the update is
                       if (voterInfos.selfvotes_detail_daily[m].rshares > 0
@@ -194,34 +195,32 @@ function doProcess(startAtBlockNum, callback) {
                 }
               }
 
-              if (toContinue || voteDetail.rshares <= 0) {
-                continue;
-              }
+              if (!toContinue) {
+                numSelfVotesToProcess++;
 
-              numSelfVotesToProcess++;
-
-              // update voter info
-              if (voterInfos === null || voterInfos === undefined) {
-                voterInfos = {
-                  voter: opDetail.voter,
-                  selfvotes: 1,
-                  selfvotes_detail_daily: [
+                // update voter info
+                if (voterInfos === null || voterInfos === undefined) {
+                  voterInfos = {
+                    voter: opDetail.voter,
+                    selfvotes: 1,
+                    selfvotes_detail_daily: [
+                      {
+                        permlink: content.permlink,
+                        rshares: voteDetail.rshares
+                      }
+                    ],
+                    selfvotes_detail_weekly: [] //to be filled with daily
+                    // when finished daily report
+                  };
+                } else {
+                  voterInfos.selfvotes = voterInfos.selfvotes + 1;
+                  voterInfos.selfvotes_detail_daily.push(
                     {
                       permlink: content.permlink,
                       rshares: voteDetail.rshares
                     }
-                  ],
-                  selfvotes_detail_weekly: [] //to be filled with daily
-                  // when finished daily report
-                };
-              } else {
-                voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                voterInfos.selfvotes_detail_daily.push(
-                  {
-                    permlink: content.permlink,
-                    rshares: voteDetail.rshares
-                  }
-                );
+                  );
+                }
               }
 
               wait.for(mongoSave_wrapper, DB_VOTERS, voterInfos);
