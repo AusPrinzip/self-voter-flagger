@@ -142,9 +142,9 @@ function doProcess(startAtBlockNum, callback) {
               // FOURTH, check if vote rshares are > 0, cancelled self votes
               // have rshares == 0
               if (voteDetail.rshares < 0) {
-                console.log("self flag?! skipping");
+                console.log(" - - self flag");
               } else if (voteDetail.rshares === 0) {
-                console.log("self vote negated, well done! skipping");
+                console.log(" - - self vote negated");
               } else {
                 // is a self voted comment
                 numSelfComments++;
@@ -187,8 +187,8 @@ function doProcess(startAtBlockNum, callback) {
                         console.log(" - - remove this post from db, no" +
                           " longer self vote");
                         voterInfos.selfvotes_detail_daily = voterInfos.selfvotes_detail_daily.splice(m, 1);
-                        toContinue = true;
                       }
+                      toContinue = true;
                       break;
                     }
                   }
