@@ -18,14 +18,14 @@ function main() {
     var steemPerRshare = pendingRewardedVestingSteemNum / pendingRewardedVestingSharesNum;
     console.log("steemPerRshare: "+steemPerRshare);
     console.log("processing...");
-    doProcess(steemPerRshare, function () {
+    createQueue(steemPerRshare, function () {
       console.log("Finished");
     });
   });
 }
 
 
-function doProcess(steemPerRshare, callback) {
+function createQueue(steemPerRshare, callback) {
   wait.launchFiber(function() {
     var voters = wait.for(lib.getAllVoters);
     var posts = [];
