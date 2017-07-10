@@ -270,15 +270,15 @@ module.exports.setAccount = function(account) {mAccount = account;};
 // functions
 
 module.exports.mongoSave_wrapper = mongoSave_wrapper;
-module.exports.mongoSave_wrapper = getSteemPowerFromVest;
-module.exports.mongoSave_wrapper = steem_getBlockHeader_wrapper;
-module.exports.mongoSave_wrapper = steem_getBlock_wrapper;
-module.exports.mongoSave_wrapper = steem_getDiscussionsByCreated_wrapper;
-module.exports.mongoSave_wrapper = steem_getSteemGlobalProperties_wrapper;
-module.exports.mongoSave_wrapper = steem_getAccounts_wrapper;
-module.exports.mongoSave_wrapper = steem_getAccountCount_wrapper;
-module.exports.mongoSave_wrapper = steem_getAccountHistory_wrapper;
-module.exports.mongoSave_wrapper = steem_getContent_wrapper;
+module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
+module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
+module.exports.steem_getBlock_wrapper = steem_getBlock_wrapper;
+module.exports.steem_getDiscussionsByCreated_wrapper = steem_getDiscussionsByCreated_wrapper;
+module.exports.steem_getSteemGlobalProperties_wrapper = steem_getSteemGlobalProperties_wrapper;
+module.exports.steem_getAccounts_wrapper = steem_getAccounts_wrapper;
+module.exports.steem_getAccountCount_wrapper = steem_getAccountCount_wrapper;
+module.exports.steem_getAccountHistory_wrapper = steem_getAccountHistory_wrapper;
+module.exports.steem_getContent_wrapper = steem_getContent_wrapper;
 
 module.exports.start = start;
 module.exports.sendEmail = sendEmail;
