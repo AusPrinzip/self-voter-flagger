@@ -110,7 +110,11 @@ var votersCursor = null;
 
 function getAllVoters_reset(limit) {
   if (votersCursor === null) {
-    votersCursor = db.collection(DB_VOTERS).find({}).batchSize(limit);
+    if (limit !== undefined && limit !== null) {
+      votersCursor = db.collection(DB_VOTERS).find({}).limit(limit);
+    } else {
+      votersCursor = db.collection(DB_VOTERS).find({});
+    }
   } else {
     votersCursor = votersCursor.rewind();
   }
@@ -128,11 +132,27 @@ function getAllVoters(callback) {
   }
 }
 
+function getEachVoter(callback) {
+  console.log("getEachVoter");
+  if (votersCursor === null || votersCursor.isClosed()) {
+    callback(null, []);
+  } else {
+    votersCursor.toArray(function(err, data) {
+      console.log("db voters collection");
+      callback(err, data);
+    });
+  }
+}
+
 var runsCursor = null;
 
 function getAllRuns_reset(limit) {
   if (runsCursor === null) {
-    runsCursor = db.collection(DB_RUNS).find({}).batchSize(limit);
+    if (limit !== undefined && limit !== null) {
+      runsCursor = db.collection(DB_RUNS).find({}).limit(limit);
+    } else {
+      runsCursor = db.collection(DB_RUNS).find({});
+    }
   } else {
     runsCursor = runsCursor.rewind();
   }
@@ -315,6 +335,7 @@ module.exports.getAllRuns_reset = getAllRuns_reset;
 module.exports.getAllRuns = getAllRuns;
 module.exports.getAllVoters_reset = getAllVoters_reset;
 module.exports.getAllVoters = getAllVoters;
+module.exports.getEachVoter = getEachVoter;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;

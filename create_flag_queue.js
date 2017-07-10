@@ -27,14 +27,21 @@ function main() {
 
 function createQueue(steemPerRshare, callback) {
   wait.launchFiber(function() {
-    lib.getAllVoters_reset(10);
+    lib.getAllVoters_reset();
     console.log("getting voters...");
     var keepGoing = true;
     var posts = [];
     while(keepGoing) {
-      var voters = wait.for(lib.getAllVoters);
-      if (voters.length <= 0) {
-        console.log("No more posts to get");
+      var voters = [];
+      try {
+        voters = wait.for(lib.getEachVoter);
+      } catch(err) {
+        console.log("No more posts to get (mongodb threw err)");
+        keepGoing = false;
+        break;
+      }
+      if (voters === null || voters === undefined || voters.length <= 0) {
+        console.log("No more posts to get (nothing returned)");
         keepGoing = false;
         break;
       }
