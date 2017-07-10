@@ -27,14 +27,14 @@ function main() {
 
 function createQueue(steemPerRshare, callback) {
   wait.launchFiber(function() {
-    lib.getAllVoters_reset();
+    lib.getAllVoters_reset(10);
     console.log("getting voters...");
     var keepGoing = true;
     var posts = [];
     while(keepGoing) {
-      var voters = wait.for(lib.getAllVoters, 50);
+      var voters = wait.for(lib.getAllVoters);
       if (voters.length <= 0) {
-        console.log("No more posts to get")
+        console.log("No more posts to get");
         keepGoing = false;
         break;
       }
