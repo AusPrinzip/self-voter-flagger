@@ -109,7 +109,7 @@ function getLastInfos(callback) {
 var votersCursor = null;
 
 function getAllVoters_reset() {
-  if (votersCursor == null) {
+  if (votersCursor === null) {
     votersCursor = db.collection(DB_VOTERS).find({});
   } else {
     votersCursor = votersCursor.rewind();
@@ -118,10 +118,14 @@ function getAllVoters_reset() {
 
 function getAllVoters(limit, callback) {
   console.log("getAllVoters");
-  votersCursor.limit(limit).toArray(function(err, data) {
-    console.log("db voters collection");
-    callback(err, data);
-  });
+  if (votersCursor === null || votersCursor.isClosed()) {
+    callback(null, []);
+  } else {
+    votersCursor.limit(limit).toArray(function(err, data) {
+      console.log("db voters collection");
+      callback(err, data);
+    });
+  }
 }
 
 function getAllRuns(callback) {

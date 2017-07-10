@@ -67,7 +67,7 @@ function createQueue(steemPerRshare, callback) {
                 rsteem: steemPerRshare * voters[i].selfvotes_detail_daily[j].rshares
               };
               console.log(" - - - adding "+JSON.stringify(post));
-              posts.push();
+              posts.push(post);
             }
             // copy daily to weekly stats (will be wiped afterward)
             voters[i].selfvotes_detail_weekly.push(voters[i].selfvotes_detail_daily[j]);
