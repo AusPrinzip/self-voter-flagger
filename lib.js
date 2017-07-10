@@ -270,6 +270,10 @@ module.exports.setAccount = function(account) {mAccount = account;};
 // functions
 
 module.exports.mongoSave_wrapper = mongoSave_wrapper;
+module.exports.getVoterFromDb = getVoterFromDb;
+module.exports.getAllRuns = getAllRuns;
+module.exports.getAllVoters= getAllVoters;
+
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
 module.exports.steem_getBlock_wrapper = steem_getBlock_wrapper;
