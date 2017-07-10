@@ -281,7 +281,4 @@ module.exports.mongoSave_wrapper = steem_getAccountHistory_wrapper;
 module.exports.mongoSave_wrapper = steem_getContent_wrapper;
 
 module.exports.start = start;
-
-module.exports.setAccount = setAccount;
-
 module.exports.sendEmail = sendEmail;
