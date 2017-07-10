@@ -28,7 +28,7 @@ function main() {
 function createQueue(steemPerRshare, callback) {
   wait.launchFiber(function() {
     console.log("getting voters...");
-    var voters = wait.for(lib.getAllVoters);
+    var voters = wait.for(lib.getAllVoters, 10);
     var posts = [];
     console.log("processing "+voter.length+" voters...");
     for (var i = 0 ; i < voters.length ; i++) {

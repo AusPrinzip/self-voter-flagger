@@ -106,9 +106,9 @@ function getLastInfos(callback) {
 
 // --- DB FUNCS
 
-function getAllVoters(callback) {
+function getAllVoters(limit, callback) {
   console.log("getAllVoters");
-  db.collection(DB_VOTERS).find({}).toArray(function(err, data) {
+  db.collection(DB_VOTERS).find({}).limit(limit).toArray(function(err, data) {
     console.log("db voters collection");
     callback(err, data);
   });
