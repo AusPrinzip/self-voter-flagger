@@ -7,7 +7,7 @@ const
   moment = require('moment'),
   S = require('string'),
   wait = require('wait.for'),
-  lib = require('/lib.js');
+  lib = require('./lib.js');
 
 function main() {
   lib.start(function () {
