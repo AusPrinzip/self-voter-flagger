@@ -81,6 +81,8 @@ function createQueue(steemPerRshare, callback) {
 
     console.log(" RESULTS: "+JSON.stringify(posts));
 
+    wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, posts);
+
     /*
      wait.for(mongoSave_wrapper, DB_RUNS,
      {

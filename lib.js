@@ -108,15 +108,15 @@ function getLastInfos(callback) {
 
 var votersCursor = null;
 
-function getAllVoters_reset() {
+function getAllVoters_reset(limit) {
   if (votersCursor === null) {
-    votersCursor = db.collection(DB_VOTERS).find({});
+    votersCursor = db.collection(DB_VOTERS).find({}).limit(limit);
   } else {
     votersCursor = votersCursor.rewind();
   }
 }
 
-function getAllVoters(limit, callback) {
+function getAllVoters(callback) {
   console.log("getAllVoters");
   if (votersCursor === null || votersCursor.isClosed()) {
     callback(null, []);
@@ -128,10 +128,26 @@ function getAllVoters(limit, callback) {
   }
 }
 
+var runsCursor = null;
+
+function getAllRuns_reset(limit) {
+  if (runsCursor === null) {
+    runsCursor = db.collection(DB_RUNS).find({}).limit(limit);
+  } else {
+    runsCursor = runsCursor.rewind();
+  }
+}
+
 function getAllRuns(callback) {
-  db.collection(DB_RUNS).find({}).toArray(function(err, data) {
-    callback(err, data);
-  });
+  console.log("getAllRuns");
+  if (runsCursor === null || runsCursor.isClosed()) {
+    callback(null, []);
+  } else {
+    runsCursor.limit(limit).toArray(function(err, data) {
+      console.log("db runs collection");
+      callback(err, data);
+    });
+  }
 }
 
 function mongoSave_wrapper(collection, obj, callback) {
@@ -272,6 +288,7 @@ function timeout_wrapper(delay, callback) {
 module.exports.DB_RECORDS = DB_RECORDS;
 module.exports.DB_VOTERS = DB_VOTERS;
 module.exports.DB_RUNS = DB_RUNS;
+module.exports.DB_QUEUE = DB_QUEUE;
 
 // getters
 
@@ -288,6 +305,7 @@ module.exports.setAccount = function(account) {mAccount = account;};
 
 module.exports.mongoSave_wrapper = mongoSave_wrapper;
 module.exports.getVoterFromDb = getVoterFromDb;
+module.exports.getAllRuns_reset = getAllRuns_reset;
 module.exports.getAllRuns = getAllRuns;
 module.exports.getAllVoters_reset = getAllVoters_reset;
 module.exports.getAllVoters = getAllVoters;
