@@ -171,7 +171,7 @@ function doProcess(startAtBlockNum, callback) {
                   for (var m = 0; m < posts.length; m++) {
                     if (posts[m].rshares < voteDetail.rshares) {
                       console.log(" - - - removing post " + posts[m].permlink + " at rhsares " + posts[m].rshares);
-                      posts = posts.splice(k, 1);
+                      posts = posts.splice(m, 1);
                       toAdd = true;
                       break;
                     }
