@@ -121,7 +121,7 @@ function getAllVoters(callback) {
   if (votersCursor === null || votersCursor.isClosed()) {
     callback(null, []);
   } else {
-    votersCursor.limit(limit).toArray(function(err, data) {
+    votersCursor.toArray(function(err, data) {
       console.log("db voters collection");
       callback(err, data);
     });
@@ -143,7 +143,7 @@ function getAllRuns(callback) {
   if (runsCursor === null || runsCursor.isClosed()) {
     callback(null, []);
   } else {
-    runsCursor.limit(limit).toArray(function(err, data) {
+    runsCursor.toArray(function(err, data) {
       console.log("db runs collection");
       callback(err, data);
     });
