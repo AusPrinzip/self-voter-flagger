@@ -25,7 +25,7 @@ function main() {
 
 function doProcess(steemPerRshare, callback) {
   wait.launchFiber(function() {
-    var voters = wait.for(getAllVoters);
+    var voters = wait.for(lib.getAllVoters);
     var posts = [];
     console.log("processing...");
     for (var i = 0 ; i < voters.length ; i++) {
