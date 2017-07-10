@@ -140,7 +140,7 @@ function getEachVoter(callback) {
   if (votersCursor === null || votersCursor.isClosed()) {
     callback(null, []);
   } else {
-    votersCursor.toArray(function(err, data) {
+    votersCursor.each(function(err, data) {
       console.log("db voters collection");
       callback(err, data);
     });

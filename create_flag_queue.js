@@ -34,7 +34,8 @@ function createQueue(steemPerRshare, callback) {
     while(keepGoing) {
       var voters = [];
       try {
-        voters = wait.for(lib.getEachVoter);
+        var voters_item = wait.for(lib.getEachVoter);
+        voters.push(voters_item);
       } catch(err) {
         console.log("No more posts to get (mongodb threw err)");
         keepGoing = false;
