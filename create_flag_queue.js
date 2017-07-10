@@ -30,7 +30,7 @@ function createQueue(steemPerRshare, callback) {
     console.log("getting voters...");
     var voters = wait.for(lib.getAllVoters, 10);
     var posts = [];
-    console.log("processing "+voter.length+" voters...");
+    console.log("processing "+voters.length+" voters...");
     for (var i = 0 ; i < voters.length ; i++) {
       console.log(" - voter: "+voters[i].voter);
       if (voters[i].selfvotes_detail_daily.length > 0) {
