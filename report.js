@@ -6,44 +6,12 @@ const
   mongodb = require("mongodb"),
   moment = require('moment'),
   S = require('string'),
-  wait = require('wait.for');
+  wait = require('wait.for'),
+  lib = require('/lib.js');
 
-const
-  DB_RECORDS = "records",
-  DB_VOTERS = "voters",
-  DB_RUNS = "runs";
-
-const
-  VOTE_POWER_1_PC = 100,
-  DATE_FORMAT = "dddd, MMMM Do YYYY, h:mm:ss a";
-
-var
-  MIN_SP;
-
-var ObjectID = mongodb.ObjectID;
-var db;
-
-var mAccount = null;
-var mProperties = null;
-var mTestAuthorList = null;
-
-
-// Connect to the database first
-mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, database) {
-  if (err) {
-    console.log(err);
-    process.exit(1);
-  }
-
-  db = database;
-  console.log("Database connection ready");
-
-  main();
-});
 
 function main() {
-  steem.config.set('websocket','wss://gtg.steem.house:8090');
-  init(function () {
+  lib.start(function () {
     doReport(function (err, html) {
       sendEmail("smackdown.kitty report", html, true, function (err, data) {
         if (err) {
@@ -53,30 +21,6 @@ function main() {
         }
       });
     });
-  });
-}
-
-function init(callback) {
-  wait.launchFiber(function() {
-    // get steem global properties first, needed for SP calc
-    mProperties = wait.for(steem_getSteemGlobalProperties_wrapper);
-    console.log("global properties: "+JSON.stringify(mProperties));
-    // get Steem Power of bot account
-    var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
-    mAccount = accounts[0];
-    console.log("account: "+JSON.stringify(mAccount));
-    // set up some vars
-    MIN_SP = Number(process.env.MIN_SP);
-    // get test list, if any
-    if (process.env.TEST_AUTHOR_LIST !== undefined
-      && process.env.TEST_AUTHOR_LIST !== null
-      && process.env.TEST_AUTHOR_LIST.localeCompare("null") != 0) {
-      mTestAuthorList = process.env.TEST_AUTHOR_LIST.split(",");
-      for (var i = 0 ; i < mTestAuthorList.length ; i++) {
-        mTestAuthorList[i] = mTestAuthorList[i].toLowerCase().trim();
-      }
-    }
-    callback();
   });
 }
 
@@ -153,93 +97,5 @@ function doReport(callback) {
 
 
 
-function getAllVoters(callback) {
-  db.collection(DB_VOTERS).find({}).toArray(function(err, data) {
-    callback(err, data);
-  });
-}
-
-function getAllRuns(callback) {
-  db.collection(DB_RUNS).find({}).toArray(function(err, data) {
-    callback(err, data);
-  });
-}
-
-function steem_getSteemGlobalProperties_wrapper(callback) {
-  steem.api.getDynamicGlobalProperties(function(err, properties) {
-    callback(err, properties);
-  });
-}
-
-function steem_getAccounts_wrapper(author, callback) {
-  steem.api.getAccounts([author], function(err, result) {
-    callback(err, result);
-  });
-}
-
-function steem_getBlockHeader_wrapper(blockNum, callback) {
-  steem.api.getBlockHeader(blockNum, function(err, result) {
-    callback(err, result);
-  });
-}
-
-function steem_getBlock_wrapper(blockNum, callback) {
-  steem.api.getBlock(blockNum, function(err, result) {
-    callback(err, result);
-  });
-}
-
-function timeout_wrapper(delay, callback) {
-  setTimeout(function() {
-    callback(null, true);
-  }, delay);
-}
-
-/*
- sendEmail(subject, message, isHtml, callback)
- * Send email using SendGrid, if set up
- */
-function sendEmail(subject, message, isHtml, callback) {
-  console.log("sendEmail with subject: "+subject);
-  if (process.env.SENDGRID_API_KEY === undefined
-    || process.env.SENDGRID_API_KEY === null
-    || process.env.SENDGRID_API_KEY.localeCompare("none") == 0
-    || process.env.EMAIL_ADDRESS_LIST === undefined
-    || process.env.EMAIL_ADDRESS_LIST === null
-    || process.env.EMAIL_ADDRESS_LIST.localeCompare("none") == 0) {
-    callback("Can't send email, config vars not set.", null);
-  }
-  var helper = require('sendgrid').mail;
-  var from_email = new helper.Email((process.env.EMAIL_ADDRESS_SENDER
-  && process.env.EMAIL_ADDRESS_SENDER.localeCompare("none") != 0)
-    ? process.env.EMAIL_ADDRESS_SENDER : 'bot@fossbot.org');
-  var content = new helper.Content(isHtml ? 'text/html' : 'text/plain', message);
-  // parse email addresses to send to and send
-  var emailAddresses = process.env.EMAIL_ADDRESS_LIST.split(",");
-  if (emailAddresses === undefined
-    || emailAddresses === null
-    || emailAddresses.length < 1) {
-    callback("Can't send email, could not parse email addresses to", null);
-  }
-  var sendEmailsNum = 0;
-  for (var i = 0 ; i < emailAddresses ; i++) {
-    emailAddresses[i] = emailAddresses[i].trim();
-    var to_email = new helper.Email(process.env.EMAIL_ADDRESS_TO);
-    var mail = new helper.Mail(from_email, subject, to_email, content);
-    var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
-    var request = sg.emptyRequest({
-      method: 'POST',
-      path: '/v3/mail/send',
-      body: mail.toJSON()
-    });
-    try {
-      wait.for(sg.API, request);
-      console.log("Sent email to "+emailAddresses[i]);
-      wait.for(timeout_wrapper, 2000);
-      sendEmailsNum++;
-    } catch(err) {
-      console.log("Error sending email to "+emailAddresses[i]);
-    }
-  }
-  callback(null, "Sent "+sendEmailsNum+" emails");
-}
+// START THIS SCRIPT
+main();
