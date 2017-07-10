@@ -25,6 +25,7 @@ var db;
 
 var mAccount = null;
 var mProperties = null;
+var mChainInfo = null;
 var mLastInfos = null;
 var mTestAuthorList = null;
 
@@ -55,6 +56,8 @@ function init(callback) {
     // get steem global properties first, needed for SP calc
     mProperties = wait.for(steem_getSteemGlobalProperties_wrapper);
     console.log("global properties: "+JSON.stringify(mProperties));
+    mChainInfo = wait.for(steem_getChainProperties_wrapper);
+    console.log("chain info: "+JSON.stringify(mChainInfo));
     // get Steem Power of bot account
     var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
     mAccount = accounts[0];
