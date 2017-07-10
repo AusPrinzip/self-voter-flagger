@@ -106,9 +106,19 @@ function getLastInfos(callback) {
 
 // --- DB FUNCS
 
+var votersCursor = null;
+
+function getAllVoters_reset() {
+  if (votersCursor == null) {
+    votersCursor = db.collection(DB_VOTERS).find({});
+  } else {
+    votersCursor = votersCursor.rewind();
+  }
+}
+
 function getAllVoters(limit, callback) {
   console.log("getAllVoters");
-  db.collection(DB_VOTERS).find({}).limit(limit).toArray(function(err, data) {
+  votersCursor.limit(limit).toArray(function(err, data) {
     console.log("db voters collection");
     callback(err, data);
   });
@@ -275,7 +285,8 @@ module.exports.setAccount = function(account) {mAccount = account;};
 module.exports.mongoSave_wrapper = mongoSave_wrapper;
 module.exports.getVoterFromDb = getVoterFromDb;
 module.exports.getAllRuns = getAllRuns;
-module.exports.getAllVoters= getAllVoters;
+module.exports.getAllVoters_reset = getAllVoters_reset;
+module.exports.getAllVoters = getAllVoters;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
