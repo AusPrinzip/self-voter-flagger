@@ -11,7 +11,7 @@ const
 
 function main() {
   lib.start(function () {
-    doProcess(mLastInfos.lastBlock + 1, function () {
+    doProcess(function () {
       console.log("Finished");
     });
   });
@@ -20,6 +20,23 @@ function main() {
 
 function doProcess(startAtBlockNum, callback) {
   wait.launchFiber(function() {
+    var voters = wait.for(getAllVoters);
+    var votersStats = [];
+    for (var i = 0 ; i < voters.length ; i++) {
+      if (voters[i].selfvotes_detail_daily.length > 0) {
+        var stats = {
+          info: voters[i],
+          total_rshares: 0
+        };
+        votersStats.push(stats);
+        // clean up, transfer daily to weekly stats
+        for (var j = 0 ; j < voters[i].selfvotes_detail_daily.length ; j++) {
+          voters[i].selfvotes_detail_weekly.push(voters[i].selfvotes_detail_daily[j]);
+        }
+        voters[i].selfvotes_detail_daily = []; //reset daily permlink
+      }
+    }
+
     var totalVotes = 0;
     var numSelfVotes = 0;
     var numSelfComments = 0;

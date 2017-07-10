@@ -11,7 +11,8 @@ const
 const
   DB_RECORDS = "records",
   DB_VOTERS = "voters",
-  DB_RUNS = "runs";
+  DB_RUNS = "runs",
+  DB_QUEUE = "queue";
 
 const
   VOTE_POWER_1_PC = 100,
