@@ -46,11 +46,11 @@ function createQueue(steemPerRshare, callback) {
             console.log(" - - self vote "+j);
             var toAdd = false;
             if (posts.length >= 4) {
-              for (var k = 0 ; k < 4 ; k++) {
+              for (var k = 0 ; k < posts.length ; k++) {
                 if (posts[k].rshares < voters[i].selfvotes_detail_daily[j].rshares) {
+                  console.log(" - - - removing post "+posts[k].permlink+" at rhsares "+posts[k].rshares);
                   posts = posts.splice(k, 1);
                   toAdd = true;
-                  console.log(" - - - removing post "+posts[k].permlink+" at rhsares "+posts[k].rshares);
                   break;
                 }
               }
