@@ -16,6 +16,8 @@ function main() {
     var pendingRewardedVestingSteemParts = lib.getProperties().pending_rewarded_vesting_steem.split(" ");
     var pendingRewardedVestingSteemNum = Number(pendingRewardedVestingSteemParts[0]);
     var steemPerRshare = pendingRewardedVestingSteemNum / pendingRewardedVestingSharesNum;
+    console.log("steemPerRshare: "+steemPerRshare);
+    console.log("processing...");
     doProcess(steemPerRshare, function () {
       console.log("Finished");
     });
