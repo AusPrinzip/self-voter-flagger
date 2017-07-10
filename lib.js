@@ -125,10 +125,6 @@ function mongoSave_wrapper(collection, obj, callback) {
 
 // --- STEEM FUNCS
 
-function setAccount(account) {
-  mAccount = account;
-}
-
 /*
  getSteemPowerFromVest(vest):
  * converts vesting steem (from get user query) to Steem Power (as on Steemit.com website)
@@ -252,17 +248,26 @@ function timeout_wrapper(delay, callback) {
   }, delay);
 }
 
-
 // EXPORTS
+
+// consts
 
 module.exports.DB_RECORDS = DB_RECORDS;
 module.exports.DB_VOTERS = DB_VOTERS;
 module.exports.DB_RUNS = DB_RUNS;
 
-module.exports.account = mAccount;
-module.exports.properties = mProperties;
-module.exports.lastInfos = mLastInfos;
-module.exports.testAuthorList = mTestAuthorList;
+// getters
+
+module.exports.getAccount = function() {return mAccount};
+module.exports.getProperties = function() {return mProperties};
+module.exports.getLastInfos = function() {return mLastInfos};
+module.exports.getTestAuthorList = function() {return mTestAuthorList};
+
+// setters
+module.exports.setLastInfos = function(lastInfos) {mLastInfos = lastInfos;};
+module.exports.setAccount = function(account) {mAccount = account;};
+
+// functions
 
 module.exports.mongoSave_wrapper = mongoSave_wrapper;
 module.exports.mongoSave_wrapper = getSteemPowerFromVest;

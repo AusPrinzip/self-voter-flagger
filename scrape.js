@@ -12,7 +12,7 @@ const
 
 function main() {
   lib.start(function () {
-    doProcess(lib.lastInfos.lastBlock + 1, function () {
+    doProcess(lib.getLastInfos().lastBlock + 1, function () {
       console.log("Finished");
     });
   });
@@ -25,7 +25,7 @@ function doProcess(startAtBlockNum, callback) {
     var numSelfComments = 0;
     var numSelfVotesToProcess = 0;
     var numFlagsToCancel = 0;
-    for (var i = startAtBlockNum; i <= lib.properties.head_block_number; i++) {
+    for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number; i++) {
       var block = wait.for(lib.steem_getBlock_wrapper, i);
       // create current time moment from block infos
       var latestBlockMoment = moment(block. timestamp, moment.ISO_8601);
@@ -179,22 +179,24 @@ function doProcess(startAtBlockNum, callback) {
       }
     }
     console.log("NUM SELF VOTES from block "+startAtBlockNum+" to " +
-      lib.properties.head_block_number + " is "+numSelfVotes +
+      lib.getProperties().head_block_number + " is "+numSelfVotes +
       ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
       " are comments out of " + totalVotes + " total votes");
     console.log(" - "+numFlagsToCancel+" previous flags cancelled");
     wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
       {
         start_block: startAtBlockNum,
-        end_block: lib.properties.head_block_number,
+        end_block: lib.getProperties().head_block_number,
         votes_total: totalVotes,
         selfvotes_total: numSelfVotes,
         selfvotes_comments: numSelfComments,
         selfvotes_high_sp_comments: numSelfVotesToProcess,
         flags_cancelled: numFlagsToCancel
       });
-    lib.lastInfos.lastBlock = lib.properties.head_block_number;
-    wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lib.lastInfos);
+    var lastInfos = lib.getLastInfos();
+    lastInfos.lastBlock = lib.getProperties().head_block_number;
+    wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
+    lib.setLastInfos(lastInfos);
     callback();
   });
 }
