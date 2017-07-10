@@ -110,7 +110,7 @@ var votersCursor = null;
 
 function getAllVoters_reset(limit) {
   if (votersCursor === null) {
-    votersCursor = db.collection(DB_VOTERS).find({}).limit(limit);
+    votersCursor = db.collection(DB_VOTERS).find({}).batchSize(limit);
   } else {
     votersCursor = votersCursor.rewind();
   }
@@ -132,7 +132,7 @@ var runsCursor = null;
 
 function getAllRuns_reset(limit) {
   if (runsCursor === null) {
-    runsCursor = db.collection(DB_RUNS).find({}).limit(limit);
+    runsCursor = db.collection(DB_RUNS).find({}).batchSize(limit);
   } else {
     runsCursor = runsCursor.rewind();
   }
@@ -195,6 +195,12 @@ function steem_getDiscussionsByCreated_wrapper(query, callback) {
 function steem_getSteemGlobalProperties_wrapper(callback) {
   steem.api.getDynamicGlobalProperties(function(err, properties) {
     callback(err, properties);
+  });
+}
+
+function steem_getChainProperties_wrapper(callback) {
+  steem.api.getChainProperties(function(err, result) {
+    callback(err, result);
   });
 }
 
@@ -315,6 +321,7 @@ module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
 module.exports.steem_getBlock_wrapper = steem_getBlock_wrapper;
 module.exports.steem_getDiscussionsByCreated_wrapper = steem_getDiscussionsByCreated_wrapper;
 module.exports.steem_getSteemGlobalProperties_wrapper = steem_getSteemGlobalProperties_wrapper;
+module.exports.steem_getChainProperties_wrapper = steem_getChainProperties_wrapper;
 module.exports.steem_getAccounts_wrapper = steem_getAccounts_wrapper;
 module.exports.steem_getAccountCount_wrapper = steem_getAccountCount_wrapper;
 module.exports.steem_getAccountHistory_wrapper = steem_getAccountHistory_wrapper;
