@@ -156,7 +156,7 @@ function doProcess(startAtBlockNum, callback) {
                 console.log("content.pending_payout_value: "+content.pending_payout_value);
                 var pending_payout_value = content.pending_payout_value.split(" ");
                 var pending_payout_value_NUM = Number(pending_payout_value[0]);
-                console.log("content.vote_rshares: "+content.vote_rshares);
+                console.log("content.net_rshares: "+content.net_rshares);
                 var self_vote_payout;
                 if (pending_payout_value_NUM <= 0.00) {
                   self_vote_payout = 0;
