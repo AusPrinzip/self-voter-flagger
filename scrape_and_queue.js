@@ -179,19 +179,20 @@ function doProcess(startAtBlockNum, callback) {
                 }
 
                 console.log(" - - - arranging posts "+posts.length+"...");
+                var adjustedPayout = (voteDetail.rshares * voteDetail.weight);
                 if (posts.length >= 4) {
-                  var lowestRshare = voteDetail.rshares;
+                  var lowestRshare = adjustedPayout;
                   var idx = -1;
                   for (var m = 0; m < posts.length; m++) {
-                    if (posts[m].rshares < voteDetail.rshares
-                        && posts[m].rshares < lowestRshare) {
-                      lowestRshare = posts[m].rshares;
+                    if (posts[m].payout < adjustedPayout
+                        && posts[m].payout < adjustedPayout) {
+                      lowestRshare = posts[m].payout;
                       idx = m;
                     }
                   }
                   if (idx >= 0) {
                     console.log(" - - - removing existing lower rshares" +
-                      " post " +posts[idx].permlink+" with rshares "+posts[idx].rshares);
+                      " post " +posts[idx].permlink+" with payout "+posts[idx].payout);
                     var newPosts = [];
                     for (var m = 0; m < posts.length; m++) {
                       if (m != idx) {
@@ -207,7 +208,9 @@ function doProcess(startAtBlockNum, callback) {
                   var post = {
                     author: opDetail.voter,
                     permlink: content.permlink,
-                    rshares: voteDetail.rshares
+                    rshares: voteDetail.rshares,
+                    weight: voteDetail.weight,
+                    payout: adjustedPayout
                   };
                   console.log(" - - - adding " + JSON.stringify(post));
                   posts.push(post);
