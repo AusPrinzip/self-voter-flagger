@@ -155,9 +155,8 @@ function doProcess(startAtBlockNum, callback) {
                 numSelfVotesToProcess++;
                 console.log("content.pending_payout_value: "+content.pending_payout_value);
                 var pending_payout_value = content.pending_payout_value.split(" ");
-                console.log("pending_payout_value: "+JSON.stringify(pending_payout_value));
                 var pending_payout_value_NUM = Number(pending_payout_value[0]);
-                console.log("pending_payout_value_NUM: "+pending_payout_value_NUM);
+                console.log("content.vote_rshares: "+content.vote_rshares);
                 var self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
                 console.log("self_vote_payout: "+self_vote_payout);
 
