@@ -27,10 +27,22 @@ function doProcess(startAtBlockNum, callback) {
     var numSelfComments = 0;
     var numSelfVotesToProcess = 0;
     var numFlagsToCancel = 0;
+    var firstBlockMoment = null;
+    var currentBlockNum = 0;
     for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number; i++) {
+      currentBlockNum = i;
       var block = wait.for(lib.steem_getBlock_wrapper, i);
       // create current time moment from block infos
       var latestBlockMoment = moment(block. timestamp, moment.ISO_8601);
+      if (firstBlockMoment === null) {
+        firstBlockMoment = latestBlockMoment;
+      } else {
+        if (firstBlockMoment.dayOfYear() < latestBlockMoment.dayOfYear()) {
+          // exit, the have processed entire day
+          currentBlockNum--;
+          break;
+        }
+      }
       //console.log("block info: "+JSON.stringify(block));
       var transactions = block.transactions;
       for (var j = 0; j < transactions.length; j++) {
@@ -218,14 +230,14 @@ function doProcess(startAtBlockNum, callback) {
       }
     }
     console.log("NUM SELF VOTES from block "+startAtBlockNum+" to " +
-      lib.getProperties().head_block_number + " is "+numSelfVotes +
+      currentBlockNum + " is "+numSelfVotes +
       ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
       " are comments out of " + totalVotes + " total votes");
     console.log(" - "+numFlagsToCancel+" previous flags cancelled");
     wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
       {
         start_block: startAtBlockNum,
-        end_block: lib.getProperties().head_block_number,
+        end_block: currentBlockNum,
         votes_total: totalVotes,
         selfvotes_total: numSelfVotes,
         selfvotes_comments: numSelfComments,
@@ -233,7 +245,7 @@ function doProcess(startAtBlockNum, callback) {
         flags_cancelled: numFlagsToCancel
       });
     var lastInfos = lib.getLastInfos();
-    lastInfos.lastBlock = lib.getProperties().head_block_number;
+    lastInfos.lastBlock = currentBlockNum;
     wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
     lib.setLastInfos(lastInfos);
     // save top posts
