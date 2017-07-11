@@ -157,7 +157,12 @@ function doProcess(startAtBlockNum, callback) {
                 var pending_payout_value = content.pending_payout_value.split(" ");
                 var pending_payout_value_NUM = Number(pending_payout_value[0]);
                 console.log("content.vote_rshares: "+content.vote_rshares);
-                var self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
+                var self_vote_payout;
+                if (pending_payout_value_NUM <= 0.00) {
+                  self_vote_payout = 0;
+                } else {
+                  self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
+                }
                 console.log("self_vote_payout: "+self_vote_payout);
 
                 // update voter info
@@ -184,6 +189,11 @@ function doProcess(startAtBlockNum, callback) {
                 }
 
                 console.log(" - - - arranging posts "+posts.length+"...");
+                // add author as the self vote obj is standalone in the
+                // top list
+                selfVoteObj.voter = opDetail.voter;
+                // add flag to mark processing
+                selfVoteObj.processed = "false";
                 if (posts.length >= 4) {
                   // first sort with lowest first
                   posts.sort(function (a, b) {
@@ -200,7 +210,7 @@ function doProcess(startAtBlockNum, callback) {
                   }
                   if (idx >= 0) {
                     console.log(" - - - removing existing lower rshares" +
-                      " post " +posts[idx].permlink+" with payout "+posts[idx].payout);
+                      " post " +posts[idx].permlink+" with payout "+posts[idx].self_vote_payout);
                     var newPosts = [];
                     for (var m = 0; m < posts.length; m++) {
                       if (m != idx) {
