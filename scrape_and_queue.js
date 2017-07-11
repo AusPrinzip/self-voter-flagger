@@ -166,22 +166,21 @@ function doProcess(startAtBlockNum, callback) {
                   );
                 }
 
-                var toAdd = false;
+                console.log(" - - - arranging posts "+posts.length+"...");
                 if (posts.length >= 4) {
+                  var newPosts = [];
                   for (var m = 0; m < posts.length; m++) {
                     if (posts[m].rshares < voteDetail.rshares) {
-                      console.log(" - - - removing post " + posts[m].permlink + " at rhsares " + posts[m].rshares);
-                      posts = posts.splice(m, 1);
-                      toAdd = true;
-                      break;
+                      console.log(" - - - - removing post " + posts[m].permlink + " at rhsares " + posts[m].rshares);
+                    } else {
+                      newPosts.push(posts[m]);
                     }
                   }
-                } else {
-                  console.log(" - - - less than 4 posts");
-                  toAdd = true;
+                  console.log(" - - - keeping "+newPosts.length+" posts");
+                  posts = newPosts;
                 }
 
-                if (toAdd) {
+                if (posts.length < 4) {
                   var post = {
                     author: opDetail.voter,
                     permlink: content.permlink,
@@ -189,6 +188,8 @@ function doProcess(startAtBlockNum, callback) {
                   };
                   console.log(" - - - adding " + JSON.stringify(post));
                   posts.push(post);
+                } else {
+                  console.log(" - - - not adding post");
                 }
               }
 
