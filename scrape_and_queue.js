@@ -168,16 +168,27 @@ function doProcess(startAtBlockNum, callback) {
 
                 console.log(" - - - arranging posts "+posts.length+"...");
                 if (posts.length >= 4) {
-                  var newPosts = [];
+                  var lowestRshare = voteDetail.rshares;
+                  var idx = -1;
                   for (var m = 0; m < posts.length; m++) {
-                    if (posts[m].rshares < voteDetail.rshares) {
-                      console.log(" - - - - removing post " + posts[m].permlink + " at rhsares " + posts[m].rshares);
-                    } else {
-                      newPosts.push(posts[m]);
+                    if (posts[m].rshares < voteDetail.rshares
+                        && posts[m].rshares < lowestRshare) {
+                      lowestRshare = posts[m].rshares;
+                      idx = m;
                     }
                   }
-                  console.log(" - - - keeping "+newPosts.length+" posts");
-                  posts = newPosts;
+                  if (idx >= 0) {
+                    console.log(" - - - removing existing lower rshares" +
+                      " post " +posts[idx].permlink+" with rshares "+posts[idx].rshares);
+                    var newPosts = [];
+                    for (var m = 0; m < posts.length; m++) {
+                      if (m != idx) {
+                        newPosts.push(posts[m]);
+                      }
+                    }
+                    posts = newPosts;
+                    console.log(" - - - keeping "+newPosts.length+" posts");
+                  }
                 }
 
                 if (posts.length < 4) {
