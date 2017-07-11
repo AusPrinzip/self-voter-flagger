@@ -153,40 +153,45 @@ function doProcess(startAtBlockNum, callback) {
 
               if (!toContinue) {
                 numSelfVotesToProcess++;
+                var pending_payout_value = content.pending_payout_value.split(" ");
+                var pending_payout_value_NUM = Number(pending_payout_value);
+                var self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
 
                 // update voter info
+                var selfVoteObj =  {
+                  permlink: content.permlink,
+                  rshares: voteDetail.rshares,
+                  self_vote_payout: self_vote_payout,
+                  pending_payout_value: pending_payout_value_NUM
+                };
+                console.log(" - - self vote obj: "+JSON.stringify(selfVoteObj));
                 if (voterInfos === null || voterInfos === undefined) {
                   voterInfos = {
                     voter: opDetail.voter,
                     selfvotes: 1,
                     selfvotes_detail_daily: [
-                      {
-                        permlink: content.permlink,
-                        rshares: voteDetail.rshares
-                      }
+                      selfVoteObj
                     ],
                     selfvotes_detail_weekly: [] //to be filled with daily
                     // when finished daily report
                   };
                 } else {
                   voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                  voterInfos.selfvotes_detail_daily.push(
-                    {
-                      permlink: content.permlink,
-                      rshares: voteDetail.rshares
-                    }
-                  );
+                  voterInfos.selfvotes_detail_daily.push(selfVoteObj);
                 }
 
                 console.log(" - - - arranging posts "+posts.length+"...");
-                var adjustedPayout = (voteDetail.rshares * voteDetail.weight);
                 if (posts.length >= 4) {
-                  var lowestRshare = adjustedPayout;
+                  // first sort with lowest first
+                  posts.sort(function (a, b) {
+                    return a.self_vote_payout - b.self_vote_payout;
+                  });
+                  var lowestRshare = self_vote_payout;
                   var idx = -1;
                   for (var m = 0; m < posts.length; m++) {
-                    if (posts[m].payout < adjustedPayout
-                        && posts[m].payout < adjustedPayout) {
-                      lowestRshare = posts[m].payout;
+                    if (posts[m].self_vote_payout < self_vote_payout
+                        && posts[m].self_vote_payout < self_vote_payout) {
+                      lowestRshare = posts[m].self_vote_payout;
                       idx = m;
                     }
                   }
@@ -205,17 +210,10 @@ function doProcess(startAtBlockNum, callback) {
                 }
 
                 if (posts.length < 4) {
-                  var post = {
-                    author: opDetail.voter,
-                    permlink: content.permlink,
-                    rshares: voteDetail.rshares,
-                    weight: voteDetail.weight,
-                    payout: adjustedPayout
-                  };
-                  console.log(" - - - adding " + JSON.stringify(post));
-                  posts.push(post);
+                  console.log(" - - - adding new post to top list");
+                  posts.push(selfVoteObj);
                 } else {
-                  console.log(" - - - not adding post");
+                  console.log(" - - - not adding post to top list");
                 }
               }
 
