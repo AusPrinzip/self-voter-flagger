@@ -10,7 +10,7 @@ const
   lib = require('./lib.js');
 
 var
-  MAX_POSTS_TO_CONSIDER = 100; //default
+  MAX_POSTS_TO_CONSIDER = 20; //default
 
 
 function main() {
@@ -27,6 +27,10 @@ function doProcess(startAtBlockNum, callback) {
   wait.launchFiber(function() {
     // get queue
     queue = wait.for(lib.getAllQueue);
+    if (queue === undefined
+        || queue === null) {
+      queue = [];
+    }
     // set up vars
     var totalVotes = 0;
     var numSelfCommentVotes = 0;
@@ -60,6 +64,36 @@ function doProcess(startAtBlockNum, callback) {
             if (opName !== undefined && opName !== null
               && opName.localeCompare("vote") == 0) {
 
+              totalVotes++;
+
+              // FIRST, screen for comments only
+              var permlinkParts = opDetail.permlink.split("-");
+              if (permlinkParts.length === 0
+                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
+                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
+                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
+                console.log("Not a comment, skipping");
+                continue;
+              }
+
+              numCommentsVotes++;
+
+              // check voter db for same vote
+              var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
+
+              // THEN, check vote is a self vote
+              if (opDetail.voter.localeCompare(opDetail.author) != 0) {
+                if (voterInfos !== undefined && voterInfos !== null) {
+                  voterInfos.outvotes = voterInfos.outvotes + 1;
+                  console.log("non selfvote for watched user "+voterInfos.voter+", now at ratio "
+                    +voterInfos.selfvotes+" / "+voterInfos.outvotes);
+                  wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
+                }
+                continue;
+              }
+
+              numSelfCommentVotes++;
+
               // get post content and rshares of vote
               var content;
               // TODO : cache posts
@@ -82,43 +116,13 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // FIRST, check if vote rshares are > 0
+              // THEN, check if vote rshares are > 0
               // note: cancelled self votes have rshares == 0
               if (voteDetail.rshares < 0) {
                 console.log(" - - self flag");
               } else if (voteDetail.rshares === 0) {
                 console.log(" - - self vote negated");
               }
-
-              totalVotes++;
-
-              // FIRST, screen for comments only
-              var permlinkParts = opDetail.permlink.split("-");
-              if (permlinkParts.length === 0
-                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
-                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
-                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
-                console.log("Not a comment, skipping");
-                continue;
-              }
-
-              numCommentsVotes++;
-
-              // check voter db for same vote
-              var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
-
-              // SECOND, check vote is a self vote
-              if (opDetail.voter.localeCompare(opDetail.author) != 0) {
-                if (voterInfos !== undefined && voterInfos !== null) {
-                  voterInfos.outvotes = voterInfos.outvotes + 1;
-                  console.log("non selfvote for watched user "+voterInfos.voter+", now at ratio "
-                    +voterInfos.selfvotes+" / "+voterInfos.outvotes);
-                  wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
-                }
-                continue;
-              }
-
-              numSelfCommentVotes++;
 
               console.log("- self vote at b " + i + ":t " + j + ":op " +
                 k + ", detail:" + JSON.stringify(opDetail));
@@ -134,7 +138,7 @@ function doProcess(startAtBlockNum, callback) {
                 recordOnly = true;
               }
 
-              // FIFTH, check their SP is above minimum
+              // THEN, check their SP is above minimum
               // TODO : cache user accounts
               var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
               var voterAccount = accounts[0];
@@ -180,18 +184,6 @@ function doProcess(startAtBlockNum, callback) {
               //if (!toContinue) {
                 numHighSpCommentSelfVotes++;
 
-                // update voter info
-                if (voterInfos === null || voterInfos === undefined) {
-                  voterInfos = {
-                    voter: opDetail.voter,
-                    selfvotes: 1,
-                    outvotes: 0,
-                    flags_received: 0
-                  };
-                } else {
-                  voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                }
-
                 // consider for flag queue
                 console.log("content.pending_payout_value: "+content.pending_payout_value);
                 var pending_payout_value = content.pending_payout_value.split(" ");
@@ -208,7 +200,21 @@ function doProcess(startAtBlockNum, callback) {
                 }
                 console.log("self_vote_payout: "+self_vote_payout);
 
-                // update voter info
+              // update voter info
+              if (voterInfos === null || voterInfos === undefined) {
+                voterInfos = {
+                  voter: opDetail.voter,
+                  selfvotes: 1,
+                  outvotes: 0,
+                  flags_received: 0,
+                  total_self_vote_payout: 0.0
+                };
+              } else {
+                voterInfos.selfvotes = voterInfos.selfvotes + 1;
+                voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
+              }
+
+                // add to queue if high enough self vote payout
                 var selfVoteObj =  {
                   permlink: content.permlink,
                   rshares: voteDetail.rshares,
