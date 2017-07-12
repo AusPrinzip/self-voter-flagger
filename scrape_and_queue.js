@@ -72,7 +72,7 @@ function doProcess(startAtBlockNum, callback) {
                 || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
                 || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
                 || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
-                console.log("Not a comment, skipping");
+                //console.log("Not a comment, skipping");
                 continue;
               }
 
@@ -290,8 +290,8 @@ function doProcess(startAtBlockNum, callback) {
         start_block: startAtBlockNum,
         end_block: currentBlockNum,
         votes_total: totalVotes,
-        selfvotes_total: numSelfVotes,
-        selfvotes_comments: numSelfComments,
+        comment_votes_total: numCommentsVotes,
+        comments_selfvotes: numSelfCommentVotes,
         selfvotes_high_sp_comments: numHighSpCommentSelfVotes,
         flags_cancelled: numFlagsToCancel
       });
