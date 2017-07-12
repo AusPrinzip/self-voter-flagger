@@ -9,6 +9,9 @@ const
   wait = require('wait.for'),
   lib = require('./lib.js');
 
+var
+  MAX_POSTS_TO_CONSIDER = 100; //default
+
 
 function main() {
   lib.start(function () {
@@ -75,7 +78,7 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // THIRD, get rshares of vote from post
+              // get post content and rshares of vote
               var content;
               // TODO : cache posts
               content = wait.for(lib.steem_getContent_wrapper, opDetail.author,
@@ -97,8 +100,19 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // FOURTH, check if vote rshares are > 0, cancelled self votes
-              // have rshares == 0
+              // SECOND, check payout window still open
+              var recordOnly = false;
+              var cashoutTime = moment(content.cashout_time);
+              cashoutTime.subtract(7, 'hours');
+              var nowTime = moment(new Date());
+              if (!nowTime.isBefore(cashoutTime)) {
+                console.log("payout window now closed, only keep record," +
+                  " do not consider for flag");
+                recordOnly = true;
+              }
+
+              // THIRD, check if vote rshares are > 0
+              // note: cancelled self votes have rshares == 0
               if (voteDetail.rshares < 0) {
                 console.log(" - - self flag");
               } else if (voteDetail.rshares === 0) {
@@ -108,7 +122,7 @@ function doProcess(startAtBlockNum, callback) {
                 numSelfComments++;
               }
 
-              // SECOND, check their SP
+              // FOURTH, check their SP is above minimum
               // TODO : cache user accounts
               var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
               var voterAccount = accounts[0];
@@ -124,10 +138,10 @@ function doProcess(startAtBlockNum, callback) {
               var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
 
               var toContinue = false;
-
-              // check if we already have a record of this
+              // check for change in record, update if so
               if (voterInfos !== null && voterInfos !== undefined) {
                 // TODO : check self vote negation against week long list
+                // TODO : and current posts list
                 if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
                   && voterInfos.selfvotes_detail_daily.length > 0) {
                   for (var m = 0; m < voterInfos.selfvotes_detail_daily.length; m++) {
@@ -190,45 +204,47 @@ function doProcess(startAtBlockNum, callback) {
                   voterInfos.selfvotes_detail_daily.push(selfVoteObj);
                 }
 
-                console.log(" - - - arranging posts "+posts.length+"...");
-                // add author as the self vote obj is standalone in the
-                // top list
-                selfVoteObj.voter = opDetail.voter;
-                // add flag to mark processing
-                selfVoteObj.processed = "false";
-                if (posts.length >= 4) {
-                  // first sort with lowest first
-                  posts.sort(function (a, b) {
-                    return a.self_vote_payout - b.self_vote_payout;
-                  });
-                  var lowestRshare = self_vote_payout;
-                  var idx = -1;
-                  for (var m = 0; m < posts.length; m++) {
-                    if (posts[m].self_vote_payout < self_vote_payout
-                        && posts[m].self_vote_payout < self_vote_payout) {
-                      lowestRshare = posts[m].self_vote_payout;
-                      idx = m;
-                    }
-                  }
-                  if (idx >= 0) {
-                    console.log(" - - - removing existing lower rshares" +
-                      " post " +posts[idx].permlink+" with payout "+posts[idx].self_vote_payout);
-                    var newPosts = [];
+                if (!recordOnly) {
+                  console.log(" - - - arranging posts " + posts.length + "...");
+                  // add author as the self vote obj is standalone in the
+                  // top list
+                  selfVoteObj.voter = opDetail.voter;
+                  // add flag to mark processing
+                  selfVoteObj.processed = "false";
+                  if (posts.length >= MAX_POSTS_TO_CONSIDER) {
+                    // first sort with lowest first
+                    posts.sort(function (a, b) {
+                      return a.self_vote_payout - b.self_vote_payout;
+                    });
+                    var lowestRshare = self_vote_payout;
+                    var idx = -1;
                     for (var m = 0; m < posts.length; m++) {
-                      if (m != idx) {
-                        newPosts.push(posts[m]);
+                      if (posts[m].self_vote_payout < self_vote_payout
+                        && posts[m].self_vote_payout < self_vote_payout) {
+                        lowestRshare = posts[m].self_vote_payout;
+                        idx = m;
                       }
                     }
-                    posts = newPosts;
-                    console.log(" - - - keeping "+newPosts.length+" posts");
+                    if (idx >= 0) {
+                      console.log(" - - - removing existing lower rshares" +
+                        " post " + posts[idx].permlink + " with payout " + posts[idx].self_vote_payout);
+                      var newPosts = [];
+                      for (var m = 0; m < posts.length; m++) {
+                        if (m != idx) {
+                          newPosts.push(posts[m]);
+                        }
+                      }
+                      posts = newPosts;
+                      console.log(" - - - keeping " + newPosts.length + " posts");
+                    }
                   }
-                }
 
-                if (posts.length < 4) {
-                  console.log(" - - - adding new post to top list");
-                  posts.push(selfVoteObj);
-                } else {
-                  console.log(" - - - not adding post to top list");
+                  if (posts.length < MAX_POSTS_TO_CONSIDER) {
+                    console.log(" - - - adding new post to top list");
+                    posts.push(selfVoteObj);
+                  } else {
+                    console.log(" - - - not adding post to top list");
+                  }
                 }
               }
 
