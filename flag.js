@@ -66,7 +66,7 @@ function doProcess(callback) {
       var receivedSharesParts = lib.getAccount().received_vesting_shares.split(" ");
       var receivedSharesNum = Number(receivedSharesParts[0]);
       console.log(" - - received_vesting_shares num: "+receivedSharesNum);
-      var abs_percentage = (abs_need_rshares * 10000 * 100 * 200 / vp / (vestingSharesNum + receivedSharesNum));
+      var abs_percentage = (abs_need_rshares * (10000 / vp)) / (vestingSharesNum + receivedSharesNum);
       console.log(" - abs_percentage: "+abs_percentage);
       if (abs_percentage > 100) {
         abs_percentage = 100;
