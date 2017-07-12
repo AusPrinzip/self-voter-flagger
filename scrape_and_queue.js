@@ -29,9 +29,9 @@ function doProcess(startAtBlockNum, callback) {
     queue = wait.for(lib.getAllQueue);
     // set up vars
     var totalVotes = 0;
-    var numSelfVotes = 0;
-    var numSelfComments = 0;
-    var numSelfVotesToProcess = 0;
+    var numSelfCommentVotes = 0;
+    var numCommentsVotes = 0;
+    var numHighSpCommentSelfVotes = 0;
     var numFlagsToCancel = 0;
     var firstBlockMoment = null;
     var currentBlockNum = 0;
@@ -60,27 +60,6 @@ function doProcess(startAtBlockNum, callback) {
             if (opName !== undefined && opName !== null
               && opName.localeCompare("vote") == 0) {
 
-              totalVotes++;
-
-              // check vote is a self vote
-              if (opDetail.voter.localeCompare(opDetail.author) != 0) {
-                continue;
-              }
-              numSelfVotes++;
-
-              console.log("- self vote at b " + i + ":t " + j + ":op " +
-                k + ", detail:" + JSON.stringify(opDetail));
-
-              // FIRST, screen for comments only
-              var permlinkParts = opDetail.permlink.split("-");
-              if (permlinkParts.length === 0
-                  || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
-                  || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
-                  || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
-                console.log("Not a comment, skipping");
-                continue;
-              }
-
               // get post content and rshares of vote
               var content;
               // TODO : cache posts
@@ -103,7 +82,48 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // SECOND, check payout window still open
+              // FIRST, check if vote rshares are > 0
+              // note: cancelled self votes have rshares == 0
+              if (voteDetail.rshares < 0) {
+                console.log(" - - self flag");
+              } else if (voteDetail.rshares === 0) {
+                console.log(" - - self vote negated");
+              }
+
+              totalVotes++;
+
+              // FIRST, screen for comments only
+              var permlinkParts = opDetail.permlink.split("-");
+              if (permlinkParts.length === 0
+                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
+                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
+                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
+                console.log("Not a comment, skipping");
+                continue;
+              }
+
+              numCommentsVotes++;
+
+              // check voter db for same vote
+              var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
+
+              // SECOND, check vote is a self vote
+              if (opDetail.voter.localeCompare(opDetail.author) != 0) {
+                if (voterInfos !== undefined && voterInfos !== null) {
+                  voterInfos.outvotes = voterInfos.outvotes + 1;
+                  console.log("non selfvote for watched user "+voterInfos.voter+", now at ratio "
+                    +voterInfos.selfvotes+" / "+voterInfos.outvotes);
+                  wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
+                }
+                continue;
+              }
+
+              numSelfCommentVotes++;
+
+              console.log("- self vote at b " + i + ":t " + j + ":op " +
+                k + ", detail:" + JSON.stringify(opDetail));
+
+              // THIRD, check payout window still open
               var recordOnly = false;
               var cashoutTime = moment(content.cashout_time);
               cashoutTime.subtract(7, 'hours');
@@ -114,18 +134,7 @@ function doProcess(startAtBlockNum, callback) {
                 recordOnly = true;
               }
 
-              // THIRD, check if vote rshares are > 0
-              // note: cancelled self votes have rshares == 0
-              if (voteDetail.rshares < 0) {
-                console.log(" - - self flag");
-              } else if (voteDetail.rshares === 0) {
-                console.log(" - - self vote negated");
-              } else {
-                // is a self voted comment
-                numSelfComments++;
-              }
-
-              // FOURTH, check their SP is above minimum
+              // FIFTH, check their SP is above minimum
               // TODO : cache user accounts
               var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
               var voterAccount = accounts[0];
@@ -137,14 +146,11 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // check voter db for same vote
-              var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
-
+              // TODO : move self vote negation to separate task
+              /*
               var toContinue = false;
               // check for change in record, update if so
               if (voterInfos !== null && voterInfos !== undefined) {
-                // TODO : check self vote negation against week long list
-                // TODO : and current posts list
                 if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
                   && voterInfos.selfvotes_detail_daily.length > 0) {
                   for (var m = 0; m < voterInfos.selfvotes_detail_daily.length; m++) {
@@ -169,9 +175,24 @@ function doProcess(startAtBlockNum, callback) {
                   }
                 }
               }
+              */
 
-              if (!toContinue) {
-                numSelfVotesToProcess++;
+              //if (!toContinue) {
+                numHighSpCommentSelfVotes++;
+
+                // update voter info
+                if (voterInfos === null || voterInfos === undefined) {
+                  voterInfos = {
+                    voter: opDetail.voter,
+                    selfvotes: 1,
+                    outvotes: 0,
+                    flags_received: 0
+                  };
+                } else {
+                  voterInfos.selfvotes = voterInfos.selfvotes + 1;
+                }
+
+                // consider for flag queue
                 console.log("content.pending_payout_value: "+content.pending_payout_value);
                 var pending_payout_value = content.pending_payout_value.split(" ");
                 var pending_payout_value_NUM = Number(pending_payout_value[0]);
@@ -195,20 +216,6 @@ function doProcess(startAtBlockNum, callback) {
                   pending_payout_value: pending_payout_value_NUM
                 };
                 console.log(" - - self vote obj: "+JSON.stringify(selfVoteObj));
-                if (voterInfos === null || voterInfos === undefined) {
-                  voterInfos = {
-                    voter: opDetail.voter,
-                    selfvotes: 1,
-                    selfvotes_detail_daily: [
-                      selfVoteObj
-                    ],
-                    selfvotes_detail_weekly: [] //to be filled with daily
-                    // when finished daily report
-                  };
-                } else {
-                  voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                  voterInfos.selfvotes_detail_daily.push(selfVoteObj);
-                }
 
                 if (!recordOnly) {
                   console.log(" - - - arranging posts " + queue.length + "...");
@@ -252,7 +259,7 @@ function doProcess(startAtBlockNum, callback) {
                     console.log(" - - - not adding post to top list");
                   }
                 }
-              }
+              //}
 
               wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
@@ -267,10 +274,10 @@ function doProcess(startAtBlockNum, callback) {
         }
       }
     }
-    console.log("NUM SELF VOTES from block "+startAtBlockNum+" to " +
-      currentBlockNum + " is "+numSelfVotes +
-      ", of which "+numSelfComments+"("+numSelfVotesToProcess+" processed)"+
-      " are comments out of " + totalVotes + " total votes");
+    console.log("NUM SELF COMMENT VOTES from block "+startAtBlockNum+" to " +
+      currentBlockNum + " is "+numSelfCommentVotes + "("+numHighSpCommentSelfVotes+" above min SP"+
+      " of "+numCommentsVotes+
+      " comments votes, out of " + totalVotes + " total votes");
     console.log(" - "+numFlagsToCancel+" previous flags cancelled");
     wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
       {
@@ -279,7 +286,7 @@ function doProcess(startAtBlockNum, callback) {
         votes_total: totalVotes,
         selfvotes_total: numSelfVotes,
         selfvotes_comments: numSelfComments,
-        selfvotes_high_sp_comments: numSelfVotesToProcess,
+        selfvotes_high_sp_comments: numHighSpCommentSelfVotes,
         flags_cancelled: numFlagsToCancel
       });
     var lastInfos = lib.getLastInfos();
