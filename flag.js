@@ -133,7 +133,7 @@ function doProcess(callback) {
 
 function recalcVotingPower(latestBlockMoment) {
   // update account
-  var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
+  var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
   var account = accounts[0];
   if (account === null || account === undefined) {
     console.log("Could not get bot account detail")
