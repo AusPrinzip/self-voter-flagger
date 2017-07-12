@@ -73,6 +73,7 @@ function doProcess(callback) {
       }
       console.log(" - abs_percentage(corrected) : "+abs_percentage);
 
+      /*
       var abs_counter_percentage = item.selfvotes;
       console.log(" - abs_counter_percentage: "+abs_counter_percentage);
       if (abs_counter_percentage > 100) {
@@ -82,9 +83,13 @@ function doProcess(callback) {
       if (abs_counter_percentage > abs_percentage) {
         console.log(" - abs_counter_percentage(bounded): "+abs_counter_percentage);
       }
+      */
       // TODO : check if flag should be countered
       //var counter_percentage = !toCancelFlag ? -abs_counter_percentage: abs_counter_percentage;
-      var counter_percentage = -abs_counter_percentage;
+      //var counter_percentage = -abs_counter_percentage;
+
+      var counter_percentage = -abs_percentage;
+
       console.log("countering percentage: "+counter_percentage);
       console.log("Voting...");
       var restricted = false;
