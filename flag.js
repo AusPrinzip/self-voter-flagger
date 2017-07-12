@@ -24,13 +24,13 @@ function resetQueue(callback) {
     if (process.env.ACTIVE !== undefined
       && process.env.ACTIVE !== null
       && process.env.ACTIVE.localeCompare("true") == 0) {
-      wait.for(lib.mongo_dropQueue_wrapper);
+      lib.mongo_dropQueue_wrapper();
     }
     callback();
   });
 }
 
-function doProcess(startAtBlockNum, callback) {
+function doProcess(callback) {
   wait.launchFiber(function() {
     // get some info first
     var headBlock = wait.for(lib.steem_getBlockHeader_wrapper, lib.getProperties().head_block_number);

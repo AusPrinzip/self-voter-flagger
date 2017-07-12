@@ -21,10 +21,13 @@ function main() {
   });
 }
 
-var posts = [];
+var queue = [];
 
 function doProcess(startAtBlockNum, callback) {
   wait.launchFiber(function() {
+    // get queue
+    queue = wait.for(lib.getAllQueue);
+    // set up vars
     var totalVotes = 0;
     var numSelfVotes = 0;
     var numSelfComments = 0;
@@ -205,43 +208,43 @@ function doProcess(startAtBlockNum, callback) {
                 }
 
                 if (!recordOnly) {
-                  console.log(" - - - arranging posts " + posts.length + "...");
+                  console.log(" - - - arranging posts " + queue.length + "...");
                   // add author as the self vote obj is standalone in the
                   // top list
                   selfVoteObj.voter = opDetail.voter;
                   // add flag to mark processing
                   selfVoteObj.processed = "false";
-                  if (posts.length >= MAX_POSTS_TO_CONSIDER) {
+                  if (queue.length >= MAX_POSTS_TO_CONSIDER) {
                     // first sort with lowest first
-                    posts.sort(function (a, b) {
+                    queue.sort(function (a, b) {
                       return a.self_vote_payout - b.self_vote_payout;
                     });
                     var lowestRshare = self_vote_payout;
                     var idx = -1;
-                    for (var m = 0; m < posts.length; m++) {
-                      if (posts[m].self_vote_payout < self_vote_payout
-                        && posts[m].self_vote_payout < self_vote_payout) {
-                        lowestRshare = posts[m].self_vote_payout;
+                    for (var m = 0; m < queue.length; m++) {
+                      if (queue[m].self_vote_payout < self_vote_payout
+                        && queue[m].self_vote_payout < self_vote_payout) {
+                        lowestRshare = queue[m].self_vote_payout;
                         idx = m;
                       }
                     }
                     if (idx >= 0) {
                       console.log(" - - - removing existing lower rshares" +
-                        " post " + posts[idx].permlink + " with payout " + posts[idx].self_vote_payout);
+                        " post " + queue[idx].permlink + " with payout " + queue[idx].self_vote_payout);
                       var newPosts = [];
-                      for (var m = 0; m < posts.length; m++) {
+                      for (var m = 0; m < queue.length; m++) {
                         if (m != idx) {
-                          newPosts.push(posts[m]);
+                          newPosts.push(queue[m]);
                         }
                       }
-                      posts = newPosts;
+                      queue = newPosts;
                       console.log(" - - - keeping " + newPosts.length + " posts");
                     }
                   }
 
-                  if (posts.length < MAX_POSTS_TO_CONSIDER) {
+                  if (queue.length < MAX_POSTS_TO_CONSIDER) {
                     console.log(" - - - adding new post to top list");
-                    posts.push(selfVoteObj);
+                    queue.push(selfVoteObj);
                   } else {
                     console.log(" - - - not adding post to top list");
                   }
@@ -280,9 +283,10 @@ function doProcess(startAtBlockNum, callback) {
     lastInfos.lastBlock = currentBlockNum;
     wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
     lib.setLastInfos(lastInfos);
-    // save top posts
-    for (var i = 0; i < posts.length; i++) {
-      wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, posts[i]);
+    // save queue, but drop it first as we are performing an overwrite
+    lib.mongo_dropQueue_wrapper();
+    for (var i = 0; i < queue.length; i++) {
+      wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
     }
     // exit
     callback();
