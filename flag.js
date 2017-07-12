@@ -73,7 +73,7 @@ function doProcess(callback) {
       }
       console.log(" - abs_percentage(corrected) : "+abs_percentage);
 
-      var abs_counter_percentage = voterInfos.selfvotes;
+      var abs_counter_percentage = item.selfvotes;
       console.log(" - abs_counter_percentage: "+abs_counter_percentage);
       if (abs_counter_percentage > 100) {
         abs_counter_percentage = 100;
