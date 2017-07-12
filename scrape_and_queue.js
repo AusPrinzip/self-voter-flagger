@@ -179,6 +179,9 @@ function doProcess(startAtBlockNum, callback) {
                 var self_vote_payout;
                 if (pending_payout_value_NUM <= 0.00) {
                   self_vote_payout = 0;
+                } else if (content.active_votes[m].length === 1
+                    || voteDetail.rshares === Number(content.vote_rshares)) {
+                  self_vote_payout = pending_payout_value_NUM;
                 } else {
                   self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
                 }
