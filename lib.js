@@ -126,13 +126,13 @@ function getAllVoters_reset(limit) {
 function getAllVoters(callback) {
   console.log("getAllVoters");
   if (votersCursor === null || votersCursor.isClosed()) {
-    callback(null, []);
-  } else {
-    votersCursor.toArray(function(err, data) {
-      console.log("db voters collection");
-      callback(err, data);
-    });
+    console.log("-reset voter db cursor");
+    getAllVoters_reset();
   }
+  votersCursor.toArray(function(err, data) {
+    console.log("db voters collection");
+    callback(err, data);
+  });
 }
 
 function getEachVoter(callback) {
@@ -164,13 +164,43 @@ function getAllRuns_reset(limit) {
 function getAllRuns(callback) {
   console.log("getAllRuns");
   if (runsCursor === null || runsCursor.isClosed()) {
-    callback(null, []);
-  } else {
-    runsCursor.toArray(function(err, data) {
-      console.log("db runs collection");
-      callback(err, data);
-    });
+    console.log("-reset runs db cursor");
+    getAllRuns_reset();
   }
+  runsCursor.toArray(function(err, data) {
+    console.log("db runs collection");
+    callback(err, data);
+  });
+}
+
+var queueCursor = null;
+
+function getAllQueue_reset(limit) {
+  if (queueCursor === null) {
+    if (limit !== undefined && limit !== null) {
+      queueCursor = db.collection(DB_QUEUE).find({}).limit(limit);
+    } else {
+      queueCursor = db.collection(DB_QUEUE).find({});
+    }
+  } else {
+    queueCursor = runsCursor.rewind();
+  }
+}
+
+function getAllQueue(callback) {
+  console.log("getAllQueue");
+  if (queueCursor === null || queueCursor.isClosed()) {
+    console.log("-reset queue db cursor");
+    getAllQueue_reset();
+  }
+  queueCursor.toArray(function(err, data) {
+    console.log("db queue collection");
+    callback(err, data);
+  });
+}
+
+function mongo_dropQueue_wrapper() {
+  db.collection(DB_QUEUE).drop();
 }
 
 function mongoSave_wrapper(collection, obj, callback) {
@@ -314,6 +344,8 @@ function timeout_wrapper(delay, callback) {
 
 // consts
 
+module.exports.VOTE_POWER_1_PC = VOTE_POWER_1_PC;
+
 module.exports.DB_RECORDS = DB_RECORDS;
 module.exports.DB_VOTERS = DB_VOTERS;
 module.exports.DB_RUNS = DB_RUNS;
@@ -339,6 +371,9 @@ module.exports.getAllRuns = getAllRuns;
 module.exports.getAllVoters_reset = getAllVoters_reset;
 module.exports.getAllVoters = getAllVoters;
 module.exports.getEachVoter = getEachVoter;
+module.exports.getAllQueue_reset = getAllQueue_reset;
+module.exports.getAllQueue = getAllQueue;
+module.exports.mongo_dropQueue_wrapper = mongo_dropQueue_wrapper;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
