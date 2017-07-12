@@ -45,7 +45,7 @@ function doProcess(callback) {
       var item = queue[i];
       console.log("** processing item "+i+": "+JSON.stringify(item));
       // update account
-      var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
+      var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
       lib.setAccount(accounts[0]);
       console.log("--DEBUG CALC VOTE PERCENTAGE--");
       var abs_need_rshares = Math.abs(item.rshares);
