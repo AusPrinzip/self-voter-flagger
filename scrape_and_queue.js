@@ -68,8 +68,10 @@ function doProcess(startAtBlockNum, callback) {
               // FIRST, screen for comments only
               var permlinkParts = opDetail.permlink.split("-");
               if (permlinkParts.length === 0
-                || !moment(permlinkParts[permlinkParts.length - 1], "YYYYMMDDtHHmmssSSSz").isValid()) {
-                console.log("Not a comment, skipping")
+                  || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
+                  || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
+                  || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
+                console.log("Not a comment, skipping");
                 continue;
               }
 
