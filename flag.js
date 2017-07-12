@@ -43,7 +43,7 @@ function doProcess(callback) {
     // process each item
     for (var i = 0 ; i < queue.length ; i++) {
       var item = queue[i];
-      console.log("** processing item "+i+": "+JSON.parse(item));
+      console.log("** processing item "+i+": "+JSON.stringify(item));
       // update account
       var accounts = wait.for(steem_getAccounts_wrapper, process.env.STEEM_USER);
       lib.setAccount(accounts[0]);
