@@ -62,11 +62,17 @@ function doProcess(callback) {
         " (delegated from others): "+lib.getAccount().received_vesting_shares);
       var vestingSharesParts = lib.getAccount().vesting_shares.split(" ");
       var vestingSharesNum = Number(vestingSharesParts[0]);
-      console.log(" - - vesting_shares num: "+vestingSharesNum);
+      console.log(" - - - vesting_shares num: "+vestingSharesNum);
       var receivedSharesParts = lib.getAccount().received_vesting_shares.split(" ");
       var receivedSharesNum = Number(receivedSharesParts[0]);
-      console.log(" - - received_vesting_shares num: "+receivedSharesNum);
-      var abs_percentage = (abs_need_rshares * (10000 / vp)) / (vestingSharesNum + receivedSharesNum);
+      console.log(" - - - received_vesting_shares num: "+receivedSharesNum);
+      var totalVests = vestingSharesNum + receivedSharesNum;
+      console.log(" - - total vests: "+totalVests);
+      console.log(" - - - vests for 1% vote at current VP:"+(totalVests * vp * 100));
+      console.log(" - - - - as SP:"+lib.getSteemPowerFromVest(totalVests * vp * 100));
+      //var abs_percentage = (abs_need_rshares * (10000 / vp)) /
+      // (vestingSharesNum + receivedSharesNum);
+      var abs_percentage = abs_need_rshares / ((vestingSharesNum + receivedSharesNum) * vp * 10000);
       console.log(" - abs_percentage: "+abs_percentage);
       if (abs_percentage > 100) {
         abs_percentage = 100;
