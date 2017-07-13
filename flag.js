@@ -9,6 +9,9 @@ const
   wait = require('wait.for'),
   lib = require('./lib.js');
 
+const
+  MAX_ITERATIONS = 50;
+
 function main() {
   lib.start(function () {
     doProcess(function () {
@@ -61,7 +64,9 @@ function doProcess(callback) {
       return b.self_vote_payout - a.self_vote_payout;
     });
 
-    while (queue.length > 0) {
+    var count = 0;
+
+    while (queue.length > 0 && count < MAX_ITERATIONS) {
       // process ONE item
       var item = queue[0];
 
