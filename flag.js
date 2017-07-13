@@ -129,7 +129,7 @@ function doProcess(callback) {
             process.env.STEEM_USER,
             item.voter,
             item.permlink,
-            (parseInt(counter_percentage) * lib.VOTE_POWER_1_PC)); // adjust
+            parseInt(counter_percentage.toFixed(2) * lib.VOTE_POWER_1_PC)); // adjust
           // pc to
           // Steem scaling
           console.log("Vote result: "+JSON.stringify(voteResult));
