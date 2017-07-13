@@ -83,10 +83,12 @@ function doProcess(callback) {
       console.log(" - - - received_vesting_shares num: "+receivedSharesNum);
       var totalVests = vestingSharesNum + receivedSharesNum;
       console.log(" - - total vests: "+totalVests);
-      console.log(" - - - vests for 1% vote at current VP:"+(totalVests * vp * 100));
-      console.log(" - - - - as SP:"+lib.getSteemPowerFromVest(totalVests * vp * 100));
+      //console.log(" - - - vests for 1% vote at current
+      // VP:"+(totalVests * vp * 100));
+      //console.log(" - - - - as
+      // SP:"+lib.getSteemPowerFromVest(totalVests * vp * 100));
 
-      var steempower = lib.getSteemPowerFromVest(totalVests * vp * 100);
+      var steempower = lib.getSteemPowerFromVest(totalVests);
       console.log("steem power: "+steempower);
       var sp_scaled_vests = steempower / steem_per_vest;
       console.log("sp_scaled_vests: "+sp_scaled_vests);
