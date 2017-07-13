@@ -444,3 +444,4 @@ module.exports.steem_getContent_wrapper = steem_getContent_wrapper;
 
 module.exports.start = start;
 module.exports.sendEmail = sendEmail;
+module.exports.timeout_wrapper = timeout_wrapper;
