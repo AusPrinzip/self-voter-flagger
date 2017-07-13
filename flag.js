@@ -64,10 +64,12 @@ function doProcess(callback) {
       return b.self_vote_payout - a.self_vote_payout;
     });
 
+    /*
     var count = 0;
 
     while (queue.length > 0 && count < MAX_ITERATIONS) {
       count++;
+      */
       // process ONE item
       var item = queue[0];
 
@@ -96,7 +98,9 @@ function doProcess(callback) {
               newQueue.push(queue[i]);
             }
             queue = newQueue;
-            continue;
+            //continue;
+            callback();
+            return;
           }
         }
       }
@@ -193,7 +197,7 @@ function doProcess(callback) {
         console.log("Not voting, author restriction list not" +
           " met");
       }
-    }
+    //}
     callback();
   });
 }
