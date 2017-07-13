@@ -181,26 +181,26 @@ function recalcVotingPower(latestBlockMoment) {
   var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
   var account = accounts[0];
   if (account === null || account === undefined) {
-    console.log("Could not get bot account detail")
+    console.log("Could not get bot account detail");
     return 0;
   }
   lib.setAccount(accounts[0]);
   var vp = account.voting_power;
-  console.log(" - - bot vp: "+vp);
+  //console.log(" - - bot vp: "+vp);
   //last_vote_time = Time.parse(r["last_vote_time"] + 'Z')
   var lastVoteTime = moment(account.last_vote_time);
-  console.log(" - - lastVoteTime: "+lastVoteTime);
+  //console.log(" - - lastVoteTime: "+lastVoteTime);
   //now_time = Time.parse(@latest_block["timestamp"] + 'Z')
-  console.log(" - - latestBlockMoment(supplied): "+latestBlockMoment);
+  //console.log(" - - latestBlockMoment(supplied): "+latestBlockMoment);
   var secondsDiff = latestBlockMoment.seconds() - lastVoteTime.seconds();
-  console.log(" - - secondsDiff: "+secondsDiff);
+  //console.log(" - - secondsDiff: "+secondsDiff);
   if (secondsDiff > 0) {
     var vpRegenerated = secondsDiff * 10000 / 86400 / 5;
-    console.log(" - - vpRegenerated: "+vpRegenerated);
+    //console.log(" - - vpRegenerated: "+vpRegenerated);
     vp += vpRegenerated;
-    console.log(" - - new vp: "+vp);
+    //console.log(" - - new vp: "+vp);
   } else {
-    console.log(" - - - negative seconds diff, do not use");
+    //console.log(" - - - negative seconds diff, do not use");
   }
   if (vp > 10000) {
     vp = 10000;
