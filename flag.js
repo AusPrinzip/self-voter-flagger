@@ -36,7 +36,7 @@ function doProcess(callback) {
     var headBlock = wait.for(lib.steem_getBlockHeader_wrapper, lib.getProperties().head_block_number);
     var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
     // chain stuff
-    var rewardfund_info = wait.for(lib.steem_getRewardFund_wrapper, "comment");
+    var rewardfund_info = wait.for(lib.steem_getRewardFund_wrapper, "comments");
     var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
 
     var reward_balance = rewardfund_info.reward_balance;
