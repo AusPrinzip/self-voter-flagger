@@ -51,7 +51,7 @@ function doProcess(callback) {
 
 
     // get queue and sort largest self vote payout first
-    var queue = wait.for(lib.getAllQueue);
+    var queue = wait.for(lib.getAllFlag);
     if (queue === undefined || queue === null || queue.length === 0) {
       console.log("Nothing in queue! Exiting");
       callback();
@@ -187,9 +187,9 @@ function doProcess(callback) {
     if (process.env.ACTIVE !== undefined
       && process.env.ACTIVE !== null
       && process.env.ACTIVE.localeCompare("true") == 0) {
-      lib.mongo_dropQueue_wrapper();
+      lib.mongo_dropFlag_wrapper();
       for (var i = 1; i < queue.length; i++) {
-        wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
+        wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
       }
     }
     //}

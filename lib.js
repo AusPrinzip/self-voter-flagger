@@ -12,7 +12,8 @@ const
   DB_RECORDS = "records",
   DB_VOTERS = "voters",
   DB_RUNS = "runs",
-  DB_QUEUE = "queue";
+  DB_QUEUE = "queue",
+  DB_FLAGLIST = "flaglist";
 
 const
   VOTE_POWER_1_PC = 100,
@@ -183,7 +184,7 @@ function getAllQueue_reset(limit) {
       queueCursor = db.collection(DB_QUEUE).find({});
     }
   } else {
-    queueCursor = runsCursor.rewind();
+    queueCursor = queueCursor.rewind();
   }
 }
 
@@ -202,6 +203,38 @@ function getAllQueue(callback) {
 function mongo_dropQueue_wrapper() {
   db.collection(DB_QUEUE).drop();
 }
+
+
+var flagCursor = null;
+
+function getAllFlag_reset(limit) {
+  if (flagCursor === null) {
+    if (limit !== undefined && limit !== null) {
+      flagCursor = db.collection(DB_FLAGLIST).find({}).limit(limit);
+    } else {
+      flagCursor = db.collection(DB_FLAGLIST).find({});
+    }
+  } else {
+    flagCursor = flagCursor.rewind();
+  }
+}
+
+function getAllFlag(callback) {
+  console.log("getAllFlag");
+  if (flagCursor === null || flagCursor.isClosed()) {
+    console.log("-reset flag db cursor");
+    getAllFlag_reset();
+  }
+  flagCursor.toArray(function(err, data) {
+    console.log("db flag collection");
+    callback(err, data);
+  });
+}
+
+function mongo_dropFlag_wrapper() {
+  db.collection(DB_FLAGLIST).drop();
+}
+
 
 function mongoSave_wrapper(collection, obj, callback) {
   db.collection(collection).save(obj, function (err, data) {
@@ -367,6 +400,7 @@ module.exports.DB_RECORDS = DB_RECORDS;
 module.exports.DB_VOTERS = DB_VOTERS;
 module.exports.DB_RUNS = DB_RUNS;
 module.exports.DB_QUEUE = DB_QUEUE;
+module.exports.DB_FLAGLIST = DB_FLAGLIST;
 
 // getters
 
@@ -391,6 +425,9 @@ module.exports.getEachVoter = getEachVoter;
 module.exports.getAllQueue_reset = getAllQueue_reset;
 module.exports.getAllQueue = getAllQueue;
 module.exports.mongo_dropQueue_wrapper = mongo_dropQueue_wrapper;
+module.exports.getAllFlag_reset = getAllFlag_reset;
+module.exports.getAllFlag = getAllFlag;
+module.exports.mongo_dropFlag_wrapper = mongo_dropFlag_wrapper;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
