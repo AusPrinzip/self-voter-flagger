@@ -35,6 +35,21 @@ function doProcess(callback) {
     // get some info first
     var headBlock = wait.for(lib.steem_getBlockHeader_wrapper, lib.getProperties().head_block_number);
     var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
+    // chain stuff
+    var rewardfund_info = wait.for(lib.steem_getRewardFund_wrapper, "comment");
+    var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
+
+    var reward_balance = rewardfund_info.reward_balance;
+    var recent_claims = rewardfund_info.recent_claims;
+    var reward_pool = reward_balance.replace(" STEEM", "") / recent_claims;
+
+    var sbd_per_steem = price_info.base.replace(" SBD", "") / price_info.quote.replace(" STEEM", "");
+
+    var steem_per_vest = lib.getProperties().total_vesting_fund_steem.replace(" STEEM", "")
+        / lib.getProperties().total_vesting_shares.replace(" VESTS", "");
+
+
+
     // get queue and sort largest self vote payout first
     var queue = wait.for(lib.getAllQueue);
     queue.sort(function (a, b) {
@@ -70,14 +85,31 @@ function doProcess(callback) {
       console.log(" - - total vests: "+totalVests);
       console.log(" - - - vests for 1% vote at current VP:"+(totalVests * vp * 100));
       console.log(" - - - - as SP:"+lib.getSteemPowerFromVest(totalVests * vp * 100));
+
+      var steempower = lib.getSteemPowerFromVest(totalVests * vp * 100);
+      console.log("steem power: "+steempower);
+      var sp_scaled_vests = steempower / steem_per_vest;
+      console.log("sp_scaled_vests: "+sp_scaled_vests);
+
+      var voteweight = 100;
+
+      var oneval = ((item.self_vote_payout * 50) - 49) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+      console.log("oneval: "+oneval);
+
+      var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
+      console.log("voting power: "+votingpower);
+
+
       //var abs_percentage = (abs_need_rshares * (10000 / vp)) /
       // (vestingSharesNum + receivedSharesNum);
+      /*
       var abs_percentage = abs_need_rshares / ((vestingSharesNum + receivedSharesNum) * vp * 10000);
       console.log(" - abs_percentage: "+abs_percentage);
       if (abs_percentage > 100) {
         abs_percentage = 100;
       }
       console.log(" - abs_percentage(corrected) : "+abs_percentage);
+      */
 
       /*
       var abs_counter_percentage = item.selfvotes;
@@ -94,7 +126,9 @@ function doProcess(callback) {
       //var counter_percentage = !toCancelFlag ? -abs_counter_percentage: abs_counter_percentage;
       //var counter_percentage = -abs_counter_percentage;
 
-      var counter_percentage = -abs_percentage;
+      //var counter_percentage = -abs_percentage;
+
+      var counter_percentage = -votingpower;
 
       console.log("countering percentage: "+counter_percentage);
       console.log("Voting...");

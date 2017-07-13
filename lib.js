@@ -257,6 +257,23 @@ function steem_getChainProperties_wrapper(callback) {
   });
 }
 
+/**
+ *
+ * @param type, can be "post" or "comment"
+ * @param callback, function with usual (err, data) args
+ */
+function steem_getRewardFund_wrapper(type, callback) {
+  steem.api.getRewardFund(type, function (err, data) {
+    callback(err, data);
+  });
+}
+
+function steem_getCurrentMedianHistoryPrice_wrapper(callback) {
+  steem.api.getCurrentMedianHistoryPrice(function(err, result) {
+    callback(err, result);
+  });
+}
+
 function steem_getAccounts_wrapper(author, callback) {
   steem.api.getAccounts([author], function(err, result) {
     callback(err, result);
@@ -380,7 +397,9 @@ module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
 module.exports.steem_getBlock_wrapper = steem_getBlock_wrapper;
 module.exports.steem_getDiscussionsByCreated_wrapper = steem_getDiscussionsByCreated_wrapper;
 module.exports.steem_getSteemGlobalProperties_wrapper = steem_getSteemGlobalProperties_wrapper;
+module.exports.steem_getCurrentMedianHistoryPrice_wrapper = steem_getCurrentMedianHistoryPrice_wrapper;
 module.exports.steem_getChainProperties_wrapper = steem_getChainProperties_wrapper;
+module.exports.steem_getRewardFund_wrapper = steem_getRewardFund_wrapper;
 module.exports.steem_getAccounts_wrapper = steem_getAccounts_wrapper;
 module.exports.steem_getAccountCount_wrapper = steem_getAccountCount_wrapper;
 module.exports.steem_getAccountHistory_wrapper = steem_getAccountHistory_wrapper;
