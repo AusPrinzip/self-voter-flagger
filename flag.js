@@ -69,7 +69,7 @@ function doProcess(callback) {
     while (queue.length > 0 && count < MAX_ITERATIONS) {
       count++;
       // process ONE item
-      var item = queue[0];
+      var item = queue[count % queue.length];
 
       // check payout window still open (only when active)
       if (process.env.ACTIVE !== undefined
