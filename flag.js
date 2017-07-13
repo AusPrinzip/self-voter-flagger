@@ -92,8 +92,12 @@ function doProcess(callback) {
 
     var voteweight = 100;
 
-    var oneval = ((item.self_vote_payout * 50) - 49) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+    //var oneval = ((item.self_vote_payout * 50) - 49) /
+    // (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+    var oneval = item.self_vote_payout / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
     console.log("oneval: "+oneval);
+    oneval = parseInt((oneval + 49) / 50);
+    console.log("oneval mod: "+oneval);
 
     var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
     console.log("voting power: "+votingpower);
