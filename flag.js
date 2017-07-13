@@ -52,12 +52,17 @@ function doProcess(callback) {
 
     // get queue and sort largest self vote payout first
     var queue = wait.for(lib.getAllQueue);
+    if (queue === undefined || queue === null || queue.length === 0) {
+      console.log("Nothing in queue! Exiting");
+      callback();
+      return;
+    }
     queue.sort(function (a, b) {
       return b.self_vote_payout - a.self_vote_payout;
     });
     // process each item
-    for (var i = 0 ; i < queue.length ; i++) {
-      var item = queue[i];
+    //for (var i = 0 ; i < queue.length ; i++) {
+      var item = queue[0];
       console.log("** processing item "+i+": "+JSON.stringify(item));
       // update account
       var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
@@ -100,6 +105,11 @@ function doProcess(callback) {
 
       var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
       console.log("voting power: "+votingpower);
+
+      if (votingpower > 100) {
+        votingpower = 100;
+        console.log("capped voting power to 100%");
+      }
 
 
       //var abs_percentage = (abs_need_rshares * (10000 / vp)) /
@@ -173,7 +183,16 @@ function doProcess(callback) {
         console.log("Not voting, author restriction list not" +
           " met");
       }
+    // Update queue
+    if (process.env.ACTIVE !== undefined
+      && process.env.ACTIVE !== null
+      && process.env.ACTIVE.localeCompare("true") == 0) {
+      lib.mongo_dropQueue_wrapper();
+      for (var i = 1; i < queue.length; i++) {
+        wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
+      }
     }
+    //}
     callback();
   });
 }
