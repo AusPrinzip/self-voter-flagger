@@ -199,6 +199,9 @@ function doProcess(startAtBlockNum, callback) {
                 } else {
                   self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
                 }
+                if (self_vote_payout < 0) {
+                  self_vote_payout = 0;
+                }
                 console.log("self_vote_payout: "+self_vote_payout);
 
               // update voter info
