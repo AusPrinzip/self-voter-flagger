@@ -130,7 +130,7 @@ function doProcess(callback) {
 
       var voteweight = 100;
 
-      var oneval = (item.self_vote_payout * 60) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+      var oneval = (item.self_vote_payout * 53) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
       console.log("oneval: " + oneval);
 
       var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
