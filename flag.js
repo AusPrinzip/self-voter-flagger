@@ -67,6 +67,7 @@ function doProcess(callback) {
     var count = 0;
 
     while (queue.length > 0 && count < MAX_ITERATIONS) {
+      count++;
       // process ONE item
       var item = queue[0];
 
