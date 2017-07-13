@@ -133,18 +133,20 @@ function doProcess(callback) {
           // pc to
           // Steem scaling
           console.log("Vote result: "+JSON.stringify(voteResult));
-          console.log("Wait 3.5 seconds to allow vote limit to" +
-            " reset");
-          wait.for(timeout_wrapper, 3500);
-          console.log("Finished waiting");
-          // update db
-          console.log("update db");
-          lib.mongo_dropFlag_wrapper();
-          for (var i = 1; i < queue.length; i++) {
-            wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
-          }
         } catch(err) {
           console.log("Error voting: "+JSON.stringify(err));
+          callback();
+          return;
+        }
+        console.log("Wait 3.5 seconds to allow vote limit to" +
+          " reset");
+        wait.for(timeout_wrapper, 3500);
+        console.log("Finished waiting");
+        // update db
+        console.log("update db");
+        lib.mongo_dropFlag_wrapper();
+        for (var i = 1; i < queue.length; i++) {
+          wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
         }
       } else {
         console.log("Bot not in active state, not voting");
