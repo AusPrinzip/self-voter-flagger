@@ -61,103 +61,125 @@ function doProcess(callback) {
       return b.self_vote_payout - a.self_vote_payout;
     });
 
-    // process ONE item
-    var item = queue[0];
-    console.log("** processing item "+i+": "+JSON.stringify(item));
-    // update account
-    var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
-    lib.setAccount(accounts[0]);
-    console.log("--DEBUG CALC VOTE PERCENTAGE--");
-    var abs_need_rshares = Math.abs(item.rshares);
-    console.log(" - abs_need_rshares: "+abs_need_rshares);
-    var vp = recalcVotingPower(latestBlockMoment);
-    console.log(" - vp: "+vp);
-    console.log(" - abs_percentage calc");
-    console.log(" - - mAccount.vesting_shares: "+lib.getAccount().vesting_shares);
-    console.log(" - - mAccount.received_vesting_shares" +
-      " (delegated from others): "+lib.getAccount().received_vesting_shares);
-    var vestingSharesParts = lib.getAccount().vesting_shares.split(" ");
-    var vestingSharesNum = Number(vestingSharesParts[0]);
-    console.log(" - - - vesting_shares num: "+vestingSharesNum);
-    var receivedSharesParts = lib.getAccount().received_vesting_shares.split(" ");
-    var receivedSharesNum = Number(receivedSharesParts[0]);
-    console.log(" - - - received_vesting_shares num: "+receivedSharesNum);
-    var totalVests = vestingSharesNum + receivedSharesNum;
-    console.log(" - - total vests: "+totalVests);
+    while (queue.length > 0) {
+      // process ONE item
+      var item = queue[0];
 
-    var steempower = lib.getSteemPowerFromVest(totalVests);
-    console.log("steem power: "+steempower);
-    var sp_scaled_vests = steempower / steem_per_vest;
-    console.log("sp_scaled_vests: "+sp_scaled_vests);
-
-    var voteweight = 100;
-
-    //var oneval = ((item.self_vote_payout * 50) - 49) /
-    // (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
-    var oneval = item.self_vote_payout / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
-    console.log("oneval: "+oneval);
-    oneval = parseInt((oneval + 49) / 50);
-    console.log("oneval mod: "+oneval);
-
-    var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
-    console.log("voting power: "+votingpower);
-
-    if (votingpower > 100) {
-      votingpower = 100;
-      console.log("capped voting power to 100%");
-    }
-
-    var counter_percentage = -votingpower;
-
-    console.log("countering percentage: "+counter_percentage);
-    console.log("Voting...");
-    var restricted = false;
-    if (lib.getTestAuthorList() !== null
-      && lib.getTestAuthorList() !== undefined
-      && lib.getTestAuthorList().length > 0) {
-      restricted = true;
-      for (var m = 0 ; m < lib.getTestAuthorList().length ; m++) {
-        if (item.voter.localeCompare(lib.getTestAuthorList()[m]) === 0) {
-          restricted = false;
-          break;
-        }
-      }
-    }
-    if (!restricted) {
-      if (process.env.ACTIVE !== undefined
-        && process.env.ACTIVE !== null
-        && process.env.ACTIVE.localeCompare("true") == 0) {
-        try {
-          var voteResult = wait.for(steem.broadcast.vote,
-            process.env.POSTING_KEY_PRV,
-            process.env.STEEM_USER,
-            item.voter,
-            item.permlink,
-            parseInt(counter_percentage.toFixed(2) * lib.VOTE_POWER_1_PC)); // adjust
-          // pc to
-          // Steem scaling
-          console.log("Vote result: "+JSON.stringify(voteResult));
-        } catch(err) {
-          console.log("Error voting: "+JSON.stringify(err));
-          callback();
-          return;
-        }
-        console.log("Wait 3.5 seconds to allow vote limit to" +
-          " reset");
-        wait.for(lib.timeout_wrapper, 3500);
-        console.log("Finished waiting");
+      // THIRD, check payout window still open
+      var cashoutTime = moment(content.cashout_time);
+      cashoutTime.subtract(7, 'hours');
+      var nowTime = moment(new Date());
+      if (!nowTime.isBefore(cashoutTime)) {
+        console.log("payout window now closed, remove from queue and" +
+          " move on :(");
         // update db
         console.log("update db");
         lib.mongo_dropFlag_wrapper();
+        var newQueue = [];
         for (var i = 1; i < queue.length; i++) {
           wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
+          newQueue.push(queue[i]);
+        }
+        queue = newQueue;
+        continue;
+      }
+
+      console.log("** processing item " + i + ": " + JSON.stringify(item));
+      // update account
+      var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
+      lib.setAccount(accounts[0]);
+      console.log("--DEBUG CALC VOTE PERCENTAGE--");
+      var abs_need_rshares = Math.abs(item.rshares);
+      console.log(" - abs_need_rshares: " + abs_need_rshares);
+      var vp = recalcVotingPower(latestBlockMoment);
+      console.log(" - vp: " + vp);
+      console.log(" - abs_percentage calc");
+      console.log(" - - mAccount.vesting_shares: " + lib.getAccount().vesting_shares);
+      console.log(" - - mAccount.received_vesting_shares" +
+        " (delegated from others): " + lib.getAccount().received_vesting_shares);
+      var vestingSharesParts = lib.getAccount().vesting_shares.split(" ");
+      var vestingSharesNum = Number(vestingSharesParts[0]);
+      console.log(" - - - vesting_shares num: " + vestingSharesNum);
+      var receivedSharesParts = lib.getAccount().received_vesting_shares.split(" ");
+      var receivedSharesNum = Number(receivedSharesParts[0]);
+      console.log(" - - - received_vesting_shares num: " + receivedSharesNum);
+      var totalVests = vestingSharesNum + receivedSharesNum;
+      console.log(" - - total vests: " + totalVests);
+
+      var steempower = lib.getSteemPowerFromVest(totalVests);
+      console.log("steem power: " + steempower);
+      var sp_scaled_vests = steempower / steem_per_vest;
+      console.log("sp_scaled_vests: " + sp_scaled_vests);
+
+      var voteweight = 100;
+
+      //var oneval = ((item.self_vote_payout * 50) - 49) /
+      // (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+      var oneval = item.self_vote_payout / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+      console.log("oneval: " + oneval);
+      oneval = parseInt((oneval + 49) / 50);
+      console.log("oneval mod: " + oneval);
+
+      var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
+      console.log("voting power: " + votingpower);
+
+      if (votingpower > 100) {
+        votingpower = 100;
+        console.log("capped voting power to 100%");
+      }
+
+      var counter_percentage = -votingpower;
+
+      console.log("countering percentage: " + counter_percentage);
+      console.log("Voting...");
+      var restricted = false;
+      if (lib.getTestAuthorList() !== null
+        && lib.getTestAuthorList() !== undefined
+        && lib.getTestAuthorList().length > 0) {
+        restricted = true;
+        for (var m = 0; m < lib.getTestAuthorList().length; m++) {
+          if (item.voter.localeCompare(lib.getTestAuthorList()[m]) === 0) {
+            restricted = false;
+            break;
+          }
+        }
+      }
+      if (!restricted) {
+        if (process.env.ACTIVE !== undefined
+          && process.env.ACTIVE !== null
+          && process.env.ACTIVE.localeCompare("true") == 0) {
+          try {
+            var voteResult = wait.for(steem.broadcast.vote,
+              process.env.POSTING_KEY_PRV,
+              process.env.STEEM_USER,
+              item.voter,
+              item.permlink,
+              parseInt(counter_percentage.toFixed(2) * lib.VOTE_POWER_1_PC)); // adjust
+            // pc to
+            // Steem scaling
+            console.log("Vote result: " + JSON.stringify(voteResult));
+          } catch (err) {
+            console.log("Error voting: " + JSON.stringify(err));
+            callback();
+            return;
+          }
+          console.log("Wait 3.5 seconds to allow vote limit to" +
+            " reset");
+          wait.for(lib.timeout_wrapper, 3500);
+          console.log("Finished waiting");
+          // update db
+          console.log("update db");
+          lib.mongo_dropFlag_wrapper();
+          for (var i = 1; i < queue.length; i++) {
+            wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
+          }
+        } else {
+          console.log("Bot not in active state, not voting");
         }
       } else {
-        console.log("Bot not in active state, not voting");
+        console.log("Not voting, author restriction list not" +
+          " met");
       }
-    } else {
-      console.log("Not voting, author restriction list not" +
-        " met");
     }
     callback();
   });
