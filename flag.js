@@ -65,23 +65,34 @@ function doProcess(callback) {
       // process ONE item
       var item = queue[0];
 
-      // THIRD, check payout window still open
-      var cashoutTime = moment(content.cashout_time);
-      cashoutTime.subtract(7, 'hours');
-      var nowTime = moment(new Date());
-      if (!nowTime.isBefore(cashoutTime)) {
-        console.log("payout window now closed, remove from queue and" +
-          " move on :(");
-        // update db
-        console.log("update db");
-        lib.mongo_dropFlag_wrapper();
-        var newQueue = [];
-        for (var i = 1; i < queue.length; i++) {
-          wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
-          newQueue.push(queue[i]);
+      // check payout window still open (only when active)
+      if (process.env.ACTIVE !== undefined
+        && process.env.ACTIVE !== null
+        && process.env.ACTIVE.localeCompare("true") == 0) {
+        var content = wait.for(lib.steem_getContent_wrapper, item.voter,
+          item.permlink);
+        if (content === undefined || content === null) {
+          console.log("Couldn't get content, assuming is within payout" +
+            " window");
+        } else {
+          var cashoutTime = moment(content.cashout_time);
+          cashoutTime.subtract(7, 'hours');
+          var nowTime = moment(new Date());
+          if (!nowTime.isBefore(cashoutTime)) {
+            console.log("payout window now closed, remove from queue and" +
+              " move on :(");
+            // update db
+            console.log("update db");
+            lib.mongo_dropFlag_wrapper();
+            var newQueue = [];
+            for (var i = 1; i < queue.length; i++) {
+              wait.for(lib.mongoSave_wrapper, lib.DB_FLAGLIST, queue[i]);
+              newQueue.push(queue[i]);
+            }
+            queue = newQueue;
+            continue;
+          }
         }
-        queue = newQueue;
-        continue;
       }
 
       console.log("** processing item " + i + ": " + JSON.stringify(item));
