@@ -140,7 +140,7 @@ function doProcess(callback) {
         }
         console.log("Wait 3.5 seconds to allow vote limit to" +
           " reset");
-        wait.for(lin.timeout_wrapper, 3500);
+        wait.for(lib.timeout_wrapper, 3500);
         console.log("Finished waiting");
         // update db
         console.log("update db");
