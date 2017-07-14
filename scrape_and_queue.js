@@ -10,7 +10,7 @@ const
   lib = require('./lib.js');
 
 var
-  MAX_BLOCKS_PER_RUN = 12340,
+  MAX_BLOCKS_PER_RUN = 1000,//MAX_BLOCKS_PER_RUN = 12340,
   MAX_USAGE_NUM_TO_CHECK = 20,
   MAX_POSTS_TO_CONSIDER = 20; //default
 
@@ -67,7 +67,7 @@ function getAccount(name) {
     }
     return account;
   } catch(err) {
-    console.log("Couldn't get account for "+name);
+    console.log("Couldn't get account for "+name+": "+JSON.stringify(err));
   }
   return null;
 }
