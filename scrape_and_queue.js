@@ -234,7 +234,7 @@ function doProcess(startAtBlockNum, callback) {
 
               // update voter db
               var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
-              if (voterInfos !== undefined && voterInfos !== null) {
+              if (voterInfos === undefined || voterInfos === null) {
                 voterInfos = {
                   voter: opDetail.voter,
                   post_flag: 0,
