@@ -31,7 +31,7 @@ function getAccount(name) {
   if (account !== null && account !== undefined) {
     console.log(" * got account from CACHE: "+name);
     sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
-    return JSON.parse(account);
+    return JSON.parse(account[1]);
   }
   var store = true;
   if (Object.keys(sAccountsMap).length >= MAX_ACCOUNTS_MAP_SIZE) {
@@ -83,7 +83,7 @@ function getPost(author, permlink, forceUpdate) {
     if (post !== null && post !== undefined) {
       console.log(" * got post from CACHE: "+thisKey);
       sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
-      return JSON.parse(post);
+      return JSON.parse(post[1]);
     }
     if (Object.keys(sPostsMap).length >= MAX_POSTS_MAP_SIZE) {
       var deletedOne = false;
