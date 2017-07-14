@@ -11,6 +11,7 @@ const
 
 var
   MAX_BLOCKS_PER_RUN = 12340,
+  MAX_USAGE_NUM_TO_CHECK = 20,
   MAX_POSTS_TO_CONSIDER = 20; //default
 
 
@@ -28,6 +29,7 @@ var sAccountsMap = {};
 function getAccount(name) {
   var account = sAccountsMap[name];
   if (account !== null && account !== undefined) {
+    console.log(" * got account from CACHE: "+thisKey);
     sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
     return account;
   }
@@ -36,11 +38,18 @@ function getAccount(name) {
     var deletedOne = false;
     // find least used account
     var smallestNumber = 1;
-    for (var key in sAccountsMap) {
-      if (sAccountsMap[key][0] === smallestNumber) {
-        // remove this
-        delete sAccountsMap[key];
-        deletedOne = true;
+    while (smallestNumber < MAX_USAGE_NUM_TO_CHECK) {
+      for (var key in sAccountsMap) {
+        if (sAccountsMap[key][0] === smallestNumber) {
+          // remove this
+          console.log(" * removed a account from cache: "+key);
+          delete sAccountsMap[key];
+          deletedOne = true;
+          break;
+        }
+      }
+      smallestNumber++;
+      if (deletedOne) {
         break;
       }
     }
@@ -51,7 +60,10 @@ function getAccount(name) {
   try {
     account = wait.for(lib.steem_getAccounts_wrapper, name)[0];
     if (store) {
+      console.log(" * got account from API: "+thisKey+" (stored)");
       sAccountsMap[name] = [1, account];
+    } else {
+      console.log(" * got account from API: "+thisKey+" (NOT stored)");
     }
     return account;
   } catch(err) {
@@ -67,6 +79,7 @@ function getPost(author, permlink) {
   var thisKey = author+":"+permlink;
   var post = sPostsMap[thisKey];
   if (post !== null && post !== undefined) {
+    console.log(" * got post from CACHE: "+thisKey);
     sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
     return post;
   }
@@ -75,11 +88,18 @@ function getPost(author, permlink) {
     var deletedOne = false;
     // find least used account
     var smallestNumber = 1;
-    for (var key in sPostsMap) {
-      if (sPostsMap[key][0] === smallestNumber) {
-        // remove this
-        delete sPostsMap[key];
-        deletedOne = true;
+    while (smallestNumber < MAX_USAGE_NUM_TO_CHECK) {
+      for (var key in sPostsMap) {
+        if (sPostsMap[key][0] === smallestNumber) {
+          // remove this
+          console.log(" * removed a post from cache: "+key);
+          delete sPostsMap[key];
+          deletedOne = true;
+          break;
+        }
+      }
+      smallestNumber++;
+      if (deletedOne) {
         break;
       }
     }
@@ -90,7 +110,10 @@ function getPost(author, permlink) {
   try {
     post = wait.for(lib.steem_getContent_wrapper, author, permlink);
     if (store) {
+      console.log(" * got post from API: "+thisKey+" (stored)");
       sPostsMap[thisKey] = [1, post];
+    } else {
+      console.log(" * got post from API: "+thisKey+" (NOT stored)");
     }
     return post;
   } catch(err) {
@@ -188,7 +211,7 @@ function doProcess(startAtBlockNum, callback) {
               } else if (voteDetail.rshares > 0) {
                 console.log(" - - - up vote");
               } else {
-                console.log(" - - self vote NEGATED");
+                console.log(" - - - vote NEGATED");
                 isVoteNegation = true;
               }
 
