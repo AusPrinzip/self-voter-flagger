@@ -31,7 +31,7 @@ function getAccount(name) {
   if (account !== null && account !== undefined) {
     console.log(" * got account from CACHE: "+name);
     sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
-    return account;
+    return JSON.parse(account);
   }
   var store = true;
   if (Object.keys(sAccountsMap).length >= MAX_ACCOUNTS_MAP_SIZE) {
@@ -65,7 +65,7 @@ function getAccount(name) {
   }
   if (store) {
     console.log(" * got account from API: "+name+" (stored)");
-    sAccountsMap[name] = [1, account];
+    sAccountsMap[name] = [1, JSON.stringify(account)];
   } else {
     console.log(" * got account from API: "+name+" (NOT stored)");
   }
@@ -75,36 +75,38 @@ function getAccount(name) {
 const MAX_POSTS_MAP_SIZE = 100;
 var sPostsMap = {};
 
-function getPost(author, permlink) {
+function getPost(author, permlink, forceUpdate) {
   var thisKey = author+":"+permlink;
   var post = sPostsMap[thisKey];
-  if (post !== null && post !== undefined) {
-    console.log(" * got post from CACHE: "+thisKey);
-    sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
-    return post;
-  }
   var store = true;
-  if (Object.keys(sPostsMap).length >= MAX_POSTS_MAP_SIZE) {
-    var deletedOne = false;
-    // find least used account
-    var smallestNumber = 1;
-    while (smallestNumber < MAX_USAGE_NUM_TO_CHECK) {
-      for (var key in sPostsMap) {
-        if (sPostsMap[key][0] === smallestNumber) {
-          // remove this
-          console.log(" * removed a post from cache: "+key);
-          delete sPostsMap[key];
-          deletedOne = true;
+  if (!forceUpdate) {
+    if (post !== null && post !== undefined) {
+      console.log(" * got post from CACHE: "+thisKey);
+      sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
+      return JSON.parse(post);
+    }
+    if (Object.keys(sPostsMap).length >= MAX_POSTS_MAP_SIZE) {
+      var deletedOne = false;
+      // find least used account
+      var smallestNumber = 1;
+      while (smallestNumber < MAX_USAGE_NUM_TO_CHECK) {
+        for (var key in sPostsMap) {
+          if (sPostsMap[key][0] === smallestNumber) {
+            // remove this
+            console.log(" * removed a post from cache: "+key);
+            delete sPostsMap[key];
+            deletedOne = true;
+            break;
+          }
+        }
+        smallestNumber++;
+        if (deletedOne) {
           break;
         }
       }
-      smallestNumber++;
-      if (deletedOne) {
-        break;
+      if (!deletedOne) {
+        store = false;
       }
-    }
-    if (!deletedOne) {
-      store = false;
     }
   }
   try {
@@ -115,7 +117,7 @@ function getPost(author, permlink) {
   }
   if (store) {
     console.log(" * got post from API: "+thisKey+" (stored)");
-    sPostsMap[thisKey] = [1, post];
+    sPostsMap[thisKey] = [1, JSON.stringify(post)];
   } else {
     console.log(" * got post from API: "+thisKey+" (NOT stored)");
   }
@@ -179,11 +181,20 @@ function doProcess(startAtBlockNum, callback) {
               }
 
               // get post content and rshares of vote
-              var content = getPost(opDetail.author, opDetail.permlink);
+              var content = getPost(opDetail.author, opDetail.permlink, false);
               if (content === undefined || content === null) {
                 console.log("Couldn't process operation, continuing." +
                   " Error: post content response not defined");
                 continue;
+              }
+              if (content.active_votes === undefined
+                || content.active_votes === null) {
+                content = getPost(opDetail.author, opDetail.permlink, true);
+                if (content === undefined || content === null) {
+                  console.log("Couldn't process operation, continuing." +
+                    " Error: post content response not defined");
+                  continue;
+                }
               }
               var voteDetail = null;
               for (var m = 0; m < content.active_votes.length; m++) {
