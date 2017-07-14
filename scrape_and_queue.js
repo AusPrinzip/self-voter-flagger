@@ -22,6 +22,84 @@ function main() {
   });
 }
 
+const MAX_ACCOUNTS_MAP_SIZE = 1000;
+var sAccountsMap = {};
+
+function getAccount(name) {
+  var account = sAccountsMap[name];
+  if (account !== null && account !== undefined) {
+    sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
+    return account;
+  }
+  var store = true;
+  if (Object.keys(sAccountsMap).length >= MAX_ACCOUNTS_MAP_SIZE) {
+    var deletedOne = false;
+    // find least used account
+    var smallestNumber = 1;
+    for (var key in sAccountsMap) {
+      if (sAccountsMap[key][0] === smallestNumber) {
+        // remove this
+        delete sAccountsMap[key];
+        deletedOne = true;
+        break;
+      }
+    }
+    if (!deletedOne) {
+      store = false;
+    }
+  }
+  try {
+    account = wait.for(lib.steem_getAccounts_wrapper, name)[0];
+    if (store) {
+      sAccountsMap[name] = [1, account];
+    }
+    return account;
+  } catch(err) {
+    console.log("Couldn't get account for "+name);
+  }
+  return null;
+}
+
+const MAX_POSTS_MAP_SIZE = 100;
+var sPostsMap = {};
+
+function getPost(author, permlink) {
+  var thisKey = author+":"+permlink;
+  var post = sPostsMap[thisKey];
+  if (post !== null && post !== undefined) {
+    sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
+    return post;
+  }
+  var store = true;
+  if (Object.keys(sPostsMap).length >= MAX_POSTS_MAP_SIZE) {
+    var deletedOne = false;
+    // find least used account
+    var smallestNumber = 1;
+    for (var key in sPostsMap) {
+      if (sPostsMap[key][0] === smallestNumber) {
+        // remove this
+        delete sPostsMap[key];
+        deletedOne = true;
+        break;
+      }
+    }
+    if (!deletedOne) {
+      store = false;
+    }
+  }
+  try {
+    post = wait.for(lib.steem_getContent_wrapper, author, permlink);
+    if (store) {
+      sPostsMap[thisKey] = [1, post];
+    }
+    return post;
+  } catch(err) {
+    console.log("Couldn't get post for "+thisKey);
+  }
+  return null;
+}
+
+
 var queue = [];
 
 function doProcess(startAtBlockNum, callback) {
@@ -61,11 +139,16 @@ function doProcess(startAtBlockNum, callback) {
               && opName.localeCompare("vote") == 0) {
 
               // THEN, check their SP is above minimum
-              // TODO : cache user accounts
-              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
-              var voterAccount = accounts[0];
-              // TODO : take delegated stake into consideration?
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares);
+              // get account from cache if possible, otherwise cache it
+              var voterAccount = getAccount(opDetail.voter);
+              if (voterAccount === null) {
+                continue;
+              }
+              // take delegated stake into consideration?
+              var steemPower = lib.getSteemPowerFromVest(
+                  voterAccount.vesting_shares
+                  + voterAccount.received_vesting_shares
+                  - voterAccount.delegated_vesting_shares);
               if (steemPower < lib.MIN_SP) {
                 console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
                   +", skipping");
@@ -73,10 +156,7 @@ function doProcess(startAtBlockNum, callback) {
               }
 
               // get post content and rshares of vote
-              var content;
-              // TODO : cache posts
-              content = wait.for(lib.steem_getContent_wrapper, opDetail.author,
-                opDetail.permlink);
+              var content = getPost(opDetail.author, opDetail.permlink);
               if (content === undefined || content === null) {
                 console.log("Couldn't process operation, continuing." +
                   " Error: post content response not defined");
