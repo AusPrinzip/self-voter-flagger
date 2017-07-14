@@ -59,17 +59,17 @@ function getAccount(name) {
   }
   try {
     account = wait.for(lib.steem_getAccounts_wrapper, name)[0];
-    if (store) {
-      console.log(" * got account from API: "+thisKey+" (stored)");
-      sAccountsMap[name] = [1, account];
-    } else {
-      console.log(" * got account from API: "+thisKey+" (NOT stored)");
-    }
-    return account;
   } catch(err) {
     console.log("Couldn't get account for "+name+": "+JSON.stringify(err));
+    return null;
   }
-  return null;
+  if (store) {
+    console.log(" * got account from API: "+thisKey+" (stored)");
+    sAccountsMap[name] = [1, account];
+  } else {
+    console.log(" * got account from API: "+thisKey+" (NOT stored)");
+  }
+  return account;
 }
 
 const MAX_POSTS_MAP_SIZE = 100;
