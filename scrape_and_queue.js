@@ -29,7 +29,7 @@ var sAccountsMap = {};
 function getAccount(name) {
   var account = sAccountsMap[name];
   if (account !== null && account !== undefined) {
-    console.log(" * got account from CACHE: "+thisKey);
+    console.log(" * got account from CACHE: "+name);
     sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
     return account;
   }
@@ -64,10 +64,10 @@ function getAccount(name) {
     return null;
   }
   if (store) {
-    console.log(" * got account from API: "+thisKey+" (stored)");
+    console.log(" * got account from API: "+name+" (stored)");
     sAccountsMap[name] = [1, account];
   } else {
-    console.log(" * got account from API: "+thisKey+" (NOT stored)");
+    console.log(" * got account from API: "+name+" (NOT stored)");
   }
   return account;
 }
@@ -109,17 +109,17 @@ function getPost(author, permlink) {
   }
   try {
     post = wait.for(lib.steem_getContent_wrapper, author, permlink);
-    if (store) {
-      console.log(" * got post from API: "+thisKey+" (stored)");
-      sPostsMap[thisKey] = [1, post];
-    } else {
-      console.log(" * got post from API: "+thisKey+" (NOT stored)");
-    }
-    return post;
   } catch(err) {
     console.log("Couldn't get post for "+thisKey);
+    return null;
   }
-  return null;
+  if (store) {
+    console.log(" * got post from API: "+thisKey+" (stored)");
+    sPostsMap[thisKey] = [1, post];
+  } else {
+    console.log(" * got post from API: "+thisKey+" (NOT stored)");
+  }
+  return post;
 }
 
 
