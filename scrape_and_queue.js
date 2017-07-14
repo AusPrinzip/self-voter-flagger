@@ -33,11 +33,6 @@ function doProcess(startAtBlockNum, callback) {
       queue = [];
     }
     // set up vars
-    var totalVotes = 0;
-    var numSelfCommentVotes = 0;
-    var numCommentsVotes = 0;
-    var numHighSpCommentSelfVotes = 0;
-    var numFlagsToCancel = 0;
     var firstBlockMoment = null;
     var currentBlockNum = 0;
     for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number && i <= (startAtBlockNum + MAX_BLOCKS_PER_RUN); i++) {
@@ -65,35 +60,17 @@ function doProcess(startAtBlockNum, callback) {
             if (opName !== undefined && opName !== null
               && opName.localeCompare("vote") == 0) {
 
-              totalVotes++;
-
-              // FIRST, screen for comments only
-              var permlinkParts = opDetail.permlink.split("-");
-              if (permlinkParts.length === 0
-                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
-                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
-                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
-                //console.log("Not a comment, skipping");
+              // THEN, check their SP is above minimum
+              // TODO : cache user accounts
+              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
+              var voterAccount = accounts[0];
+              // TODO : take delegated stake into consideration?
+              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares);
+              if (steemPower < lib.MIN_SP) {
+                console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
+                  +", skipping");
                 continue;
               }
-
-              numCommentsVotes++;
-
-              // check voter db for same vote
-              var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
-
-              // THEN, check vote is a self vote
-              if (opDetail.voter.localeCompare(opDetail.author) != 0) {
-                if (voterInfos !== undefined && voterInfos !== null) {
-                  voterInfos.outvotes = voterInfos.outvotes + 1;
-                  console.log("non selfvote for watched user "+voterInfos.voter+", now at ratio "
-                    +voterInfos.selfvotes+" / "+voterInfos.outvotes);
-                  wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
-                }
-                continue;
-              }
-
-              numSelfCommentVotes++;
 
               // get post content and rshares of vote
               var content;
@@ -117,18 +94,89 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
+              // basic deciding info
+              var isComment = false;
+              var isFlag = false;
+              var isVoteNegation = false;
+              var isSelfVote = false;
+
               // THEN, check if vote rshares are > 0
               // note: cancelled self votes have rshares == 0
               if (voteDetail.rshares < 0) {
-                console.log(" - - self flag");
-              } else if (voteDetail.rshares === 0) {
-                console.log(" - - self vote negated");
+                console.log(" - - - flag");
+                isFlag = true;
+              } else if (voteDetail.rshares > 0) {
+                console.log(" - - - up vote");
+              } else {
+                console.log(" - - self vote NEGATED");
+                isVoteNegation = true;
               }
 
-              console.log("- self vote at b " + i + ":t " + j + ":op " +
-                k + ", detail:" + JSON.stringify(opDetail));
+              // FIRST, screen for comments only
+              isComment = true;
+              var permlinkParts = opDetail.permlink.split("-");
+              if (permlinkParts.length === 0
+                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
+                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
+                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
+                //console.log("Not a comment, skipping");
+                //continue;
+                isComment = false;
+              }
 
-              // THIRD, check payout window still open
+              // THEN, check vote is a self vote
+              if (opDetail.voter.localeCompare(opDetail.author) === 0) {
+                isSelfVote = true;
+              }
+
+              // update voter db
+              var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
+              if (voterInfos !== undefined && voterInfos !== null) {
+                voterInfos = {
+                  voter: opDetail.voter,
+                  post_flag: 0,
+                  post_selfvote: 0,
+                  post_outvote: 0,
+                  comment_flag: 0,
+                  comment_selfvote: 0,
+                  comment_outvote: 0,
+                  total_self_vote_payout: 0.0,
+                  steempower_self: 0,
+                  steempower_net: 0
+                };
+              }
+              // add to relevant vote counter
+              if (!isComment) {
+                if (isFlag) {
+                  voterInfos.post_flag = voterInfos.post_flag + 1;
+                } else if (isSelfVote) {
+                  voterInfos.post_selfvote = voterInfos.post_selfvote + 1;
+                } else {
+                  voterInfos.post_outvote = voterInfos.post_outvote + 1;
+                }
+              } else {
+                if (isFlag) {
+                  voterInfos.comment_flag = voterInfos.comment_flag + 1;
+                } else if (isSelfVote) {
+                  voterInfos.comment_selfvote = voterInfos.comment_selfvote + 1;
+                } else {
+                  voterInfos.comment_outvote = voterInfos.comment_outvote + 1;
+                }
+              }
+              // update data
+              voterInfos.steempower_self = lib.getSteemPowerFromVest(voterAccount.vesting_shares);
+              voterInfos.steempower_net = voterInfos.steempower_self
+                + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
+                - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
+
+              if (!isSelfVote || !isComment || isFlag || isVoteNegation) {
+                // TODO : do something about the vote negation
+                // save voter data here
+                wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
+                continue;
+              }
+
+              // THEN, check payout window still open
               var recordOnly = false;
               var cashoutTime = moment(content.cashout_time);
               cashoutTime.subtract(7, 'hours');
@@ -139,93 +187,35 @@ function doProcess(startAtBlockNum, callback) {
                 recordOnly = true;
               }
 
-              // THEN, check their SP is above minimum
-              // TODO : cache user accounts
-              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
-              var voterAccount = accounts[0];
-              // TODO : take delegated stake into consideration?
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares);
-              if (steemPower < lib.MIN_SP) {
-                console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
-                  +", skipping");
-                continue;
-              }
-
-              // TODO : move self vote negation to separate task
-              /*
-              var toContinue = false;
-              // check for change in record, update if so
-              if (voterInfos !== null && voterInfos !== undefined) {
-                if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
-                  && voterInfos.selfvotes_detail_daily.length > 0) {
-                  for (var m = 0; m < voterInfos.selfvotes_detail_daily.length; m++) {
-                    if (content.permlink.localeCompare(voterInfos.selfvotes_detail_daily[m].permlink) === 0) {
-                      console.log(" - permlink " + content.permlink + " already noted as self vote");
-                      console.log(" - rshares changed from "
-                        + voterInfos.selfvotes_detail_daily[m].rshares
-                        +" to "+ voteDetail.rshares);
-                      voterInfos.selfvotes_detail_daily[m].rshares = voteDetail.rshares;
-                      // already exists, figure out what the update is
-                      if (voterInfos.selfvotes_detail_daily[m].rshares > 0
-                        && voteDetail.rshares <= 0) {
-                        // user canceled a self vote
-                        // remove self vote from db
-                        console.log(" - - remove this post from db, no" +
-                          " longer self vote");
-                        voterInfos.selfvotes_detail_daily = voterInfos.selfvotes_detail_daily.splice(m, 1);
-                      }
-                      toContinue = true;
-                      break;
-                    }
-                  }
-                }
-              }
-              */
-
-              //if (!toContinue) {
-                numHighSpCommentSelfVotes++;
-
-                // consider for flag queue
-                console.log("content.pending_payout_value: "+content.pending_payout_value);
-                var pending_payout_value = content.pending_payout_value.split(" ");
-                var pending_payout_value_NUM = Number(pending_payout_value[0]);
-                console.log("content.net_rshares: "+content.net_rshares);
-                var self_vote_payout;
-                if (pending_payout_value_NUM <= 0.00) {
-                  self_vote_payout = 0;
-                } else if (content.active_votes.length === 1
-                    || voteDetail.rshares === Number(content.vote_rshares)) {
-                  self_vote_payout = pending_payout_value_NUM;
-                } else {
-                  self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
-                }
-                if (self_vote_payout < 0) {
-                  self_vote_payout = 0;
-                }
-                console.log("self_vote_payout: "+self_vote_payout);
-
-              // update voter info
-              if (voterInfos === null || voterInfos === undefined) {
-                voterInfos = {
-                  voter: opDetail.voter,
-                  selfvotes: 1,
-                  outvotes: 0,
-                  flags_received: 0,
-                  total_self_vote_payout: 0.0
-                };
+              // consider for flag queue
+              console.log("content.pending_payout_value: "+content.pending_payout_value);
+              var pending_payout_value = content.pending_payout_value.split(" ");
+              var pending_payout_value_NUM = Number(pending_payout_value[0]);
+              console.log("content.net_rshares: "+content.net_rshares);
+              var self_vote_payout;
+              if (pending_payout_value_NUM <= 0.00) {
+                self_vote_payout = 0;
+              } else if (content.active_votes.length === 1
+                  || voteDetail.rshares === Number(content.vote_rshares)) {
+                self_vote_payout = pending_payout_value_NUM;
               } else {
-                voterInfos.selfvotes = voterInfos.selfvotes + 1;
-                voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
+                self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
               }
+              console.log("self_vote_payout: "+self_vote_payout);
+              // ignore negative or zero payout values
+              if (self_vote_payout > 0) {
+
+                // update voter info with payout
+                voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
 
                 // add to queue if high enough self vote payout
-                var selfVoteObj =  {
+                var selfVoteObj = {
                   permlink: content.permlink,
                   rshares: voteDetail.rshares,
                   self_vote_payout: self_vote_payout,
                   pending_payout_value: pending_payout_value_NUM
                 };
-                console.log(" - - self vote obj: "+JSON.stringify(selfVoteObj));
+                console.log(" - - self vote obj: " + JSON.stringify(selfVoteObj));
 
                 if (!recordOnly) {
                   console.log(" - - - arranging posts " + queue.length + "...");
@@ -269,7 +259,7 @@ function doProcess(startAtBlockNum, callback) {
                     console.log(" - - - not adding post to top list");
                   }
                 }
-              //}
+              }
 
               wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
@@ -284,20 +274,11 @@ function doProcess(startAtBlockNum, callback) {
         }
       }
     }
-    console.log("NUM SELF COMMENT VOTES from block "+startAtBlockNum+" to " +
-      currentBlockNum + " is "+numSelfCommentVotes + "("+numHighSpCommentSelfVotes+" above min SP"+
-      " of "+numCommentsVotes+
-      " comments votes, out of " + totalVotes + " total votes");
-    console.log(" - "+numFlagsToCancel+" previous flags cancelled");
+    console.log("Processed from block "+startAtBlockNum+" to " + currentBlockNum);
     wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
       {
         start_block: startAtBlockNum,
-        end_block: currentBlockNum,
-        votes_total: totalVotes,
-        comment_votes_total: numCommentsVotes,
-        comments_selfvotes: numSelfCommentVotes,
-        selfvotes_high_sp_comments: numHighSpCommentSelfVotes,
-        flags_cancelled: numFlagsToCancel
+        end_block: currentBlockNum
       });
     var lastInfos = lib.getLastInfos();
     lastInfos.lastBlock = currentBlockNum;
