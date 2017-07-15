@@ -17,6 +17,10 @@ var
 
 function main() {
   lib.start(function () {
+    if (lib.getLastInfos().blocked) {
+      console.log("Day blocked - edit value to unblock");
+      return;
+    }
     doProcess(lib.getLastInfos().lastBlock + 1, function () {
       console.log("Finished");
     });
@@ -138,6 +142,7 @@ function doProcess(startAtBlockNum, callback) {
     // set up vars
     var firstBlockMoment = null;
     var currentBlockNum = 0;
+    var dayBlocked = false;
     for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number && i <= (startAtBlockNum + MAX_BLOCKS_PER_RUN); i++) {
       currentBlockNum = i;
       var block = wait.for(lib.steem_getBlock_wrapper, i);
@@ -148,6 +153,7 @@ function doProcess(startAtBlockNum, callback) {
       } else {
         if (firstBlockMoment.dayOfYear() < latestBlockMoment.dayOfYear()) {
           // exit, the have processed entire day
+          dayBlocked = true;
           currentBlockNum--;
           break;
         }
@@ -310,16 +316,14 @@ function doProcess(startAtBlockNum, callback) {
               if (pending_payout_value_NUM <= 0.00) {
                 self_vote_payout = 0;
               } else if (content.active_votes.length === 1
-                  || voteDetail.rshares === Number(content.vote_rshares)) {
+                  || voteDetail.rshares === Number(content.net_rshares)) {
                 self_vote_payout = pending_payout_value_NUM;
               } else {
-                self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.vote_rshares));
+                self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.net_rshares));
               }
               console.log("self_vote_payout: "+self_vote_payout);
               // ignore negative or zero payout values
               if (self_vote_payout > 0) {
-
-                // update voter info with payout
                 voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
 
                 // add to queue if high enough self vote payout
@@ -396,6 +400,9 @@ function doProcess(startAtBlockNum, callback) {
       });
     var lastInfos = lib.getLastInfos();
     lastInfos.lastBlock = currentBlockNum;
+    if (dayBlocked) {
+      lastInfos.blocked = true;
+    }
     wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
     lib.setLastInfos(lastInfos);
     // save queue, but drop it first as we are performing an overwrite
