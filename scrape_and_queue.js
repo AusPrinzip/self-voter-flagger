@@ -16,6 +16,10 @@ var
 
 function main() {
   lib.start(function () {
+    if (lib.getLastInfos().blocked) {
+      console.log("Day blocked - edit value to unblock");
+      return;
+    }
     doProcess(lib.getLastInfos().lastBlock + 1, function () {
       console.log("Finished");
     });
@@ -40,6 +44,7 @@ function doProcess(startAtBlockNum, callback) {
     var numFlagsToCancel = 0;
     var firstBlockMoment = null;
     var currentBlockNum = 0;
+    var dayBlocked = false;
     for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number && i <= (startAtBlockNum + MAX_BLOCKS_PER_RUN); i++) {
       currentBlockNum = i;
       var block = wait.for(lib.steem_getBlock_wrapper, i);
@@ -50,6 +55,7 @@ function doProcess(startAtBlockNum, callback) {
       } else {
         if (firstBlockMoment.dayOfYear() < latestBlockMoment.dayOfYear()) {
           // exit, the have processed entire day
+          dayBlocked = true;
           currentBlockNum--;
           break;
         }
@@ -301,6 +307,9 @@ function doProcess(startAtBlockNum, callback) {
       });
     var lastInfos = lib.getLastInfos();
     lastInfos.lastBlock = currentBlockNum;
+    if (dayBlocked) {
+      lastInfos.blocked = true;
+    }
     wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
     lib.setLastInfos(lastInfos);
     // save queue, but drop it first as we are performing an overwrite

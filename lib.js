@@ -93,11 +93,13 @@ function getLastInfos(callback) {
       if (process.env.STARTING_BLOCK_NUM !== undefined
         && process.env.STARTING_BLOCK_NUM !== null) {
         mLastInfos = {
-          lastBlock: Number(process.env.STARTING_BLOCK_NUM)
+          lastBlock: Number(process.env.STARTING_BLOCK_NUM),
+          blocked: false
         };
       } else {
         mLastInfos = {
-          lastBlock: 0
+          lastBlock: 0,
+          blocked: false
         };
       }
     } else {
