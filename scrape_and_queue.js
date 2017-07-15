@@ -29,9 +29,9 @@ var sAccountsMap = {};
 function getAccount(name) {
   var account = sAccountsMap[name];
   if (account !== null && account !== undefined) {
-    console.log(" * got account from CACHE: "+name);
+    //console.log(" * got account from CACHE: "+name);
     sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
-    return JSON.parse(account[1]);
+    return account[1];
   }
   var store = true;
   if (Object.keys(sAccountsMap).length >= MAX_ACCOUNTS_MAP_SIZE) {
@@ -42,7 +42,7 @@ function getAccount(name) {
       for (var key in sAccountsMap) {
         if (sAccountsMap[key][0] === smallestNumber) {
           // remove this
-          console.log(" * removed a account from cache: "+key);
+          //console.log(" * removed a account from cache: "+key);
           delete sAccountsMap[key];
           deletedOne = true;
           break;
@@ -64,11 +64,11 @@ function getAccount(name) {
     return null;
   }
   if (store) {
-    console.log(" * got account from API: "+name+" (stored)");
-    sAccountsMap[name] = [1, JSON.stringify(account)];
-  } else {
-    console.log(" * got account from API: "+name+" (NOT stored)");
-  }
+    //console.log(" * got account from API: "+name+" (stored)");
+    sAccountsMap[name] = [1, account];
+  }// else {
+   // console.log(" * got account from API: "+name+" (NOT stored)");
+  //}
   return account;
 }
 
@@ -81,9 +81,9 @@ function getPost(author, permlink, forceUpdate) {
   var store = true;
   if (!forceUpdate) {
     if (post !== null && post !== undefined) {
-      console.log(" * got post from CACHE: "+thisKey);
+      //console.log(" * got post from CACHE: "+thisKey);
       sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
-      return JSON.parse(post[1]);
+      return post[1];
     }
     if (Object.keys(sPostsMap).length >= MAX_POSTS_MAP_SIZE) {
       var deletedOne = false;
@@ -93,7 +93,7 @@ function getPost(author, permlink, forceUpdate) {
         for (var key in sPostsMap) {
           if (sPostsMap[key][0] === smallestNumber) {
             // remove this
-            console.log(" * removed a post from cache: "+key);
+            //console.log(" * removed a post from cache: "+key);
             delete sPostsMap[key];
             deletedOne = true;
             break;
@@ -116,11 +116,11 @@ function getPost(author, permlink, forceUpdate) {
     return null;
   }
   if (store) {
-    console.log(" * got post from API: "+thisKey+" (stored)");
-    sPostsMap[thisKey] = [1, JSON.stringify(post)];
-  } else {
-    console.log(" * got post from API: "+thisKey+" (NOT stored)");
-  }
+    //console.log(" * got post from API: "+thisKey+" (stored)");
+    sPostsMap[thisKey] = [1, post];
+  }// else {
+   // console.log(" * got post from API: "+thisKey+" (NOT stored)");
+  //}
   return post;
 }
 
@@ -217,12 +217,12 @@ function doProcess(startAtBlockNum, callback) {
               // THEN, check if vote rshares are > 0
               // note: cancelled self votes have rshares == 0
               if (voteDetail.rshares < 0) {
-                console.log(" - - - flag");
+                //console.log(" - - - flag");
                 isFlag = true;
               } else if (voteDetail.rshares > 0) {
-                console.log(" - - - up vote");
+                //console.log(" - - - up vote");
               } else {
-                console.log(" - - - vote NEGATED");
+                //console.log(" - - - vote NEGATED");
                 isVoteNegation = true;
               }
 
