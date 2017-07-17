@@ -73,16 +73,15 @@ function doProcess(startAtBlockNum, callback) {
               // THEN, check their SP is above minimum
               // get account from cache if possible, otherwise cache it
               var voterAccount = wait.for(lib.getAccount, opDetail.voter, latestBlockMoment);
-              if (voterAccount === null) {
+              if (voterAccount === null || voterAccount === undefined) {
                 console.log("Error getting account, skipping this vote" +
                   " (this is a big problem)");
                 //continue;
               }
               // take delegated stake into consideration?
-              var steemPower = lib.getSteemPowerFromVest(
-                  voterAccount.vesting_shares
-                  + voterAccount.received_vesting_shares
-                  - voterAccount.delegated_vesting_shares);
+              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares
+                + voterAccount.received_vesting_shares
+                - voterAccount.delegated_vesting_shares);
               if (steemPower < lib.MIN_SP) {
                 console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
                   +", skipping");
