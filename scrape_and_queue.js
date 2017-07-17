@@ -74,7 +74,9 @@ function doProcess(startAtBlockNum, callback) {
               // get account from cache if possible, otherwise cache it
               var voterAccount = wait.for(lib.getAccount, opDetail.voter, latestBlockMoment);
               if (voterAccount === null) {
-                continue;
+                console.log("Error getting account, skipping this vote" +
+                  " (this is a big problem)");
+                //continue;
               }
               // take delegated stake into consideration?
               var steemPower = lib.getSteemPowerFromVest(
