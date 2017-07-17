@@ -72,7 +72,7 @@ function doProcess(startAtBlockNum, callback) {
 
               // THEN, check their SP is above minimum
               // get account from cache if possible, otherwise cache it
-              var voterAccount = lib.getAccount(opDetail.voter, latestBlockMoment);
+              var voterAccount = wait.for(lib.getAccount, opDetail.voter, latestBlockMoment);
               if (voterAccount === null) {
                 continue;
               }
