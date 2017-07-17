@@ -12,7 +12,7 @@ const
 var
   MAX_BLOCKS_PER_RUN = 2000,//MAX_BLOCKS_PER_RUN = 12340,
   MAX_USAGE_NUM_TO_CHECK = 20,
-  MAX_POSTS_TO_CONSIDER = 20; //default
+  MAX_POSTS_TO_CONSIDER = 100; //default
 
 
 function main() {
