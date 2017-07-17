@@ -110,7 +110,7 @@ function getAccount(name, fetchMoment, callback) {
         });
       } else {
         console.log("getAccount: fetching from DB");
-        callback(null, data[0]);
+        callback(null, data[0].account);
       }
     });
   }
