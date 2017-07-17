@@ -101,7 +101,7 @@ function doProcess(startAtBlockNum, callback) {
                 || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
                 || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
                 || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
-                //console.log("Not a comment, skipping");
+                console.log("Not a comment, skipping");
                 //continue;
                 //isComment = false;
                 continue; // DO NOT REPORT ON MAIN POSTS, TAKING TOO LONG
@@ -189,6 +189,7 @@ function doProcess(startAtBlockNum, callback) {
                 // TODO : do something about the vote negation
                 // save voter data here
                 wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
+                console.log("not comment self vote, skipping");
                 continue;
               }
 
