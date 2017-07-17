@@ -95,7 +95,7 @@ function getAccount(name, fetchMoment, callback) {
         console.log("getAccount: fetching from API");
         steem_getAccounts_wrapper(name, function (err, data) {
           if (err || data === null || data.length === 0) {
-            console.log("getAccount: error fetching from API");
+            //console.log("getAccount: error fetching from API");
             callback(err, data);
           } else {
             var account = data[0];
@@ -109,7 +109,7 @@ function getAccount(name, fetchMoment, callback) {
           }
         });
       } else {
-        console.log("getAccount: fetching from DB");
+        //console.log("getAccount: fetching from DB");
         callback(null, data[0].account);
       }
     });
