@@ -307,6 +307,8 @@ function doProcess(startAtBlockNum, callback) {
     for (var i = 0; i < queue.length; i++) {
       wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
     }
+    // drop temp accounts cache
+    lib.mongo_dropAccounts();
     // exit
     callback();
   });
