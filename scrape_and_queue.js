@@ -11,7 +11,7 @@ const
 
 var
   MAX_BLOCKS_PER_RUN = 12340,
-  MAX_POSTS_TO_CONSIDER = 20; //default
+  MAX_POSTS_TO_CONSIDER = 100; //default
 
 
 function main() {
