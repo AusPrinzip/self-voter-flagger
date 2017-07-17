@@ -93,13 +93,21 @@ function getAccount(name, fetchMoment, callback) {
           || data[0] === null
           || moment(data[0].timestamp).add(8, 'hours').isBefore(fetchMoment)) {
         console.log("getAccount: fetching from API");
-        var account = wait.for(steem_getAccounts_wrapper, name)[0];
-        wait.for(mongoSave_wrapper, DB_ACCOUNTS, {
-          name: name,
-          timestamp: fetchMoment.valueOf(),
-          account: account
+        steem_getAccounts_wrapper(name, function (err, data) {
+          if (err || data === null || data.length === 0) {
+            console.log("getAccount: error fetching from API");
+            callback(err, data);
+          } else {
+            var account = data[0];
+            mongoSave_wrapper(DB_ACCOUNTS, {
+              name: name,
+              timestamp: fetchMoment.valueOf(),
+              account: account
+            }, function (err, data) {
+              callback(err, account);
+            });
+          }
         });
-        callback(null, account);
       } else {
         console.log("getAccount: fetching from DB");
         callback(null, data[0]);
