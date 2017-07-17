@@ -27,107 +27,8 @@ function main() {
   });
 }
 
+
 const MAX_ACCOUNTS_MAP_SIZE = 1000;
-var sAccountsMap = {};
-
-function getAccount(name) {
-  var account = sAccountsMap[name];
-  if (account !== null && account !== undefined) {
-    //console.log(" * got account from CACHE: "+name);
-    sAccountsMap[name][0] = sAccountsMap[name][0] + 1;
-    return account[1];
-  }
-  var store = true;
-  if (Object.keys(sAccountsMap).length >= MAX_ACCOUNTS_MAP_SIZE) {
-    var deletedOne = false;
-    // find least used account
-    var smallestNumber = 1;
-    while (smallestNumber < MAX_USAGE_NUM_TO_CHECK) {
-      for (var key in sAccountsMap) {
-        if (sAccountsMap[key][0] === smallestNumber) {
-          // remove this
-          //console.log(" * removed a account from cache: "+key);
-          delete sAccountsMap[key];
-          deletedOne = true;
-          break;
-        }
-      }
-      smallestNumber++;
-      if (deletedOne) {
-        break;
-      }
-    }
-    if (!deletedOne) {
-      store = false;
-    }
-  }
-  try {
-    account = wait.for(lib.steem_getAccounts_wrapper, name)[0];
-  } catch(err) {
-    console.log("Couldn't get account for "+name+": "+JSON.stringify(err));
-    return null;
-  }
-  if (store) {
-    //console.log(" * got account from API: "+name+" (stored)");
-    sAccountsMap[name] = [1, account];
-  }// else {
-   // console.log(" * got account from API: "+name+" (NOT stored)");
-  //}
-  return account;
-}
-
-const MAX_POSTS_MAP_SIZE = 100;
-var sPostsMap = {};
-
-function getPost(author, permlink, forceUpdate) {
-  var thisKey = author+":"+permlink;
-  var post = sPostsMap[thisKey];
-  var store = true;
-  if (!forceUpdate) {
-    if (post !== null && post !== undefined) {
-      //console.log(" * got post from CACHE: "+thisKey);
-      sPostsMap[thisKey][0] = sPostsMap[thisKey][0] + 1;
-      return post[1];
-    }
-    if (Object.keys(sPostsMap).length >= MAX_POSTS_MAP_SIZE) {
-      var deletedOne = false;
-      // find least used account
-      var smallestNumber = 1;
-      while (smallestNumber < MAX_USAGE_NUM_TO_CHECK) {
-        for (var key in sPostsMap) {
-          if (sPostsMap[key][0] === smallestNumber) {
-            // remove this
-            //console.log(" * removed a post from cache: "+key);
-            delete sPostsMap[key];
-            deletedOne = true;
-            break;
-          }
-        }
-        smallestNumber++;
-        if (deletedOne) {
-          break;
-        }
-      }
-      if (!deletedOne) {
-        store = false;
-      }
-    }
-  }
-  try {
-    post = wait.for(lib.steem_getContent_wrapper, author, permlink);
-  } catch(err) {
-    console.log("Couldn't get post for "+thisKey);
-    return null;
-  }
-  if (store) {
-    //console.log(" * got post from API: "+thisKey+" (stored)");
-    sPostsMap[thisKey] = [1, post];
-  }// else {
-   // console.log(" * got post from API: "+thisKey+" (NOT stored)");
-  //}
-  return post;
-}
-
 
 var queue = [];
 
@@ -171,7 +72,7 @@ function doProcess(startAtBlockNum, callback) {
 
               // THEN, check their SP is above minimum
               // get account from cache if possible, otherwise cache it
-              var voterAccount = getAccount(opDetail.voter);
+              var voterAccount = lib.getAccount(opDetail.voter, latestBlockMoment);
               if (voterAccount === null) {
                 continue;
               }
@@ -186,21 +87,33 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
+              // basic deciding info
+              var isComment = false;
+              var isFlag = false;
+              var isVoteNegation = false;
+              var isSelfVote = false;
+
+              // FIRST, screen for comments only
+              //isComment = true;
+              var permlinkParts = opDetail.permlink.split("-");
+              if (permlinkParts.length === 0
+                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
+                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
+                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
+                //console.log("Not a comment, skipping");
+                //continue;
+                //isComment = false;
+                continue; // DO NOT REPORT ON MAIN POSTS, TAKING TOO LONG
+              }
+
               // get post content and rshares of vote
-              var content = getPost(opDetail.author, opDetail.permlink, false);
-              if (content === undefined || content === null) {
+              var content = wait.for(lib.steem_getContent_wrapper, opDetail.author, opDetail.permlink);
+              if (content === undefined || content === null
+                  || content.active_votes === undefined
+                  || content.active_votes === null) {
                 console.log("Couldn't process operation, continuing." +
                   " Error: post content response not defined");
                 continue;
-              }
-              if (content.active_votes === undefined
-                || content.active_votes === null) {
-                content = getPost(opDetail.author, opDetail.permlink, true);
-                if (content === undefined || content === null) {
-                  console.log("Couldn't process operation, continuing." +
-                    " Error: post content response not defined");
-                  continue;
-                }
               }
               var voteDetail = null;
               for (var m = 0; m < content.active_votes.length; m++) {
@@ -214,12 +127,6 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // basic deciding info
-              var isComment = false;
-              var isFlag = false;
-              var isVoteNegation = false;
-              var isSelfVote = false;
-
               // THEN, check if vote rshares are > 0
               // note: cancelled self votes have rshares == 0
               if (voteDetail.rshares < 0) {
@@ -230,18 +137,6 @@ function doProcess(startAtBlockNum, callback) {
               } else {
                 //console.log(" - - - vote NEGATED");
                 isVoteNegation = true;
-              }
-
-              // FIRST, screen for comments only
-              isComment = true;
-              var permlinkParts = opDetail.permlink.split("-");
-              if (permlinkParts.length === 0
-                || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
-                || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
-                || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
-                //console.log("Not a comment, skipping");
-                //continue;
-                isComment = false;
               }
 
               // THEN, check vote is a self vote

@@ -13,7 +13,8 @@ const
   DB_VOTERS = "voters",
   DB_RUNS = "runs",
   DB_QUEUE = "queue",
-  DB_FLAGLIST = "flaglist";
+  DB_FLAGLIST = "flaglist",
+  DB_ACCOUNTS = "accounts";
 
 const
   VOTE_POWER_1_PC = 100,
@@ -76,6 +77,39 @@ function init(callback) {
     }
     callback();
   });
+}
+
+function getAccount(name, fetchMoment, callback) {
+  if (name === undefined || name === null || name.length === 0) {
+    console.log("getAccount: bot account");
+    callback(null, mAccount);
+  } else {
+    db.collection(DB_ACCOUNTS).find({name: name}).toArray(function(err, data) {
+      if (err) {
+        console.log("getAccount: error");
+        callback(err, data);
+      } else if (data === undefined || data === null
+          || data.length === 0 || data[0] === undefined
+          || data[0] === null
+          || moment(data[0].timestamp).add(8, 'hours').isBefore(fetchMoment)) {
+        console.log("getAccount: fetching from API");
+        var account = wait.for(steem_getAccounts_wrapper, name)[0];
+        wait.for(mongoSave_wrapper, DB_ACCOUNTS, {
+          name: name,
+          timestamp: fetchMoment.valueOf(),
+          account: account
+        });
+        callback(null, account);
+      } else {
+        console.log("getAccount: fetching from DB");
+        callback(null, data[0]);
+      }
+    });
+  }
+}
+
+function mongo_dropAccounts() {
+  db.collection(DB_ACCOUNTS).drop();
 }
 
 
@@ -406,7 +440,7 @@ module.exports.DB_FLAGLIST = DB_FLAGLIST;
 
 // getters
 
-module.exports.getAccount = function() {return mAccount};
+module.exports.getAccount = getAccount;
 module.exports.getProperties = function() {return mProperties};
 module.exports.getLastInfos = function() {return mLastInfos};
 module.exports.getTestAuthorList = function() {return mTestAuthorList};
@@ -430,6 +464,7 @@ module.exports.mongo_dropQueue_wrapper = mongo_dropQueue_wrapper;
 module.exports.getAllFlag_reset = getAllFlag_reset;
 module.exports.getAllFlag = getAllFlag;
 module.exports.mongo_dropFlag_wrapper = mongo_dropFlag_wrapper;
+module.exports.mongo_dropAccounts = mongo_dropAccounts;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.steem_getBlockHeader_wrapper = steem_getBlockHeader_wrapper;
