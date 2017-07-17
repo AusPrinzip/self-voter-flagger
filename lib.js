@@ -81,7 +81,7 @@ function init(callback) {
 
 function getAccount(name, fetchMoment, callback) {
   if (name === undefined || name === null || name.length === 0) {
-    console.log("getAccount: bot account");
+    //console.log("getAccount: bot account");
     callback(null, mAccount);
   } else {
     db.collection(DB_ACCOUNTS).find({name: name}).toArray(function(err, data) {
@@ -92,10 +92,10 @@ function getAccount(name, fetchMoment, callback) {
           || data.length === 0 || data[0] === undefined
           || data[0] === null
           || moment(data[0].timestamp).add(8, 'hours').isBefore(fetchMoment)) {
-        console.log("getAccount: fetching from API");
+        //console.log("getAccount: fetching from API");
         steem_getAccounts_wrapper(name, function (err, data) {
           if (err || data === null || data.length === 0) {
-            //console.log("getAccount: error fetching from API");
+            console.log("getAccount: error fetching from API");
             callback(err, data);
           } else {
             var account = data[0];
