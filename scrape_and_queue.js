@@ -89,7 +89,7 @@ function doProcess(startAtBlockNum, callback) {
               }
 
               // basic deciding info
-              var isComment = false;
+              var isComment = true;
               var isFlag = false;
               var isVoteNegation = false;
               var isSelfVote = false;
