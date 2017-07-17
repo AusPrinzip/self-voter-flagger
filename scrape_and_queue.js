@@ -98,6 +98,7 @@ function doProcess(startAtBlockNum, callback) {
               //isComment = true;
               var permlinkParts = opDetail.permlink.split("-");
               if (permlinkParts.length === 0
+                || !S(permlinkParts[0]).startsWith("re")
                 || !S(permlinkParts[permlinkParts.length - 1]).startsWith("201")
                 || !S(permlinkParts[permlinkParts.length - 1]).endsWith("z")
                 || permlinkParts[permlinkParts.length - 1].indexOf("t") < 0) {
