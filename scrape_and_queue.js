@@ -246,26 +246,39 @@ function doProcess(startAtBlockNum, callback) {
                     queue.sort(function (a, b) {
                       return a.self_vote_payout - b.self_vote_payout;
                     });
-                    var lowestRshare = self_vote_payout;
-                    var idx = -1;
+                    // first check for duplicate vote by permlink
+                    var isDuplicate = false;
                     for (var m = 0; m < queue.length; m++) {
-                      if (queue[m].self_vote_payout < self_vote_payout
-                        && queue[m].self_vote_payout < self_vote_payout) {
-                        lowestRshare = queue[m].self_vote_payout;
-                        idx = m;
+                      if (queue[m].permlink.localeCompare(selfVoteObj.permlink) === 0) {
+                        console.log(" - - - new vote is duplicate on top" +
+                        " list, replacing value");
+                        queue[m] = selfVoteObj;
+                        isDuplicate = true;
+                        break;
                       }
                     }
-                    if (idx >= 0) {
-                      console.log(" - - - removing existing lower rshares" +
-                        " post " + queue[idx].permlink + " with payout " + queue[idx].self_vote_payout);
-                      var newPosts = [];
+                    if (!isDuplicate) {
+                      var lowestRshare = self_vote_payout;
+                      var idx = -1;
                       for (var m = 0; m < queue.length; m++) {
-                        if (m != idx) {
-                          newPosts.push(queue[m]);
+                        if (queue[m].self_vote_payout < self_vote_payout
+                          && queue[m].self_vote_payout < self_vote_payout) {
+                          lowestRshare = queue[m].self_vote_payout;
+                          idx = m;
                         }
                       }
-                      queue = newPosts;
-                      console.log(" - - - keeping " + newPosts.length + " posts");
+                      if (idx >= 0) {
+                        console.log(" - - - removing existing lower rshares" +
+                          " post " + queue[idx].permlink + " with payout " + queue[idx].self_vote_payout);
+                        var newPosts = [];
+                        for (var m = 0; m < queue.length; m++) {
+                          if (m != idx) {
+                            newPosts.push(queue[m]);
+                          }
+                        }
+                        queue = newPosts;
+                        console.log(" - - - keeping " + newPosts.length + " posts");
+                      }
                     }
                   }
 
