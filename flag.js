@@ -218,7 +218,7 @@ function recalcVotingPower(latestBlockMoment) {
   //console.log(" - - lastVoteTime: "+lastVoteTime);
   //now_time = Time.parse(@latest_block["timestamp"] + 'Z')
   //console.log(" - - latestBlockMoment(supplied): "+latestBlockMoment);
-  var secondsDiff = latestBlockMoment.seconds() - lastVoteTime.seconds();
+  var secondsDiff = (latestBlockMoment.valueOf() - lastVoteTime.valueOf()) / 1000;
   //console.log(" - - secondsDiff: "+secondsDiff);
   if (secondsDiff > 0) {
     var vpRegenerated = secondsDiff * 10000 / 86400 / 5;
