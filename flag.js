@@ -114,7 +114,7 @@ function doProcess(callback) {
       console.log(" - abs_need_rshares: " + abs_need_rshares);
       var vp = recalcVotingPower(latestBlockMoment);
       console.log(" - vp: " + vp);
-      console.log(" - abs_percentage calc");
+
       console.log(" - - mAccount.vesting_shares: " + lib.getAccount().vesting_shares);
       console.log(" - - mAccount.received_vesting_shares" +
         " (delegated from others): " + lib.getAccount().received_vesting_shares);
@@ -126,6 +126,10 @@ function doProcess(callback) {
       console.log(" - - - received_vesting_shares num: " + receivedSharesNum);
       var totalVests = vestingSharesNum + receivedSharesNum;
       console.log(" - - total vests: " + totalVests);
+
+      // METHOD 1 - rev
+      console.log("METHOD 1");
+      console.log(" - abs_percentage calc");
 
       var steempower = lib.getSteemPowerFromVest(totalVests);
       console.log("steem power: " + steempower);
@@ -146,8 +150,15 @@ function doProcess(callback) {
       }
 
       var counter_percentage = -votingpower;
-
       console.log("countering percentage: " + counter_percentage);
+
+
+      // METHOD 2 - cal
+      console.log("METHOD 2");
+      var vpCal = rshares / ((totalVests) * 0.02 * (vp / 100));
+      console.log("vapCal: "+vpCal);
+
+
       console.log("Voting...");
       var restricted = false;
       if (lib.getTestAuthorList() !== null
