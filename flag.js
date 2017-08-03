@@ -155,7 +155,7 @@ function doProcess(callback) {
 
       // METHOD 2 - cal
       console.log("METHOD 2");
-      var vpCal = abs_need_rshares / ((totalVests) * 0.02 * (vp / 100));
+      var vpCal = (abs_need_rshares / totalVests) * (0.02 * (vp / 100));
       console.log("vapCal: "+vpCal);
 
       counter_percentage = ((vpCal / 100) * -1);
