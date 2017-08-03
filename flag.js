@@ -155,8 +155,8 @@ function doProcess(callback) {
 
       // METHOD 2 - cal
       console.log("METHOD 2");
-      var vpCal = rshares / ((totalVests) * 0.02 * (vp / 100));
-      console.log("vapCal: "+vpCal);
+      var vpCal = abs_need_rshares / ((totalVests) * 0.02 * (vp / 100));
+      console.log("vapCal: "+(vpCal * -1));
 
 
       console.log("Voting...");
