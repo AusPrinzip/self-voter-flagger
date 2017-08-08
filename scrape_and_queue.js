@@ -91,12 +91,6 @@ function doProcess(startAtBlockNum, callback) {
 
               // THEN, check vote is a self vote
               if (opDetail.voter.localeCompare(opDetail.author) != 0) {
-                if (voterInfos !== undefined && voterInfos !== null) {
-                  voterInfos.outvotes = voterInfos.outvotes + 1;
-                  console.log("non selfvote for watched user "+voterInfos.voter+", now at ratio "
-                    +voterInfos.selfvotes+" / "+voterInfos.outvotes);
-                  wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
-                }
                 continue;
               }
 
@@ -151,7 +145,9 @@ function doProcess(startAtBlockNum, callback) {
               var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
               var voterAccount = accounts[0];
               // TODO : take delegated stake into consideration?
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares);
+              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares)
+                + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
+                - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
               if (steemPower < lib.MIN_SP) {
                 console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
                   +", skipping");
@@ -179,74 +175,88 @@ function doProcess(startAtBlockNum, callback) {
               }
               console.log("self_vote_payout: "+self_vote_payout);
 
+              // calculate cumulative extrapolated ROI
+              var roi =  0;
+              if (self_vote_payout > 0) {
+                roi = ((self_vote_payout * 356) / steemPower) * 100;
+              }
+
               // update voter info
               if (voterInfos === null || voterInfos === undefined) {
                 voterInfos = {
                   voter: opDetail.voter,
-                  selfvotes: 1,
-                  outvotes: 0,
-                  flags_received: 0,
-                  total_self_vote_payout: 0.0
+                  total_self_vote_payout: 0.0,
+                  total_extrapolated_roi: roi,
+                  steem_power: steemPower,
+                  comments: [
+                      {
+                        permlink: content.permlink,
+                        extrapolated_roi: roi
+                      }
+                    ]
                 };
               } else {
-                voterInfos.selfvotes = voterInfos.selfvotes + 1;
                 voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
+                voterInfos.steem_power = steemPower;
+                voterInfos.total_extrapolated_roi += roi;
+                // check for duplicate permlink, if so then update roi
+                var isDuplicate = false;
+                for (var m = 0; m < voterInfos.comments.length; m++) {
+                  if (voterInfos.comments[m].permlink.localeCompare(content.permlink) === 0) {
+                    console.log(" - - - new vote is duplicate on top" +
+                      " list, replacing value");
+                    voterInfos.comments[m].extrapolated_roi = roi;
+                    // update total_extrapolated_roi
+                    voterInfos.total_extrapolated_roi = 0;
+                    for (var n = 0 ; n < voterInfos.comments.length ; n++) {
+                      voterInfos.total_extrapolated_roi += voterInfos.comments[n].extrapolated_roi;
+                    }
+                    isDuplicate = true;
+                    break;
+                  }
+                }
+                if (!isDuplicate) {
+                  voterInfos.comments.push(
+                    {
+                      permlink: content.permlink,
+                      extrapolated_roi: roi
+                    }
+                  );
+                }
               }
-
-              // add to queue if high enough self vote payout
-              var selfVoteObj =  {
-                permlink: content.permlink,
-                rshares: voteDetail.rshares,
-                self_vote_payout: self_vote_payout,
-                pending_payout_value: pending_payout_value_NUM
-              };
-              console.log(" - - self vote obj: "+JSON.stringify(selfVoteObj));
+              console.log(" - - updated voter info: "+JSON.parse(voterInfos));
 
               if (!recordOnly) {
                 console.log(" - - - arranging posts " + queue.length + "...");
-                // add author as the self vote obj is standalone in the
-                // top list
-                selfVoteObj.voter = opDetail.voter;
-                // add flag to mark processing
-                selfVoteObj.processed = "false";
                 if (queue.length >= MAX_POSTS_TO_CONSIDER) {
                   // first sort with lowest first
+                  /*
                   queue.sort(function (a, b) {
-                    return a.self_vote_payout - b.self_vote_payout;
+                    return a.total_extrapolated_roi - b.total_extrapolated_roi;
                   });
-                  // first check for duplicate vote by permlink
-                  var isDuplicate = false;
+                  */
+
+                  var lowest = roi;
+                  var idx = -1;
                   for (var m = 0; m < queue.length; m++) {
-                    if (queue[m].permlink.localeCompare(selfVoteObj.permlink) === 0) {
-                      console.log(" - - - new vote is duplicate on top" +
-                      " list, replacing value");
-                      queue[m] = selfVoteObj;
-                      isDuplicate = true;
-                      break;
+                    if (queue[m].total_extrapolated_roi < voterInfos.total_extrapolated_roi) {
+                      lowest = queue[m].total_extrapolated_roi ;
+                      idx = m;
                     }
                   }
-                  if (!isDuplicate) {
-                    var lowestRshare = self_vote_payout;
-                    var idx = -1;
+                  if (idx >= 0) {
+                    console.log(" - - - removing existing lower roi " +
+                      " user " + queue[idx].voter + " with total" +
+                      " extrapolated roi of " +
+                      + queue[idx].total_extrapolated_roi);
+                    var newPosts = [];
                     for (var m = 0; m < queue.length; m++) {
-                      if (queue[m].self_vote_payout < self_vote_payout
-                        && queue[m].self_vote_payout < self_vote_payout) {
-                        lowestRshare = queue[m].self_vote_payout;
-                        idx = m;
+                      if (m != idx) {
+                        newPosts.push(queue[m]);
                       }
                     }
-                    if (idx >= 0) {
-                      console.log(" - - - removing existing lower rshares" +
-                        " post " + queue[idx].permlink + " with payout " + queue[idx].self_vote_payout);
-                      var newPosts = [];
-                      for (var m = 0; m < queue.length; m++) {
-                        if (m != idx) {
-                          newPosts.push(queue[m]);
-                        }
-                      }
-                      queue = newPosts;
-                      console.log(" - - - keeping " + newPosts.length + " posts");
-                    }
+                    queue = newPosts;
+                    console.log(" - - - keeping " + newPosts.length + " posts");
                   }
                 }
 
