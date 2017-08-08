@@ -158,58 +158,26 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // TODO : move self vote negation to separate task
-              /*
-              var toContinue = false;
-              // check for change in record, update if so
-              if (voterInfos !== null && voterInfos !== undefined) {
-                if (voterInfos.hasOwnProperty("selfvotes_detail_daily")
-                  && voterInfos.selfvotes_detail_daily.length > 0) {
-                  for (var m = 0; m < voterInfos.selfvotes_detail_daily.length; m++) {
-                    if (content.permlink.localeCompare(voterInfos.selfvotes_detail_daily[m].permlink) === 0) {
-                      console.log(" - permlink " + content.permlink + " already noted as self vote");
-                      console.log(" - rshares changed from "
-                        + voterInfos.selfvotes_detail_daily[m].rshares
-                        +" to "+ voteDetail.rshares);
-                      voterInfos.selfvotes_detail_daily[m].rshares = voteDetail.rshares;
-                      // already exists, figure out what the update is
-                      if (voterInfos.selfvotes_detail_daily[m].rshares > 0
-                        && voteDetail.rshares <= 0) {
-                        // user canceled a self vote
-                        // remove self vote from db
-                        console.log(" - - remove this post from db, no" +
-                          " longer self vote");
-                        voterInfos.selfvotes_detail_daily = voterInfos.selfvotes_detail_daily.splice(m, 1);
-                      }
-                      toContinue = true;
-                      break;
-                    }
-                  }
-                }
+              numHighSpCommentSelfVotes++;
+
+              // consider for flag queue
+              console.log("content.pending_payout_value: "+content.pending_payout_value);
+              var pending_payout_value = content.pending_payout_value.split(" ");
+              var pending_payout_value_NUM = Number(pending_payout_value[0]);
+              console.log("content.net_rshares: "+content.net_rshares);
+              var self_vote_payout;
+              if (pending_payout_value_NUM <= 0.00) {
+                self_vote_payout = 0;
+              } else if (content.active_votes.length === 1
+                  || voteDetail.rshares === Number(content.net_rshares)) {
+                self_vote_payout = pending_payout_value_NUM;
+              } else {
+                self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.net_rshares));
               }
-              */
-
-              //if (!toContinue) {
-                numHighSpCommentSelfVotes++;
-
-                // consider for flag queue
-                console.log("content.pending_payout_value: "+content.pending_payout_value);
-                var pending_payout_value = content.pending_payout_value.split(" ");
-                var pending_payout_value_NUM = Number(pending_payout_value[0]);
-                console.log("content.net_rshares: "+content.net_rshares);
-                var self_vote_payout;
-                if (pending_payout_value_NUM <= 0.00) {
-                  self_vote_payout = 0;
-                } else if (content.active_votes.length === 1
-                    || voteDetail.rshares === Number(content.net_rshares)) {
-                  self_vote_payout = pending_payout_value_NUM;
-                } else {
-                  self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.net_rshares));
-                }
-                if (self_vote_payout < 0) {
-                  self_vote_payout = 0;
-                }
-                console.log("self_vote_payout: "+self_vote_payout);
+              if (self_vote_payout < 0) {
+                self_vote_payout = 0;
+              }
+              console.log("self_vote_payout: "+self_vote_payout);
 
               // update voter info
               if (voterInfos === null || voterInfos === undefined) {
@@ -225,71 +193,70 @@ function doProcess(startAtBlockNum, callback) {
                 voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
               }
 
-                // add to queue if high enough self vote payout
-                var selfVoteObj =  {
-                  permlink: content.permlink,
-                  rshares: voteDetail.rshares,
-                  self_vote_payout: self_vote_payout,
-                  pending_payout_value: pending_payout_value_NUM
-                };
-                console.log(" - - self vote obj: "+JSON.stringify(selfVoteObj));
+              // add to queue if high enough self vote payout
+              var selfVoteObj =  {
+                permlink: content.permlink,
+                rshares: voteDetail.rshares,
+                self_vote_payout: self_vote_payout,
+                pending_payout_value: pending_payout_value_NUM
+              };
+              console.log(" - - self vote obj: "+JSON.stringify(selfVoteObj));
 
-                if (!recordOnly) {
-                  console.log(" - - - arranging posts " + queue.length + "...");
-                  // add author as the self vote obj is standalone in the
-                  // top list
-                  selfVoteObj.voter = opDetail.voter;
-                  // add flag to mark processing
-                  selfVoteObj.processed = "false";
-                  if (queue.length >= MAX_POSTS_TO_CONSIDER) {
-                    // first sort with lowest first
-                    queue.sort(function (a, b) {
-                      return a.self_vote_payout - b.self_vote_payout;
-                    });
-                    // first check for duplicate vote by permlink
-                    var isDuplicate = false;
-                    for (var m = 0; m < queue.length; m++) {
-                      if (queue[m].permlink.localeCompare(selfVoteObj.permlink) === 0) {
-                        console.log(" - - - new vote is duplicate on top" +
-                        " list, replacing value");
-                        queue[m] = selfVoteObj;
-                        isDuplicate = true;
-                        break;
-                      }
-                    }
-                    if (!isDuplicate) {
-                      var lowestRshare = self_vote_payout;
-                      var idx = -1;
-                      for (var m = 0; m < queue.length; m++) {
-                        if (queue[m].self_vote_payout < self_vote_payout
-                          && queue[m].self_vote_payout < self_vote_payout) {
-                          lowestRshare = queue[m].self_vote_payout;
-                          idx = m;
-                        }
-                      }
-                      if (idx >= 0) {
-                        console.log(" - - - removing existing lower rshares" +
-                          " post " + queue[idx].permlink + " with payout " + queue[idx].self_vote_payout);
-                        var newPosts = [];
-                        for (var m = 0; m < queue.length; m++) {
-                          if (m != idx) {
-                            newPosts.push(queue[m]);
-                          }
-                        }
-                        queue = newPosts;
-                        console.log(" - - - keeping " + newPosts.length + " posts");
-                      }
+              if (!recordOnly) {
+                console.log(" - - - arranging posts " + queue.length + "...");
+                // add author as the self vote obj is standalone in the
+                // top list
+                selfVoteObj.voter = opDetail.voter;
+                // add flag to mark processing
+                selfVoteObj.processed = "false";
+                if (queue.length >= MAX_POSTS_TO_CONSIDER) {
+                  // first sort with lowest first
+                  queue.sort(function (a, b) {
+                    return a.self_vote_payout - b.self_vote_payout;
+                  });
+                  // first check for duplicate vote by permlink
+                  var isDuplicate = false;
+                  for (var m = 0; m < queue.length; m++) {
+                    if (queue[m].permlink.localeCompare(selfVoteObj.permlink) === 0) {
+                      console.log(" - - - new vote is duplicate on top" +
+                      " list, replacing value");
+                      queue[m] = selfVoteObj;
+                      isDuplicate = true;
+                      break;
                     }
                   }
-
-                  if (queue.length < MAX_POSTS_TO_CONSIDER) {
-                    console.log(" - - - adding new post to top list");
-                    queue.push(selfVoteObj);
-                  } else {
-                    console.log(" - - - not adding post to top list");
+                  if (!isDuplicate) {
+                    var lowestRshare = self_vote_payout;
+                    var idx = -1;
+                    for (var m = 0; m < queue.length; m++) {
+                      if (queue[m].self_vote_payout < self_vote_payout
+                        && queue[m].self_vote_payout < self_vote_payout) {
+                        lowestRshare = queue[m].self_vote_payout;
+                        idx = m;
+                      }
+                    }
+                    if (idx >= 0) {
+                      console.log(" - - - removing existing lower rshares" +
+                        " post " + queue[idx].permlink + " with payout " + queue[idx].self_vote_payout);
+                      var newPosts = [];
+                      for (var m = 0; m < queue.length; m++) {
+                        if (m != idx) {
+                          newPosts.push(queue[m]);
+                        }
+                      }
+                      queue = newPosts;
+                      console.log(" - - - keeping " + newPosts.length + " posts");
+                    }
                   }
                 }
-              //}
+
+                if (queue.length < MAX_POSTS_TO_CONSIDER) {
+                  console.log(" - - - adding new post to top list");
+                  queue.push(selfVoteObj);
+                } else {
+                  console.log(" - - - not adding post to top list");
+                }
+              }
 
               wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
               console.log("* voter updated: "+JSON.stringify(voterInfos));
