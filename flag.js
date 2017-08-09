@@ -64,20 +64,18 @@ function doProcess(callback) {
       return b.self_vote_payout - a.self_vote_payout;
     });
 
-    /*
     var count = 0;
-
-    while (queue.length > 0 && count < MAX_ITERATIONS) {
+    for (var k = 0 ; k < queue[0].comments.length ; k++) {
       count++;
-      */
       // process ONE item
-      var item = queue[0];
+      var voter = queue[0].voter;
+      var item = queue[0].comments[k];
 
       // check payout window still open (only when active)
       if (process.env.ACTIVE !== undefined
         && process.env.ACTIVE !== null
         && process.env.ACTIVE.localeCompare("true") == 0) {
-        var content = wait.for(lib.steem_getContent_wrapper, item.voter,
+        var content = wait.for(lib.steem_getContent_wrapper, voter,
           item.permlink);
         if (content === undefined || content === null) {
           console.log("Couldn't get content, assuming is within payout" +
@@ -110,8 +108,6 @@ function doProcess(callback) {
       var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
       lib.setAccount(accounts[0]);
       console.log("--DEBUG CALC VOTE PERCENTAGE--");
-      var abs_need_rshares = Math.abs(item.rshares);
-      console.log(" - abs_need_rshares: " + abs_need_rshares);
       var vp = recalcVotingPower(latestBlockMoment);
       console.log(" - vp: " + vp);
       console.log(" - abs_percentage calc");
@@ -155,7 +151,7 @@ function doProcess(callback) {
         && lib.getTestAuthorList().length > 0) {
         restricted = true;
         for (var m = 0; m < lib.getTestAuthorList().length; m++) {
-          if (item.voter.localeCompare(lib.getTestAuthorList()[m]) === 0) {
+          if (voter.localeCompare(lib.getTestAuthorList()[m]) === 0) {
             restricted = false;
             break;
           }
@@ -169,7 +165,7 @@ function doProcess(callback) {
             var voteResult = wait.for(steem.broadcast.vote,
               process.env.POSTING_KEY_PRV,
               process.env.STEEM_USER,
-              item.voter,
+              voter,
               item.permlink,
               parseInt(counter_percentage.toFixed(2) * lib.VOTE_POWER_1_PC)); // adjust
             // pc to
@@ -197,7 +193,7 @@ function doProcess(callback) {
         console.log("Not voting, author restriction list not" +
           " met");
       }
-    //}
+    }
     callback();
   });
 }

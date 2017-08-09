@@ -191,6 +191,7 @@ function doProcess(startAtBlockNum, callback) {
                   comments: [
                       {
                         permlink: content.permlink,
+                        self_vote_payout: self_vote_payout,
                         extrapolated_roi: roi
                       }
                     ]
@@ -219,6 +220,7 @@ function doProcess(startAtBlockNum, callback) {
                   voterInfos.comments.push(
                     {
                       permlink: content.permlink,
+                      self_vote_payout: self_vote_payout,
                       extrapolated_roi: roi
                     }
                   );
