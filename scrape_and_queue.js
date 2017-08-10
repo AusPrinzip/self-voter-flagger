@@ -230,10 +230,12 @@ function doProcess(startAtBlockNum, callback) {
                   );
                 }
               }
-              console.log(" - - updated voter info: "+JSON.stringify(voterInfos));
+              //console.log(" - - updated voter info:
+              // "+JSON.stringify(voterInfos));
 
               if (!recordOnly) {
-                console.log(" - - - arranging posts " + queue.length + "...");
+                //console.log(" - - - arranging users " + queue.length +
+                // "...");
                 if (queue.length >= MAX_POSTS_TO_CONSIDER) {
                   // first sort with lowest first
                   /*
@@ -262,12 +264,12 @@ function doProcess(startAtBlockNum, callback) {
                       }
                     }
                     queue = newPosts;
-                    console.log(" - - - keeping " + newPosts.length + " posts");
+                    console.log(" - - - keeping " + queue.length + " queue");
                   }
                 }
 
                 if (queue.length < MAX_POSTS_TO_CONSIDER) {
-                  console.log(" - - - adding new post to top list");
+                  console.log(" - - - adding user to top list");
                   queue.push(voterInfos);
                 } else {
                   console.log(" - - - not adding post to top list");
@@ -275,7 +277,7 @@ function doProcess(startAtBlockNum, callback) {
               }
 
               wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
-              console.log("* voter updated: "+JSON.stringify(voterInfos));
+              //console.log("* voter updated: "+JSON.stringify(voterInfos));
             }
             /*
           } catch (err) {
@@ -302,6 +304,8 @@ function doProcess(startAtBlockNum, callback) {
     lib.setLastInfos(lastInfos);
     // save queue, but drop it first as we are performing an overwrite
     lib.mongo_dropQueue_wrapper();
+    wait.for(lib.timeout_wrapper, 200);
+    console.log(" - saving queue of length " + queue.length);
     for (var i = 0; i < queue.length; i++) {
       wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
     }
