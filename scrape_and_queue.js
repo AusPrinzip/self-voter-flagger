@@ -264,7 +264,7 @@ function doProcess(startAtBlockNum, callback) {
 
                 if (queue.length < MAX_POSTS_TO_CONSIDER) {
                   console.log(" - - - adding new post to top list");
-                  queue.push(selfVoteObj);
+                  queue.push(voterInfos);
                 } else {
                   console.log(" - - - not adding post to top list");
                 }
