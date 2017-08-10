@@ -226,7 +226,7 @@ function doProcess(startAtBlockNum, callback) {
                   );
                 }
               }
-              console.log(" - - updated voter info: "+JSON.parse(voterInfos));
+              console.log(" - - updated voter info: "+JSON.stringify(voterInfos));
 
               if (!recordOnly) {
                 console.log(" - - - arranging posts " + queue.length + "...");
