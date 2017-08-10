@@ -36,6 +36,9 @@ function doProcess(startAtBlockNum, callback) {
         || queue === null) {
       queue = [];
     }
+    // facts from blockchain
+    var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
+    var sbd_per_steem = price_info.base.replace(" SBD", "") / price_info.quote.replace(" STEEM", "");
     // set up vars
     var totalVotes = 0;
     var numSelfCommentVotes = 0;
@@ -196,7 +199,7 @@ function doProcess(startAtBlockNum, callback) {
               // calculate cumulative extrapolated ROI
               var roi =  0;
               if (self_vote_payout > 0) {
-                roi = ((self_vote_payout * 356) / steemPower) * 100;
+                roi = ((self_vote_payout * 356) / (steemPower * sbd_per_steem)) * 100;
               }
 
               // update voter info
