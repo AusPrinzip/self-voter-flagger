@@ -182,7 +182,7 @@ function doProcess(startAtBlockNum, callback) {
               // calculate cumulative extrapolated ROI
               var roi =  0;
               if (self_vote_payout > 0) {
-                roi = ((self_vote_payout * 356) / (steemPower * sbd_per_steem)) * 100;
+                roi = (self_vote_payout / (steemPower * sbd_per_steem)) * 100;
               }
 
               // update voter info
