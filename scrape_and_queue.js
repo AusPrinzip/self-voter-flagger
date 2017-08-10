@@ -69,8 +69,6 @@ function doProcess(startAtBlockNum, callback) {
             if (opName !== undefined && opName !== null
               && opName.localeCompare("vote") == 0) {
 
-              totalVotes++;
-
               // FIRST, screen for comments only
               var permlinkParts = opDetail.permlink.split("-");
               if (permlinkParts.length === 0
