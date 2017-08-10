@@ -128,12 +128,10 @@ function doProcess(callback) {
       var sp_scaled_vests = steempower / steem_per_vest;
       console.log("sp_scaled_vests: " + sp_scaled_vests);
 
-      var voteweight = 100;
-
-      var oneval = (item.self_vote_payout * 52) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem);
+      var oneval = ((item.self_vote_payout * 100) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem)) * 42;
       console.log("oneval: " + oneval);
 
-      var votingpower = (oneval / (100 * (100 * voteweight) / lib.VOTE_POWER_1_PC)) * 100;
+      var votingpower = (oneval / (100 * (100 * vp) / lib.VOTE_POWER_1_PC)) * 100;
       console.log("voting power: " + votingpower);
 
       if (votingpower > 100) {
