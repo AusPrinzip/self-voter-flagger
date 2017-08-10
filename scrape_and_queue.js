@@ -40,11 +40,6 @@ function doProcess(startAtBlockNum, callback) {
     var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
     var sbd_per_steem = price_info.base.replace(" SBD", "") / price_info.quote.replace(" STEEM", "");
     // set up vars
-    var totalVotes = 0;
-    var numSelfCommentVotes = 0;
-    var numCommentsVotes = 0;
-    var numHighSpCommentSelfVotes = 0;
-    var numFlagsToCancel = 0;
     var firstBlockMoment = null;
     var currentBlockNum = 0;
     var dayBlocked = false;
@@ -87,8 +82,6 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              numCommentsVotes++;
-
               // check voter db for same vote
               var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
 
@@ -96,8 +89,6 @@ function doProcess(startAtBlockNum, callback) {
               if (opDetail.voter.localeCompare(opDetail.author) != 0) {
                 continue;
               }
-
-              numSelfCommentVotes++;
 
               // get post content and rshares of vote
               var content;
@@ -163,8 +154,6 @@ function doProcess(startAtBlockNum, callback) {
                   +", skipping");
                 continue;
               }
-
-              numHighSpCommentSelfVotes++;
 
               // consider for flag queue
               var max_payout = 0;
@@ -304,20 +293,11 @@ function doProcess(startAtBlockNum, callback) {
         }
       }
     }
-    console.log("NUM SELF COMMENT VOTES from block "+startAtBlockNum+" to " +
-      currentBlockNum + " is "+numSelfCommentVotes + "("+numHighSpCommentSelfVotes+" above min SP"+
-      " of "+numCommentsVotes+
-      " comments votes, out of " + totalVotes + " total votes");
-    console.log(" - "+numFlagsToCancel+" previous flags cancelled");
+    console.log("Processed from block "+startAtBlockNum+" to " + currentBlockNum);
     wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
       {
         start_block: startAtBlockNum,
-        end_block: currentBlockNum,
-        votes_total: totalVotes,
-        comment_votes_total: numCommentsVotes,
-        comments_selfvotes: numSelfCommentVotes,
-        selfvotes_high_sp_comments: numHighSpCommentSelfVotes,
-        flags_cancelled: numFlagsToCancel
+        end_block: currentBlockNum
       });
     var lastInfos = lib.getLastInfos();
     lastInfos.lastBlock = currentBlockNum;
