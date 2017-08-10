@@ -88,6 +88,18 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
+              // check their SP is above minimum
+              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
+              var voterAccount = accounts[0];
+              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares)
+                + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
+                - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
+              if (steemPower < lib.MIN_SP) {
+                console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
+                  +", skipping");
+                continue;
+              }
+
               // get post content and rshares of vote
               var content;
               // TODO : cache posts
@@ -138,20 +150,6 @@ function doProcess(startAtBlockNum, callback) {
 
               console.log("- self vote at b " + i + ":t " + j + ":op " +
                 k + ", detail:" + JSON.stringify(opDetail));
-
-              // THEN, check their SP is above minimum
-              // TODO : cache user accounts
-              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
-              var voterAccount = accounts[0];
-              // TODO : take delegated stake into consideration?
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares)
-                + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
-                - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
-              if (steemPower < lib.MIN_SP) {
-                console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
-                  +", skipping");
-                continue;
-              }
 
               // consider for flag queue
               var max_payout = 0;
