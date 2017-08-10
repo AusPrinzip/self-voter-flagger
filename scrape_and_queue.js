@@ -10,7 +10,7 @@ const
   lib = require('./lib.js');
 
 var
-  MAX_BLOCKS_PER_RUN = 9000,
+  MAX_BLOCKS_PER_RUN = 5000,
   MAX_POSTS_TO_CONSIDER = 100; //default
 
 
