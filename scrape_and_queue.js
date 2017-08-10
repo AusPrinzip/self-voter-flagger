@@ -113,10 +113,8 @@ function doProcess(startAtBlockNum, callback) {
 
               // check payout window still open
               var recordOnly = false;
-              var paidOutAlready = false;
               var cashoutTime = moment(content.cashout_time);
               var nowTime = moment(new Date());
-              paidOutAlready = !nowTime.isBefore(cashoutTime);
               cashoutTime.subtract(7, 'hours');
               if (!nowTime.isBefore(cashoutTime)) {
                 console.log("payout window now closed, only keep record," +
@@ -130,7 +128,7 @@ function doProcess(startAtBlockNum, callback) {
                 counted_net_rshares += content.active_votes[m].rshares;
                 if (content.active_votes[m].voter.localeCompare(opDetail.voter) == 0) {
                   voteDetail = content.active_votes[m];
-                  if (!paidOutAlready) {
+                  if (!recordOnly) {
                     break;
                   }
                 }
@@ -154,7 +152,7 @@ function doProcess(startAtBlockNum, callback) {
               // consider for flag queue
               var max_payout = 0;
               var net_rshares = 0;
-              if (!paidOutAlready) {
+              if (!recordOnly) {
                 console.log("content.pending_payout_value: "+content.pending_payout_value);
                 var pending_payout_value = content.pending_payout_value.split(" ");
                 max_payout = Number(pending_payout_value[0]);
