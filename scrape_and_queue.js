@@ -95,8 +95,9 @@ function doProcess(startAtBlockNum, callback) {
                 + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
                 - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
               if (steemPower < lib.MIN_SP) {
-                console.log("SP of "+opDetail.voter+" < min of "+lib.MIN_SP
-                  +", skipping");
+                //console.log("SP of "+opDetail.voter+" < min of
+                // "+lib.MIN_SP
+                  //+", skipping");
                 continue;
               }
 
@@ -244,14 +245,23 @@ function doProcess(startAtBlockNum, callback) {
                   });
                   */
 
-                  var lowest = roi;
                   var idx = -1;
                   for (var m = 0; m < queue.length; m++) {
-                    if (queue[m].total_extrapolated_roi < voterInfos.total_extrapolated_roi) {
-                      lowest = queue[m].total_extrapolated_roi ;
+                    if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
                       idx = m;
+                      break;
                     }
                   }
+                  if (idx < 0) {
+                    var lowest = roi;
+                    for (var m = 0; m < queue.length; m++) {
+                      if (queue[m].total_extrapolated_roi < voterInfos.total_extrapolated_roi) {
+                        lowest = queue[m].total_extrapolated_roi ;
+                        idx = m;
+                      }
+                    }
+                  }
+                  
                   if (idx >= 0) {
                     console.log(" - - - removing existing lower roi " +
                       " user " + queue[idx].voter + " with total" +
