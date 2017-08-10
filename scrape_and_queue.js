@@ -106,11 +106,29 @@ function doProcess(startAtBlockNum, callback) {
                   " Error: post content response not defined");
                 continue;
               }
+
+              // check payout window still open
+              var recordOnly = false;
+              var paidOutAlready = false;
+              var cashoutTime = moment(content.cashout_time);
+              var nowTime = moment(new Date());
+              paidOutAlready = !nowTime.isBefore(cashoutTime);
+              cashoutTime.subtract(7, 'hours');
+              if (!nowTime.isBefore(cashoutTime)) {
+                console.log("payout window now closed, only keep record," +
+                  " do not consider for flag");
+                recordOnly = true;
+              }
+
               var voteDetail = null;
+              var counted_net_rshares = 0;
               for (var m = 0; m < content.active_votes.length; m++) {
+                counted_net_rshares += content.active_votes[m].rshares;
                 if (content.active_votes[m].voter.localeCompare(opDetail.voter) == 0) {
                   voteDetail = content.active_votes[m];
-                  break;
+                  if (!paidOutAlready) {
+                    break;
+                  }
                 }
               }
               if (voteDetail === null) {
@@ -129,19 +147,6 @@ function doProcess(startAtBlockNum, callback) {
               console.log("- self vote at b " + i + ":t " + j + ":op " +
                 k + ", detail:" + JSON.stringify(opDetail));
 
-              // THIRD, check payout window still open
-              var recordOnly = false;
-              var paidOutAlready = false;
-              var cashoutTime = moment(content.cashout_time);
-              var nowTime = moment(new Date());
-              paidOutAlready = !nowTime.isBefore(cashoutTime);
-              cashoutTime.subtract(7, 'hours');
-              if (!nowTime.isBefore(cashoutTime)) {
-                console.log("payout window now closed, only keep record," +
-                  " do not consider for flag");
-                recordOnly = true;
-              }
-
               // THEN, check their SP is above minimum
               // TODO : cache user accounts
               var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
@@ -159,26 +164,29 @@ function doProcess(startAtBlockNum, callback) {
               numHighSpCommentSelfVotes++;
 
               // consider for flag queue
-              console.log("content.net_rshares: "+content.net_rshares);
               var max_payout = 0;
+              var net_rshares = 0;
               if (!paidOutAlready) {
                 console.log("content.pending_payout_value: "+content.pending_payout_value);
                 var pending_payout_value = content.pending_payout_value.split(" ");
                 max_payout = Number(pending_payout_value[0]);
+                net_rshares = content.net_rshares;
               } else {
                 console.log("content.total_payout_value: "+content.total_payout_value);
                 var total_payout_value = content.total_payout_value.split(" ");
                 max_payout = Number(total_payout_value[0]);
+                net_rshares = counted_net_rshares;
               }
+              console.log("net_rshares: "+net_rshares);
 
               var self_vote_payout;
               if (max_payout <= 0.00) {
                 self_vote_payout = 0;
               } else if (content.active_votes.length === 1
-                  || voteDetail.rshares === Number(content.net_rshares)) {
+                  || voteDetail.rshares === Number(net_rshares)) {
                 self_vote_payout = max_payout;
               } else {
-                self_vote_payout = max_payout * (voteDetail.rshares / Number(content.net_rshares));
+                self_vote_payout = max_payout * (voteDetail.rshares / Number(net_rshares));
               }
               if (self_vote_payout < 0) {
                 self_vote_payout = 0;
