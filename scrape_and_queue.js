@@ -131,9 +131,11 @@ function doProcess(startAtBlockNum, callback) {
 
               // THIRD, check payout window still open
               var recordOnly = false;
+              var paidOutAlready = false;
               var cashoutTime = moment(content.cashout_time);
-              cashoutTime.subtract(7, 'hours');
               var nowTime = moment(new Date());
+              paidOutAlready = !nowTime.isBefore(cashoutTime);
+              cashoutTime.subtract(7, 'hours');
               if (!nowTime.isBefore(cashoutTime)) {
                 console.log("payout window now closed, only keep record," +
                   " do not consider for flag");
@@ -157,18 +159,26 @@ function doProcess(startAtBlockNum, callback) {
               numHighSpCommentSelfVotes++;
 
               // consider for flag queue
-              console.log("content.pending_payout_value: "+content.pending_payout_value);
-              var pending_payout_value = content.pending_payout_value.split(" ");
-              var pending_payout_value_NUM = Number(pending_payout_value[0]);
               console.log("content.net_rshares: "+content.net_rshares);
+              var max_payout = 0;
+              if (!paidOutAlready) {
+                console.log("content.pending_payout_value: "+content.pending_payout_value);
+                var pending_payout_value = content.pending_payout_value.split(" ");
+                max_payout = Number(pending_payout_value[0]);
+              } else {
+                console.log("content.total_payout_value: "+content.total_payout_value);
+                var total_payout_value = content.total_payout_value.split(" ");
+                max_payout = Number(total_payout_value[0]);
+              }
+
               var self_vote_payout;
-              if (pending_payout_value_NUM <= 0.00) {
+              if (max_payout <= 0.00) {
                 self_vote_payout = 0;
               } else if (content.active_votes.length === 1
                   || voteDetail.rshares === Number(content.net_rshares)) {
-                self_vote_payout = pending_payout_value_NUM;
+                self_vote_payout = max_payout;
               } else {
-                self_vote_payout = pending_payout_value_NUM * (voteDetail.rshares / Number(content.net_rshares));
+                self_vote_payout = max_payout * (voteDetail.rshares / Number(content.net_rshares));
               }
               if (self_vote_payout < 0) {
                 self_vote_payout = 0;
