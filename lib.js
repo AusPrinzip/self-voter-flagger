@@ -404,6 +404,8 @@ module.exports.DB_RUNS = DB_RUNS;
 module.exports.DB_QUEUE = DB_QUEUE;
 module.exports.DB_FLAGLIST = DB_FLAGLIST;
 
+module.exports.MIN_SP = MIN_SP;
+
 // getters
 
 module.exports.getAccount = function() {return mAccount};
