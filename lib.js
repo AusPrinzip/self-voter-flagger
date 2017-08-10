@@ -20,7 +20,7 @@ const
   DATE_FORMAT = "dddd, MMMM Do YYYY, h:mm:ss a";
 
 var
-  MIN_SP;
+  MIN_SP = 1000;
 
 var db;
 
