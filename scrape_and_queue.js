@@ -11,7 +11,7 @@ const
 
 var
   MAX_BLOCKS_PER_RUN = 7000,
-  MAX_POSTS_TO_CONSIDER = 100; //default
+  MAX_POSTS_TO_CONSIDER = 20; //default
 
 
 function main() {
@@ -261,7 +261,7 @@ function doProcess(startAtBlockNum, callback) {
                       }
                     }
                   }
-                  
+
                   if (idx >= 0) {
                     console.log(" - - - removing existing lower roi " +
                       " user " + queue[idx].voter + " with total" +
