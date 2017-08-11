@@ -61,7 +61,7 @@ function doProcess(callback) {
       return;
     }
     queue.sort(function (a, b) {
-      return b.self_vote_payout - a.self_vote_payout;
+      return b.total_extrapolated_roi - a.total_extrapolated_roi;
     });
 
     var count = 0;
