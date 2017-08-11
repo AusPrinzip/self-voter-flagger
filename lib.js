@@ -244,6 +244,12 @@ function mongoSave_wrapper(collection, obj, callback) {
   });
 }
 
+function mongoRemove_wrapper(collection, obj, callback) {
+  db.collection(collection).remove(obj, function (err, data) {
+    callback(err, data);
+  });
+}
+
 // --- STEEM FUNCS
 
 /*
@@ -420,6 +426,7 @@ module.exports.setAccount = function(account) {mAccount = account;};
 // functions
 
 module.exports.mongoSave_wrapper = mongoSave_wrapper;
+module.exports.mongoRemove_wrapper = mongoRemove_wrapper;
 module.exports.getVoterFromDb = getVoterFromDb;
 module.exports.getAllRuns_reset = getAllRuns_reset;
 module.exports.getAllRuns = getAllRuns;

@@ -166,8 +166,9 @@ function doProcess(callback) {
             console.log("Vote result: " + JSON.stringify(voteResult));
           } catch (err) {
             console.log("Error voting: " + JSON.stringify(err));
-            callback();
-            return;
+            //callback();
+            //return;
+            continue;
           }
           console.log("Wait 3.5 seconds to allow vote limit to" +
             " reset");
@@ -183,10 +184,13 @@ function doProcess(callback) {
     }
     // update db
     console.log("update db");
+    /*
     lib.mongo_dropQueue_wrapper();
     for (var i = 1; i < queue.length; i++) {
       wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
     }
+    */
+    wait.for(lib.mongoRemove_wrapper, lib.DB_QUEUE, queue[0]);
     callback();
   });
 }
