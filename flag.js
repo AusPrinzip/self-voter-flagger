@@ -126,24 +126,28 @@ function doProcess(callback) {
       console.log(" - - total vests: " + totalVests);
 
       var steempower = lib.getSteemPowerFromVest(totalVests);
-      console.log("steem power: " + steempower);
+      //console.log("steem power: " + steempower);
       var sp_scaled_vests = steempower / steem_per_vest;
-      console.log("sp_scaled_vests: " + sp_scaled_vests);
+      //console.log("sp_scaled_vests: " + sp_scaled_vests);
 
       var oneval = ((item.self_vote_payout * 100) / (sp_scaled_vests * 100 * reward_pool * sbd_per_steem)) * 42;
-      console.log("oneval: " + oneval);
+      //console.log("oneval: " + oneval);
 
       var votingpower = (oneval / (100 * (100 * vp) / lib.VOTE_POWER_1_PC)) * 100;
-      console.log("voting power: " + votingpower);
+      //console.log("voting power: " + votingpower);
 
       if (votingpower > 100) {
         votingpower = 100;
-        console.log("capped voting power to 100%");
+        //console.log("capped voting power to 100%");
       }
 
       var counter_percentage = -votingpower;
 
-      console.log("countering percentage: " + counter_percentage);
+      //console.log("countering percentage: " + counter_percentage);
+
+      var counter_pc_int = parseInt(counter_percentage.toFixed(2) * lib.VOTE_POWER_1_PC);
+
+      console.log("countering percentage int: " + counter_pc_int);
       console.log("Voting...");
       var restricted = false;
       if (lib.getTestAuthorList() !== null
@@ -167,7 +171,7 @@ function doProcess(callback) {
               process.env.STEEM_USER,
               voter,
               item.permlink,
-              parseInt(counter_percentage.toFixed(2) * lib.VOTE_POWER_1_PC)); // adjust
+              counter_pc_int);
             // pc to
             // Steem scaling
             console.log("Vote result: " + JSON.stringify(voteResult));
