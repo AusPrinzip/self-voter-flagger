@@ -71,6 +71,8 @@ function doProcess(callback) {
       var voter = queue[0].voter;
       var item = queue[0].comments[k];
 
+      console.log("** processing for user: "+voter);
+
       // check payout window still open (only when active)
       if (process.env.ACTIVE !== undefined
         && process.env.ACTIVE !== null
@@ -103,7 +105,7 @@ function doProcess(callback) {
         }
       }
 
-      console.log("** processing item " + i + ": " + JSON.stringify(item));
+      console.log("** processing item " + k + ": " + JSON.stringify(item));
       // update account
       var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
       lib.setAccount(accounts[0]);
