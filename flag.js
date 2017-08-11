@@ -15,21 +15,8 @@ const
 function main() {
   lib.start(function () {
     doProcess(function () {
-      resetQueue(function () {
-        console.log("Finished");
-      });
+      console.log("Finished");
     });
-  });
-}
-
-function resetQueue(callback) {
-  wait.launchFiber(function () {
-    if (process.env.ACTIVE !== undefined
-      && process.env.ACTIVE !== null
-      && process.env.ACTIVE.localeCompare("true") == 0) {
-      lib.mongo_dropQueue_wrapper();
-    }
-    callback();
   });
 }
 
