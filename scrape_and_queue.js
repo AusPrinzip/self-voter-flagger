@@ -10,7 +10,7 @@ const
   lib = require('./lib.js');
 
 var
-  MAX_BLOCKS_PER_RUN = 7000,
+  MAX_MINS_TO_RUN = 50,
   MAX_POSTS_TO_CONSIDER = 20; //default
 
 
@@ -43,7 +43,13 @@ function doProcess(startAtBlockNum, callback) {
     var firstBlockMoment = null;
     var currentBlockNum = 0;
     var dayBlocked = false;
-    for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number && i <= (startAtBlockNum + MAX_BLOCKS_PER_RUN); i++) {
+    var endTime = moment(new Date()).add(MAX_MINS_TO_RUN, "minute");
+    for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number ; i++) {
+      if (moment(new Date()).isAfter(endTime)) {
+        console.log("Max time reached, stopping");
+        currentBlockNum --;
+        break;
+      }
       currentBlockNum = i;
       var block = wait.for(lib.steem_getBlock_wrapper, i);
       // create current time moment from block infos
