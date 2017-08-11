@@ -54,7 +54,7 @@ function doProcess(callback) {
 
 
     // get queue and sort largest self vote payout first
-    var queue = wait.for(lib.getAllQueue());
+    var queue = wait.for(lib.getAllQueue);
     if (queue === undefined || queue === null || queue.length === 0) {
       console.log("Nothing in queue! Exiting");
       callback();
