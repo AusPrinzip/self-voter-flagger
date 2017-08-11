@@ -89,18 +89,7 @@ function doProcess(callback) {
           if (!nowTime.isBefore(cashoutTime)) {
             console.log("payout window now closed, remove from queue and" +
               " move on :(");
-            // update db
-            console.log("update db");
-            lib.mongo_dropQueue_wrapper();
-            var newQueue = [];
-            for (var i = 1; i < queue.length; i++) {
-              wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
-              newQueue.push(queue[i]);
-            }
-            queue = newQueue;
-            //continue;
-            callback();
-            return;
+            continue;
           }
         }
       }
@@ -184,12 +173,6 @@ function doProcess(callback) {
             " reset");
           wait.for(lib.timeout_wrapper, 3500);
           console.log("Finished waiting");
-          // update db
-          console.log("update db");
-          lib.mongo_dropQueue_wrapper();
-          for (var i = 1; i < queue.length; i++) {
-            wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
-          }
         } else {
           console.log("Bot not in active state, not voting");
         }
@@ -197,6 +180,12 @@ function doProcess(callback) {
         console.log("Not voting, author restriction list not" +
           " met");
       }
+    }
+    // update db
+    console.log("update db");
+    lib.mongo_dropQueue_wrapper();
+    for (var i = 1; i < queue.length; i++) {
+      wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
     }
     callback();
   });
