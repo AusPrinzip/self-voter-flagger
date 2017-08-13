@@ -191,6 +191,8 @@ function doProcess(startAtBlockNum, callback) {
               if (self_vote_payout > 0) {
                 roi = (self_vote_payout / (steemPower * sbd_per_steem)) * 100;
               }
+              // cap at 10^(-20) precision to avoid exponent form
+              roi = Number(roi.toFixed(20));
 
               // update voter info
               if (voterInfos === null || voterInfos === undefined) {
