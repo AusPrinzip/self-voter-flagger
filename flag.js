@@ -16,6 +16,9 @@ function main() {
   lib.start(function () {
     doProcess(function () {
       console.log("Finished");
+      setTimeout(function() {
+        process.exit();
+      }, 5000);
     });
   });
 }

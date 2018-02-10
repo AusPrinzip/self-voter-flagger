@@ -18,10 +18,16 @@ function main() {
   lib.start(function () {
     if (lib.getLastInfos().blocked) {
       console.log("Day blocked - edit value to unblock");
+      setTimeout(function() {
+        process.exit();
+      }, 5000);
       return;
     }
     doProcess(lib.getLastInfos().lastBlock + 1, function () {
       console.log("Finished");
+      setTimeout(function() {
+        process.exit();
+      }, 5000);
     });
   });
 }
