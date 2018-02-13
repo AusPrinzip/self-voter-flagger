@@ -43,7 +43,13 @@ function doProcess(startAtBlockNum, callback) {
       queue = [];
     }
     // facts from blockchain
-    var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
+    try {
+      var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
+    } catch (err) {
+      console.log("Couldnt get price info, aborting");
+      callback();
+      return;
+    }
     var sbd_per_steem = price_info.base.replace(" SBD", "") / price_info.quote.replace(" STEEM", "");
     // set up vars
     var firstBlockMoment = null;
@@ -57,7 +63,15 @@ function doProcess(startAtBlockNum, callback) {
         break;
       }
       currentBlockNum = i;
-      var block = wait.for(lib.steem_getBlock_wrapper, i);
+      try {
+        var block = wait.for(lib.steem_getBlock_wrapper, i);
+      } catch(err) {
+        console.log("Getting block failed, finish gravefully");
+        finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+          callback();
+        });
+        return;
+      }
       // create current time moment from block infos
       var latestBlockMoment = moment(block. timestamp, moment.ISO_8601);
       if (firstBlockMoment === null) {
@@ -92,7 +106,7 @@ function doProcess(startAtBlockNum, callback) {
                 continue;
               }
 
-              // check voter db for same vote
+              // try to get voter info from db
               var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
 
               // THEN, check vote is a self vote
@@ -101,11 +115,27 @@ function doProcess(startAtBlockNum, callback) {
               }
 
               // check their SP is above minimum
-              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
+              try {
+                var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
+              } catch(err) {
+                console.log("Get accounts for voter failed, finish gracefully");
+                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+                  callback();
+                });
+                return;
+              }
               var voterAccount = accounts[0];
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares)
-                + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
-                - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
+              try {
+                var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares)
+                  + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
+                  - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
+              } catch(err) {
+                console.log("Get vesting shares for voter failed, finish gracefully");
+                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+                  callback();
+                });
+                return;
+              }
               if (steemPower < lib.MIN_SP) {
                 //console.log("SP of "+opDetail.voter+" < min of
                 // "+lib.MIN_SP
@@ -115,9 +145,15 @@ function doProcess(startAtBlockNum, callback) {
 
               // get post content and rshares of vote
               var content;
-              // TODO : cache posts
-              content = wait.for(lib.steem_getContent_wrapper, opDetail.author,
-                opDetail.permlink);
+              try {
+                content = wait.for(lib.steem_getContent_wrapper, opDetail.author, opDetail.permlink);
+              } catch(err) {
+                console.log("Get post content failed, finish gracefully");
+                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+                  callback();
+                });
+                return;
+              }
               if (content === undefined || content === null) {
                 console.log("Couldn't process operation, continuing." +
                   " Error: post content response not defined");
@@ -313,29 +349,34 @@ function doProcess(startAtBlockNum, callback) {
         }
       }
     }
-    console.log("Processed from block "+startAtBlockNum+" to " + currentBlockNum);
-    wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
-      {
-        start_block: startAtBlockNum,
-        end_block: currentBlockNum
-      });
-    var lastInfos = lib.getLastInfos();
-    lastInfos.lastBlock = currentBlockNum;
-    if (dayBlocked) {
-      lastInfos.blocked = true;
-    }
-    wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
-    lib.setLastInfos(lastInfos);
-    // save queue, but drop it first as we are performing an overwrite
-    lib.mongo_dropQueue_wrapper();
-    wait.for(lib.timeout_wrapper, 200);
-    console.log(" - saving queue of length " + queue.length);
-    for (var i = 0; i < queue.length; i++) {
-      wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
-    }
-    // exit
-    callback();
+    finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, function() {
+      callback();
+    });
   });
+}
+
+function finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, callback) {
+  console.log("Processed from block "+startAtBlockNum+" to " + currentBlockNum);
+  wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
+    {
+      start_block: startAtBlockNum,
+      end_block: currentBlockNum
+    });
+  var lastInfos = lib.getLastInfos();
+  lastInfos.lastBlock = currentBlockNum;
+  if (dayBlocked) {
+    lastInfos.blocked = true;
+  }
+  wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
+  lib.setLastInfos(lastInfos);
+  // save queue, but drop it first as we are performing an overwrite
+  lib.mongo_dropQueue_wrapper();
+  wait.for(lib.timeout_wrapper, 200);
+  console.log(" - saving queue of length " + queue.length);
+  for (var i = 0; i < queue.length; i++) {
+    wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
+  }
+  callback();
 }
 
 
