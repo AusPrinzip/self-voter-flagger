@@ -94,7 +94,8 @@ function doProcess(startAtBlockNum, callback) {
           if (opName !== undefined && opName !== null
             && opName.localeCompare("vote") == 0) {
 
-            // FIRST, screen for comments only
+            // process all posts, not just comments
+            /*
             var permlinkParts = opDetail.permlink.split("-");
             if (permlinkParts.length === 0
               || !S(permlinkParts[0]).startsWith("re")
@@ -104,6 +105,7 @@ function doProcess(startAtBlockNum, callback) {
               //console.log("Not a comment, skipping");
               continue;
             }
+            */
 
             // try to get voter info from db
             var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
