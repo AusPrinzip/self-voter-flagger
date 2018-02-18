@@ -10,7 +10,7 @@ const
   lib = require('./lib.js');
 
 var
-  MAX_MINS_TO_RUN = 50,
+  MAX_MINS_TO_RUN = 5,
   MAX_POSTS_TO_CONSIDER = 20; //default
 
 
