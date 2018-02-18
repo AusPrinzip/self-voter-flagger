@@ -355,7 +355,11 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
   wait.for(lib.saveWrapper, lib.DB_RECORDS, lastInfos);
   lib.setLastInfos(lastInfos);
   // save queue, but drop it first as we are performing an overwrite
-  lib.dropQueueWrapper();
+  try {
+    lib.dropQueueWrapper();
+  } catch (err) {
+    console.log('Couldnt drop queue wrapper db, likely doesnt exist');
+  }
   wait.for(lib.timeoutWait, 200);
   console.log(' - saving queue of length ' + queue.length);
   for (var i = 0; i < queue.length; i++) {
