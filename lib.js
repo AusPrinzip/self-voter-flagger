@@ -40,7 +40,7 @@ function start (callback) {
 
     // steem.config.set('websocket','wss://gtg.steem.house:8090');
     init(function () {
-      getLastInfos(function () {
+      fetchLastInfos(function () {
         callback();
       });
     });
@@ -79,7 +79,7 @@ function getVoterFromDb (voter, callback) {
   });
 }
 
-function getLastInfos (callback) {
+function fetchLastInfos (callback) {
   db.collection(DB_RECORDS).find({}).toArray(function (err, data) {
     if (err || data === null || data === undefined || data.length === 0) {
       console.log('No last infos data in db, is first time run, set up with defaults');
@@ -112,12 +112,6 @@ function getDbCursor (dbName, limit) {
     cursor = db.collection(dbName).find({});
   }
   return cursor;
-}
-
-function getAllRecordsFromDb (dbName, callback) {
-  db.collection(dbName).find({}).toArray(function (err, data) {
-    callback(err, data);
-  });
 }
 
 function getRecordsFromDb (dbName, recordSearchObj, callback) {
@@ -357,7 +351,6 @@ module.exports.setAccount = function (account) { mAccount = account; };
 module.exports.getDbCursor = getDbCursor;
 module.exports.getAllRecordsFromDb = getAllRecordsFromDb;
 module.exports.getRecordsFromDb = getRecordsFromDb;
-module.exports.getAllRecordsFromDb = getAllRecordsFromDb;
 module.exports.getRecordFromDb = getRecordFromDb;
 module.exports.addAllToDb = addAllToDb;
 module.exports.dropDb = dropDb;
