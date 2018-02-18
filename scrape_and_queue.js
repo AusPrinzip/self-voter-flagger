@@ -1,31 +1,25 @@
 'use strict';
 
-const
-  steem = require("steem"),
-  path = require("path"),
-  mongodb = require("mongodb"),
-  moment = require('moment'),
-  S = require('string'),
-  wait = require('wait.for'),
-  lib = require('./lib.js');
+const moment = require('moment');
+// const S = require('string');
+const wait = require('wait.for');
+const lib = require('./lib.js');
 
-var
-  MAX_MINS_TO_RUN = 5,
-  MAX_POSTS_TO_CONSIDER = 20; //default
+var MAX_MINS_TO_RUN = 5;
+var MAX_POSTS_TO_CONSIDER = 20; // default
 
-
-function main() {
+function main () {
   lib.start(function () {
     if (lib.getLastInfos().blocked) {
-      console.log("Day blocked - edit value to unblock");
-      setTimeout(function() {
+      console.log('Day blocked - edit value to unblock');
+      setTimeout(function () {
         process.exit();
       }, 5000);
       return;
     }
     doProcess(lib.getLastInfos().lastBlock + 1, function () {
-      console.log("Finished");
-      setTimeout(function() {
+      console.log('Finished');
+      setTimeout(function () {
         process.exit();
       }, 5000);
     });
@@ -34,46 +28,46 @@ function main() {
 
 var queue = [];
 
-function doProcess(startAtBlockNum, callback) {
-  wait.launchFiber(function() {
+function doProcess (startAtBlockNum, callback) {
+  wait.launchFiber(function () {
     // get queue
     queue = wait.for(lib.getAllQueue);
-    if (queue === undefined
-        || queue === null) {
+    if (queue === undefined ||
+        queue === null) {
       queue = [];
     }
     // facts from blockchain
     try {
-      var price_info = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
+      var priceInfo = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
     } catch (err) {
-      console.log("Couldnt get price info, aborting");
+      console.log('Couldnt get price info, aborting');
       callback();
       return;
     }
-    var sbd_per_steem = price_info.base.replace(" SBD", "") / price_info.quote.replace(" STEEM", "");
+    var sbdPerSteem = priceInfo.base.replace(' SBD', '') / priceInfo.quote.replace(' STEEM', '');
     // set up vars
     var firstBlockMoment = null;
     var currentBlockNum = 0;
     var dayBlocked = false;
-    var endTime = moment(new Date()).add(MAX_MINS_TO_RUN, "minute");
-    for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number ; i++) {
+    var endTime = moment(new Date()).add(MAX_MINS_TO_RUN, 'minute');
+    for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number; i++) {
       if (moment(new Date()).isAfter(endTime)) {
-        console.log("Max time reached, stopping");
-        currentBlockNum --;
+        console.log('Max time reached, stopping');
+        currentBlockNum--;
         break;
       }
       currentBlockNum = i;
       try {
         var block = wait.for(lib.steem_getBlock_wrapper, i);
-      } catch(err) {
-        console.log("Getting block failed, finish gravefully");
-        finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+      } catch (err) {
+        console.log('Getting block failed, finish gravefully');
+        finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
           callback();
         });
         return;
       }
       // create current time moment from block infos
-      var latestBlockMoment = moment(block. timestamp, moment.ISO_8601);
+      var latestBlockMoment = moment(block.timestamp, moment.ISO_8601);
       if (firstBlockMoment === null) {
         firstBlockMoment = latestBlockMoment;
       } else {
@@ -84,16 +78,15 @@ function doProcess(startAtBlockNum, callback) {
           break;
         }
       }
-      //console.log("block info: "+JSON.stringify(block));
+      // console.log("block info: "+JSON.stringify(block));
       var transactions = block.transactions;
       for (var j = 0; j < transactions.length; j++) {
         var transaction = transactions[j];
-        for (var k = 0 ; k < transaction.operations.length ; k++) {
+        for (var k = 0; k < transaction.operations.length; k++) {
           var opName = transaction.operations[k][0];
           var opDetail = transaction.operations[k][1];
-          if (opName !== undefined && opName !== null
-            && opName.localeCompare("vote") == 0) {
-
+          if (opName !== undefined && opName !== null &&
+            opName.localeCompare('vote') === 0) {
             // process all posts, not just comments
             /*
             var permlinkParts = opDetail.permlink.split("-");
@@ -111,36 +104,36 @@ function doProcess(startAtBlockNum, callback) {
             var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
 
             // THEN, check vote is a self vote
-            if (opDetail.voter.localeCompare(opDetail.author) != 0) {
+            if (opDetail.voter.localeCompare(opDetail.author) !== 0) {
               continue;
             }
 
             // check their SP is above minimum
             try {
               var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
-            } catch(err) {
-              console.log("Get accounts for voter failed, finish gracefully");
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+            } catch (err) {
+              console.log('Get accounts for voter failed, finish gracefully');
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
                 callback();
               });
               return;
             }
             var voterAccount = accounts[0];
             try {
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares)
-                + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares)
-                - lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
-            } catch(err) {
-              console.log("Get vesting shares for voter failed, finish gracefully");
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
+                  lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) -
+                  lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
+            } catch (err) {
+              console.log('Get vesting shares for voter failed, finish gracefully');
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
                 callback();
               });
               return;
             }
             if (steemPower < lib.MIN_SP) {
-              //console.log("SP of "+opDetail.voter+" < min of
+              // console.log("SP of "+opDetail.voter+" < min of
               // "+lib.MIN_SP
-                //+", skipping");
+                // +", skipping");
               continue;
             }
 
@@ -148,16 +141,16 @@ function doProcess(startAtBlockNum, callback) {
             var content;
             try {
               content = wait.for(lib.steem_getContent_wrapper, opDetail.author, opDetail.permlink);
-            } catch(err) {
-              console.log("Get post content failed, finish gracefully");
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function() {
+            } catch (err) {
+              console.log('Get post content failed, finish gracefully');
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
                 callback();
               });
               return;
             }
             if (content === undefined || content === null) {
-              console.log("Couldn't process operation, continuing." +
-                " Error: post content response not defined");
+              console.log('Couldnt process operation, continuing.' +
+                ' Error: post content response not defined');
               continue;
             }
 
@@ -167,16 +160,16 @@ function doProcess(startAtBlockNum, callback) {
             var nowTime = moment(new Date());
             cashoutTime.subtract(7, 'hours');
             if (!nowTime.isBefore(cashoutTime)) {
-              console.log("payout window now closed, only keep record," +
-                " do not consider for flag");
+              console.log('payout window now closed, only keep record,' +
+                  ' do not consider for flag');
               recordOnly = true;
             }
 
             var voteDetail = null;
-            var counted_net_rshares = 0;
+            var countedNetRshares = 0;
             for (var m = 0; m < content.active_votes.length; m++) {
-              counted_net_rshares += content.active_votes[m].rshares;
-              if (content.active_votes[m].voter.localeCompare(opDetail.voter) == 0) {
+              countedNetRshares += content.active_votes[m].rshares;
+              if (content.active_votes[m].voter.localeCompare(opDetail.voter) === 0) {
                 voteDetail = content.active_votes[m];
                 if (!recordOnly) {
                   break;
@@ -184,55 +177,55 @@ function doProcess(startAtBlockNum, callback) {
               }
             }
             if (voteDetail === null) {
-              console.log("vote details null, cannot process, skip");
+              console.log('vote details null, cannot process, skip');
               continue;
             }
 
             // THEN, check if vote rshares are > 0
             // note: cancelled self votes have rshares == 0
             if (voteDetail.rshares < 0) {
-              console.log(" - - self flag");
+              console.log(' - - self flag');
             } else if (voteDetail.rshares === 0) {
-              console.log(" - - self vote negated");
+              console.log(' - - self vote negated');
             }
 
-            console.log("- self vote at b " + i + ":t " + j + ":op " +
-              k + ", detail:" + JSON.stringify(opDetail));
+            console.log('- self vote at b ' + i + ':t ' + j + ':op ' +
+              k + ', detail:' + JSON.stringify(opDetail));
 
             // consider for flag queue
-            var max_payout = 0;
-            var net_rshares = 0;
+            var maxPayout = 0;
+            var netRshares = 0;
             if (!recordOnly) {
-              console.log("content.pending_payout_value: "+content.pending_payout_value);
-              var pending_payout_value = content.pending_payout_value.split(" ");
-              max_payout = Number(pending_payout_value[0]);
-              net_rshares = content.net_rshares;
+              console.log('content.pending_payout_value: ' + content.pending_payout_value);
+              var pendingPayoutValue = content.pending_payout_value.split(' ');
+              maxPayout = Number(pendingPayoutValue[0]);
+              netRshares = content.net_rshares;
             } else {
-              console.log("content.total_payout_value: "+content.total_payout_value);
-              var total_payout_value = content.total_payout_value.split(" ");
-              max_payout = Number(total_payout_value[0]);
-              net_rshares = counted_net_rshares;
+              console.log('content.total_payout_value: ' + content.total_payout_value);
+              var totalPayoutValue = content.total_payout_value.split(' ');
+              maxPayout = Number(totalPayoutValue[0]);
+              netRshares = countedNetRshares;
             }
-            console.log("net_rshares: "+net_rshares);
+            console.log('netRshares: ' + netRshares);
 
-            var self_vote_payout;
-            if (max_payout <= 0.00) {
-              self_vote_payout = 0;
-            } else if (content.active_votes.length === 1
-                || voteDetail.rshares === Number(net_rshares)) {
-              self_vote_payout = max_payout;
+            var selfVotePayout;
+            if (maxPayout <= 0.00) {
+              selfVotePayout = 0;
+            } else if (content.active_votes.length === 1 ||
+                  voteDetail.rshares === Number(netRshares)) {
+              selfVotePayout = maxPayout;
             } else {
-              self_vote_payout = max_payout * (voteDetail.rshares / Number(net_rshares));
+              selfVotePayout = maxPayout * (voteDetail.rshares / Number(netRshares));
             }
-            if (self_vote_payout < 0) {
-              self_vote_payout = 0;
+            if (selfVotePayout < 0) {
+              selfVotePayout = 0;
             }
-            console.log("self_vote_payout: "+self_vote_payout);
+            console.log('selfVotePayout: ' + selfVotePayout);
 
             // calculate cumulative extrapolated ROI
-            var roi =  0;
-            if (self_vote_payout > 0) {
-              roi = (self_vote_payout / (steemPower * sbd_per_steem)) * 100;
+            var roi = 0;
+            if (selfVotePayout > 0) {
+              roi = (selfVotePayout / (steemPower * sbdPerSteem)) * 100;
             }
             // cap at 10^(-20) precision to avoid exponent form
             roi = Number(roi.toFixed(20));
@@ -245,27 +238,26 @@ function doProcess(startAtBlockNum, callback) {
                 total_extrapolated_roi: roi,
                 steem_power: steemPower,
                 comments: [
-                    {
-                      permlink: content.permlink,
-                      self_vote_payout: self_vote_payout,
-                      extrapolated_roi: roi
-                    }
-                  ]
+                  {
+                    permlink: content.permlink,
+                    self_vote_payout: selfVotePayout,
+                    extrapolated_roi: roi
+                  }
+                ]
               };
             } else {
-              voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + self_vote_payout;
+              voterInfos.total_self_vote_payout = voterInfos.total_self_vote_payout + selfVotePayout;
               voterInfos.steem_power = steemPower;
               voterInfos.total_extrapolated_roi += roi;
               // check for duplicate permlink, if so then update roi
               var isDuplicate = false;
-              for (var m = 0; m < voterInfos.comments.length; m++) {
+              for (m = 0; m < voterInfos.comments.length; m++) {
                 if (voterInfos.comments[m].permlink.localeCompare(content.permlink) === 0) {
-                  console.log(" - - - new vote is duplicate on top" +
-                    " list, replacing value");
+                  console.log(' - - - new vote is duplicate on top list, replacing value');
                   voterInfos.comments[m].extrapolated_roi = roi;
                   // update total_extrapolated_roi
                   voterInfos.total_extrapolated_roi = 0;
-                  for (var n = 0 ; n < voterInfos.comments.length ; n++) {
+                  for (var n = 0; n < voterInfos.comments.length; n++) {
                     voterInfos.total_extrapolated_roi += voterInfos.comments[n].extrapolated_roi;
                   }
                   isDuplicate = true;
@@ -276,17 +268,17 @@ function doProcess(startAtBlockNum, callback) {
                 voterInfos.comments.push(
                   {
                     permlink: content.permlink,
-                    self_vote_payout: self_vote_payout,
+                    self_vote_payout: selfVotePayout,
                     extrapolated_roi: roi
                   }
                 );
               }
             }
-            //console.log(" - - updated voter info:
+            // console.log(" - - updated voter info:
             // "+JSON.stringify(voterInfos));
 
             if (!recordOnly) {
-              //console.log(" - - - arranging users " + queue.length +
+              // console.log(" - - - arranging users " + queue.length +
               // "...");
               if (queue.length >= MAX_POSTS_TO_CONSIDER) {
                 // first sort with lowest first
@@ -297,7 +289,7 @@ function doProcess(startAtBlockNum, callback) {
                 */
 
                 var idx = -1;
-                for (var m = 0; m < queue.length; m++) {
+                for (m = 0; m < queue.length; m++) {
                   if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
                     idx = m;
                     break;
@@ -305,52 +297,51 @@ function doProcess(startAtBlockNum, callback) {
                 }
                 if (idx < 0) {
                   var lowest = roi;
-                  for (var m = 0; m < queue.length; m++) {
+                  for (m = 0; m < queue.length; m++) {
                     if (queue[m].total_extrapolated_roi < voterInfos.total_extrapolated_roi) {
-                      lowest = queue[m].total_extrapolated_roi ;
+                      lowest = queue[m].total_extrapolated_roi;
                       idx = m;
                     }
                   }
                 }
 
                 if (idx >= 0) {
-                  console.log(" - - - removing existing lower roi " +
-                    " user " + queue[idx].voter + " with total" +
-                    " extrapolated roi of " +
-                    + queue[idx].total_extrapolated_roi);
+                  console.log(' - - - removing existing lower roi user ' +
+                      queue[idx].voter + ' with total extrapolated roi of ' +
+                      queue[idx].total_extrapolated_roi);
                   var newPosts = [];
-                  for (var m = 0; m < queue.length; m++) {
-                    if (m != idx) {
+                  for (m = 0; m < queue.length; m++) {
+                    if (m !== idx) {
                       newPosts.push(queue[m]);
                     }
                   }
                   queue = newPosts;
-                  console.log(" - - - keeping " + queue.length + " queue");
+                  console.log(' - - - keeping ' + queue.length + ' queue');
                 }
               }
 
               if (queue.length < MAX_POSTS_TO_CONSIDER) {
-                console.log(" - - - adding user to top list");
+                console.log(' - - - adding user to top list');
                 queue.push(voterInfos);
               } else {
-                console.log(" - - - not adding post to top list");
+                console.log(' - - - not adding post to top list');
               }
             }
 
             wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
-            //console.log("* voter updated: "+JSON.stringify(voterInfos));
+            // console.log("* voter updated: "+JSON.stringify(voterInfos));
           }
         }
       }
     }
-    finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, function() {
+    finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, function () {
       callback();
     });
   });
 }
 
-function finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, callback) {
-  console.log("Processed from block "+startAtBlockNum+" to " + currentBlockNum);
+function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, callback) {
+  console.log('Processed from block ' + startAtBlockNum + ' to ' + currentBlockNum);
   wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
     {
       start_block: startAtBlockNum,
@@ -366,13 +357,12 @@ function finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, c
   // save queue, but drop it first as we are performing an overwrite
   lib.mongo_dropQueue_wrapper();
   wait.for(lib.timeout_wrapper, 200);
-  console.log(" - saving queue of length " + queue.length);
+  console.log(' - saving queue of length ' + queue.length);
   for (var i = 0; i < queue.length; i++) {
     wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
   }
   callback();
 }
-
 
 // START THIS SCRIPT
 main();
