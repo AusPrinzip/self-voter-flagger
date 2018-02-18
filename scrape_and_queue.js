@@ -31,6 +31,7 @@ var queue = [];
 function doProcess (startAtBlockNum, callback) {
   wait.launchFiber(function () {
     // get queue
+    console.log('getting queue...');
     try {
       queue = wait.for(lib.getAllRecordsFromDb, lib.DB_QUEUE);
       if (queue === undefined || queue === null) {
@@ -40,6 +41,7 @@ function doProcess (startAtBlockNum, callback) {
       queue = [];
     }
     // facts from blockchain
+    console.log('getting blockhain info...');
     try {
       var priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
     } catch (err) {
@@ -50,20 +52,20 @@ function doProcess (startAtBlockNum, callback) {
     var sbdPerSteem = priceInfo.base.replace(' SBD', '') / priceInfo.quote.replace(' STEEM', '');
     // set up vars
     var firstBlockMoment = null;
-    var currentBlockNum = 0;
+    var currentBlockNum = startAtBlockNum;
     var dayBlocked = false;
     var endTime = moment(new Date()).add(MAX_MINS_TO_RUN, 'minute');
     for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number; i++) {
+      currentBlockNum = i;
       if (moment(new Date()).isAfter(endTime)) {
         console.log('Max time reached, stopping');
         currentBlockNum--;
         break;
       }
-      currentBlockNum = i;
       try {
         var block = wait.for(lib.getBlock, i);
       } catch (err) {
-        console.log('Getting block failed, finish gravefully');
+        console.log('Getting block failed, finish gracefully');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
           callback();
         });
