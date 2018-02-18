@@ -195,7 +195,11 @@ function getAllQueue (callback) {
 }
 
 function dropQueueWrapper () {
-  db.collection(DB_QUEUE).drop();
+  try {
+    db.collection(DB_QUEUE).drop();
+  } catch (err) {
+    // do nothing
+  }
 }
 
 var flagCursor = null;
