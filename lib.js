@@ -163,7 +163,7 @@ function addAllToDb (dbName, records, callback) {
   });
 }
 
-function dropDb (dbName) {
+function dropDb (dbName, callback) {
   getDbCursor(dbName).count(function (err, count) {
     if (err) {
       console.error(err);
@@ -172,6 +172,7 @@ function dropDb (dbName) {
     } else {
       console.log('Cant drop db ' + dbName + ', no records');
     }
+    callback(err, null);
   });
 }
 
