@@ -104,143 +104,82 @@ function getLastInfos (callback) {
 
 // --- DB FUNCS
 
-var votersCursor = null;
-
-function getAllVotersReset (limit) {
-  if (votersCursor === null) {
-    if (limit !== undefined && limit !== null) {
-      votersCursor = db.collection(DB_VOTERS).find({}).limit(limit);
-    } else {
-      votersCursor = db.collection(DB_VOTERS).find({});
-    }
+function getDbCursor (dbName, limit) {
+  var cursor = null;
+  if (limit !== undefined && limit !== null) {
+    cursor = db.collection(dbName).find({}).limit(limit);
   } else {
-    votersCursor = votersCursor.rewind();
+    cursor = db.collection(dbName).find({});
   }
+  return cursor;
 }
 
-function getAllVoters (callback) {
-  console.log('getAllVoters');
-  if (votersCursor === null || votersCursor.isClosed()) {
-    console.log('-reset voter db cursor');
-    getAllVotersReset();
-  }
-  votersCursor.toArray(function (err, data) {
-    console.log('db voters collection');
-    callback(err, data);
+function getAllRecordsFromDb (dbName, callback) {
+  db.collection(dbName).find({}).toArray(function (err, data) {
+    if (callback !== undefined && callback !== null) {
+      if (err || data === null || data === undefined) {
+        callback(data);
+      }
+      callback(null);
+    }
   });
 }
 
-function getEachVoter (callback) {
-  console.log('getEachVoter');
-  if (votersCursor === null || votersCursor.isClosed()) {
-    callback(null, []);
-  } else {
-    votersCursor.each(function (err, data) {
-      console.log('db voters collection');
+function getRecordsFromDb (dbName, recordSearchObj, callback) {
+  db.collection(dbName).find(recordSearchObj).toArray(function (err, data) {
+    if (callback !== undefined && callback !== null) {
+      if (err) {
+        callback(err, null);
+      } else if (data === null || data === undefined || data.length === 0) {
+        callback(null, null);
+      } else {
+        callback(null, data);
+      }
+    }
+  });
+}
+
+function getAllRecordsFromDb (dbName, callback) {
+  getRecordsFromDb(dbName, {}, callback);
+}
+
+function getRecordFromDb (dbName, recordSearchObj, callback) {
+  getRecordsFromDb(dbName, recordSearchObj, function (err, data) {
+    if (err) {
+      callback(err, null);
+    } else if (data === null || data === undefined || data.length === 0) {
+      callback(null, null);
+    } else {
+      callback(null, data[0]);
+    }
+  });
+}
+
+function addAllToDb (dbName, records, callback) {
+  db.collection(dbName).insertMany(records, function (err, data) {
+    if (callback !== undefined && callback !== null) {
       callback(err, data);
-    });
-  }
-}
-
-var runsCursor = null;
-
-function getAllRunsReset (limit) {
-  if (runsCursor === null) {
-    if (limit !== undefined && limit !== null) {
-      runsCursor = db.collection(DB_RUNS).find({}).limit(limit);
-    } else {
-      runsCursor = db.collection(DB_RUNS).find({});
     }
-  } else {
-    runsCursor = runsCursor.rewind();
-  }
-}
-
-function getAllRuns (callback) {
-  console.log('getAllRuns');
-  if (runsCursor === null || runsCursor.isClosed()) {
-    console.log('-reset runs db cursor');
-    getAllRunsReset();
-  }
-  runsCursor.toArray(function (err, data) {
-    console.log('db runs collection');
-    callback(err, data);
   });
 }
 
-var queueCursor = null;
-
-function getAllQueueReset (limit) {
-  if (queueCursor === null) {
-    if (limit !== undefined && limit !== null) {
-      queueCursor = db.collection(DB_QUEUE).find({}).limit(limit);
+function dropDb (dbName) {
+  getDbCursor(dbName).count(function (err, count) {
+    if (err) {
+      console.error(err);
+    } else if (count > 0) {
+      db.collection(dbName).drop();
     } else {
-      queueCursor = db.collection(DB_QUEUE).find({});
+      console.log('Cant drop db ' + dbName + ', no records');
     }
-  } else {
-    queueCursor = queueCursor.rewind();
-  }
-}
-
-function getAllQueue (callback) {
-  console.log('getAllQueue');
-  if (queueCursor === null || queueCursor.isClosed()) {
-    console.log('-reset queue db cursor');
-    getAllQueueReset();
-  }
-  queueCursor.toArray(function (err, data) {
-    console.log('db queue collection');
-    callback(err, data);
   });
 }
 
-function dropQueueWrapper () {
-  try {
-    db.collection(DB_QUEUE).drop();
-  } catch (err) {
-    // do nothing
-  }
-}
-
-var flagCursor = null;
-
-function getAllFlagReset (limit) {
-  if (flagCursor === null) {
-    if (limit !== undefined && limit !== null) {
-      flagCursor = db.collection(DB_FLAGLIST).find({}).limit(limit);
-    } else {
-      flagCursor = db.collection(DB_FLAGLIST).find({});
+function saveDb (dbName, obj, callback) {
+  db.collection(dbName).save(obj, function (err, data) {
+    if (callback !== undefined && callback !== null) {
+      callback(err, data);
     }
-  } else {
-    flagCursor = flagCursor.rewind();
-  }
-}
-
-function getAllFlag (callback) {
-  console.log('getAllFlag');
-  if (flagCursor === null || flagCursor.isClosed()) {
-    console.log('-reset flag db cursor');
-    getAllFlagReset();
-  }
-  flagCursor.toArray(function (err, data) {
-    console.log('db flag collection');
-    callback(err, data);
-  });
-}
-
-function dropFlagWrapper () {
-  db.collection(DB_FLAGLIST).drop();
-}
-
-function saveWrapper (collection, obj, callback) {
-  db.collection(collection).save(obj, function (err, data) {
-    callback(err, data);
-  });
-}
-
-function removeWrapper (collection, obj, callback) {
-  db.collection(collection).remove(obj, function (err, data) {
-    callback(err, data);
   });
 }
 
@@ -419,20 +358,14 @@ module.exports.setAccount = function (account) { mAccount = account; };
 
 // functions
 
-module.exports.saveWrapper = saveWrapper;
-module.exports.removeWrapper = removeWrapper;
-module.exports.getVoterFromDb = getVoterFromDb;
-module.exports.getAllRunsReset = getAllRunsReset;
-module.exports.getAllRuns = getAllRuns;
-module.exports.getAllVotersReset = getAllVotersReset;
-module.exports.getAllVoters = getAllVoters;
-module.exports.getEachVoter = getEachVoter;
-module.exports.getAllQueueReset = getAllQueueReset;
-module.exports.getAllQueue = getAllQueue;
-module.exports.dropQueueWrapper = dropQueueWrapper;
-module.exports.getAllFlagReset = getAllFlagReset;
-module.exports.getAllFlag = getAllFlag;
-module.exports.dropFlagWrapper = dropFlagWrapper;
+module.exports.getDbCursor = getDbCursor;
+module.exports.getAllRecordsFromDb = getAllRecordsFromDb;
+module.exports.getRecordsFromDb = getRecordsFromDb;
+module.exports.getAllRecordsFromDb = getAllRecordsFromDb;
+module.exports.getRecordFromDb = getRecordFromDb;
+module.exports.addAllToDb = addAllToDb;
+module.exports.dropDb = dropDb;
+module.exports.saveDb = saveDb;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.getBlockHeader = getBlockHeader;

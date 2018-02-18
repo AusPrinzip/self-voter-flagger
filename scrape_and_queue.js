@@ -31,9 +31,12 @@ var queue = [];
 function doProcess (startAtBlockNum, callback) {
   wait.launchFiber(function () {
     // get queue
-    queue = wait.for(lib.getAllQueue);
-    if (queue === undefined ||
-        queue === null) {
+    try {
+      queue = wait.for(lib.getAllRecordsFromDb, lib.DB_QUEUE);
+      if (queue === undefined || queue === null) {
+        queue = [];
+      }
+    } catch (err) {
       queue = [];
     }
     // facts from blockchain
@@ -328,7 +331,7 @@ function doProcess (startAtBlockNum, callback) {
               }
             }
 
-            wait.for(lib.saveWrapper, lib.DB_VOTERS, voterInfos);
+            wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
             // console.log("* voter updated: "+JSON.stringify(voterInfos));
           }
         }
@@ -342,7 +345,7 @@ function doProcess (startAtBlockNum, callback) {
 
 function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, callback) {
   console.log('Processed from block ' + startAtBlockNum + ' to ' + currentBlockNum);
-  wait.for(lib.saveWrapper, lib.DB_RUNS,
+  wait.for(lib.saveDb, lib.DB_RUNS,
     {
       start_block: startAtBlockNum,
       end_block: currentBlockNum
@@ -352,18 +355,18 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
   if (dayBlocked) {
     lastInfos.blocked = true;
   }
-  wait.for(lib.saveWrapper, lib.DB_RECORDS, lastInfos);
+  wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
   lib.setLastInfos(lastInfos);
   // save queue, but drop it first as we are performing an overwrite
   try {
-    lib.dropQueueWrapper();
+    lib.dropDb(lib.DB_QUEUE);
   } catch (err) {
     console.log('Couldnt drop queue wrapper db, likely doesnt exist');
   }
   wait.for(lib.timeoutWait, 200);
   console.log(' - saving queue of length ' + queue.length);
   for (var i = 0; i < queue.length; i++) {
-    wait.for(lib.saveWrapper, lib.DB_QUEUE, queue[i]);
+    wait.for(lib.saveDb, lib.DB_QUEUE, queue[i]);
   }
   callback();
 }
