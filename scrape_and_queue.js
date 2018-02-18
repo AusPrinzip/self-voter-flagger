@@ -359,7 +359,7 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
   lib.setLastInfos(lastInfos);
   // save queue, but drop it first as we are performing an overwrite
   try {
-    lib.dropDb(lib.DB_QUEUE);
+    wait.for(lib.dropDb, lib.DB_QUEUE);
   } catch (err) {
     console.log('Couldnt drop queue wrapper db, likely doesnt exist');
   }

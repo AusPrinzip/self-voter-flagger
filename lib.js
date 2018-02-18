@@ -116,12 +116,7 @@ function getDbCursor (dbName, limit) {
 
 function getAllRecordsFromDb (dbName, callback) {
   db.collection(dbName).find({}).toArray(function (err, data) {
-    if (callback !== undefined && callback !== null) {
-      if (err || data === null || data === undefined) {
-        callback(data);
-      }
-      callback(null);
-    }
+    callback(err, data);
   });
 }
 
