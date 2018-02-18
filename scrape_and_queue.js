@@ -38,7 +38,7 @@ function doProcess (startAtBlockNum, callback) {
     }
     // facts from blockchain
     try {
-      var priceInfo = wait.for(lib.steem_getCurrentMedianHistoryPrice_wrapper);
+      var priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
     } catch (err) {
       console.log('Couldnt get price info, aborting');
       callback();
@@ -58,7 +58,7 @@ function doProcess (startAtBlockNum, callback) {
       }
       currentBlockNum = i;
       try {
-        var block = wait.for(lib.steem_getBlock_wrapper, i);
+        var block = wait.for(lib.getBlock, i);
       } catch (err) {
         console.log('Getting block failed, finish gravefully');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
@@ -110,7 +110,7 @@ function doProcess (startAtBlockNum, callback) {
 
             // check their SP is above minimum
             try {
-              var accounts = wait.for(lib.steem_getAccounts_wrapper, opDetail.voter);
+              var accounts = wait.for(lib.getSteemAccounts, opDetail.voter);
             } catch (err) {
               console.log('Get accounts for voter failed, finish gracefully');
               finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
@@ -140,7 +140,7 @@ function doProcess (startAtBlockNum, callback) {
             // get post content and rshares of vote
             var content;
             try {
-              content = wait.for(lib.steem_getContent_wrapper, opDetail.author, opDetail.permlink);
+              content = wait.for(lib.getPostContent, opDetail.author, opDetail.permlink);
             } catch (err) {
               console.log('Get post content failed, finish gracefully');
               finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
@@ -328,7 +328,7 @@ function doProcess (startAtBlockNum, callback) {
               }
             }
 
-            wait.for(lib.mongoSave_wrapper, lib.DB_VOTERS, voterInfos);
+            wait.for(lib.saveWrapper, lib.DB_VOTERS, voterInfos);
             // console.log("* voter updated: "+JSON.stringify(voterInfos));
           }
         }
@@ -342,7 +342,7 @@ function doProcess (startAtBlockNum, callback) {
 
 function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, callback) {
   console.log('Processed from block ' + startAtBlockNum + ' to ' + currentBlockNum);
-  wait.for(lib.mongoSave_wrapper, lib.DB_RUNS,
+  wait.for(lib.saveWrapper, lib.DB_RUNS,
     {
       start_block: startAtBlockNum,
       end_block: currentBlockNum
@@ -352,14 +352,14 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
   if (dayBlocked) {
     lastInfos.blocked = true;
   }
-  wait.for(lib.mongoSave_wrapper, lib.DB_RECORDS, lastInfos);
+  wait.for(lib.saveWrapper, lib.DB_RECORDS, lastInfos);
   lib.setLastInfos(lastInfos);
   // save queue, but drop it first as we are performing an overwrite
-  lib.mongo_dropQueue_wrapper();
-  wait.for(lib.timeout_wrapper, 200);
+  lib.dropQueueWrapper();
+  wait.for(lib.timeoutWait, 200);
   console.log(' - saving queue of length ' + queue.length);
   for (var i = 0; i < queue.length; i++) {
-    wait.for(lib.mongoSave_wrapper, lib.DB_QUEUE, queue[i]);
+    wait.for(lib.saveWrapper, lib.DB_QUEUE, queue[i]);
   }
   callback();
 }
