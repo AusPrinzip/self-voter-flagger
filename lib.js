@@ -114,6 +114,12 @@ function getDbCursor (dbName, limit) {
   return cursor;
 }
 
+function getAllRecordsFromDb (dbName, callback) {
+  db.collection(dbName).find({}).toArray(function (err, data) {
+    callback(err, data);
+  });
+}
+
 function getRecordsFromDb (dbName, recordSearchObj, callback) {
   db.collection(dbName).find(recordSearchObj).toArray(function (err, data) {
     if (callback !== undefined && callback !== null) {
@@ -126,10 +132,6 @@ function getRecordsFromDb (dbName, recordSearchObj, callback) {
       }
     }
   });
-}
-
-function getAllRecordsFromDb (dbName, callback) {
-  getRecordsFromDb(dbName, {}, callback);
 }
 
 function getRecordFromDb (dbName, recordSearchObj, callback) {
