@@ -298,7 +298,7 @@ function doProcess (startAtBlockNum, callback) {
                 if (idx < 0) {
                   var lowest = roi;
                   for (m = 0; m < queue.length; m++) {
-                    if (queue[m].total_extrapolated_roi < voterInfos.total_extrapolated_roi) {
+                    if (queue[m].total_extrapolated_roi < lowest) {
                       lowest = queue[m].total_extrapolated_roi;
                       idx = m;
                     }
