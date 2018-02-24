@@ -15,7 +15,6 @@ function main () {
     // application specific logging, throwing an error, or other logic here
     process.exit(1);
   });
-
   lib.start(function () {
     if (lib.getLastInfos().blocked) {
       console.log('Day blocked - edit value to unblock');
@@ -70,8 +69,7 @@ function doProcess (startAtBlockNum, callback) {
         break;
       }
       try {
-        var block = wait.for(lib.
-          , i);
+        var block = wait.for(lib.getBlock, i);
       } catch (err) {
         console.log('Getting block failed, finish gracefully');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
