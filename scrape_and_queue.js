@@ -9,6 +9,13 @@ var MAX_MINS_TO_RUN = 5;
 var MAX_POSTS_TO_CONSIDER = 20; // default
 
 function main () {
+  // get more information on unhandled promise rejections
+  process.on('unhandledRejection', (reason, p) => {
+    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    // application specific logging, throwing an error, or other logic here
+    process.exit(1);
+  });
+
   lib.start(function () {
     if (lib.getLastInfos().blocked) {
       console.log('Day blocked - edit value to unblock');
@@ -63,7 +70,8 @@ function doProcess (startAtBlockNum, callback) {
         break;
       }
       try {
-        var block = wait.for(lib.getBlock, i);
+        var block = wait.for(lib.
+          , i);
       } catch (err) {
         console.log('Getting block failed, finish gracefully');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
