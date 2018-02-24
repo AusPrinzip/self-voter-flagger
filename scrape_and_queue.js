@@ -289,46 +289,42 @@ function doProcess (startAtBlockNum, callback) {
             // "+JSON.stringify(voterInfos));
 
             if (!recordOnly) {
-              // console.log(" - - - arranging users " + queue.length +
-              // "...");
-              if (queue.length >= MAX_POSTS_TO_CONSIDER) {
-                // first sort with lowest first
-                /*
-                queue.sort(function (a, b) {
-                  return a.total_extrapolated_roi - b.total_extrapolated_roi;
-                });
-                */
+              // first sort with lowest first
+              /*
+              queue.sort(function (a, b) {
+                return a.total_extrapolated_roi - b.total_extrapolated_roi;
+              });
+              */
 
-                var idx = -1;
+              var idx = -1;
+              for (m = 0; m < queue.length; m++) {
+                if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
+                  idx = m;
+                  break;
+                }
+              }
+              if (idx < 0) {
+                var lowest = roi;
                 for (m = 0; m < queue.length; m++) {
-                  if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
+                  if (queue[m].total_extrapolated_roi < lowest) {
+                    lowest = queue[m].total_extrapolated_roi;
                     idx = m;
-                    break;
                   }
                 }
-                if (idx < 0) {
-                  var lowest = roi;
-                  for (m = 0; m < queue.length; m++) {
-                    if (queue[m].total_extrapolated_roi < lowest) {
-                      lowest = queue[m].total_extrapolated_roi;
-                      idx = m;
-                    }
-                  }
-                }
+              }
 
-                if (idx >= 0) {
-                  console.log(' - - - removing existing lower roi user ' +
-                      queue[idx].voter + ' with total extrapolated roi of ' +
-                      queue[idx].total_extrapolated_roi);
-                  var newPosts = [];
-                  for (m = 0; m < queue.length; m++) {
-                    if (m !== idx) {
-                      newPosts.push(queue[m]);
-                    }
+              if (idx >= 0) {
+                console.log(' - - - removing existing lower roi user ' +
+                    queue[idx].voter + ' with total extrapolated roi of ' +
+                    queue[idx].total_extrapolated_roi);
+                var newPosts = [];
+                for (m = 0; m < queue.length; m++) {
+                  if (m !== idx) {
+                    newPosts.push(queue[m]);
                   }
-                  queue = newPosts;
-                  console.log(' - - - keeping ' + queue.length + ' queue');
                 }
+                queue = newPosts;
+                console.log(' - - - keeping ' + queue.length + ' queue');
               }
 
               if (queue.length < MAX_POSTS_TO_CONSIDER) {
