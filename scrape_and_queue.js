@@ -374,6 +374,7 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
   wait.for(lib.timeoutWait, 200);
   console.log(' - saving queue of length ' + queue.length);
   for (var i = 0; i < queue.length; i++) {
+    console.log(' - - saving item ' + i + ': ' + JSON.stringify(queue[i]));
     wait.for(lib.saveDb, lib.DB_QUEUE, queue[i]);
   }
   callback();
