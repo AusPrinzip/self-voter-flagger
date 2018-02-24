@@ -313,7 +313,7 @@ function doProcess (startAtBlockNum, callback) {
                 if (queue.length >= MAX_POSTS_TO_CONSIDER) {
                   var idx = -1;
                   var lowest = roi;
-                  for (m = 1; m < queue.length; m++) { // skip first list item, as set before loop
+                  for (m = 0; m < queue.length; m++) { // skip first list item, as set before loop
                     if (queue[m].total_extrapolated_roi < lowest) {
                       lowest = queue[m].total_extrapolated_roi;
                       idx = m;
