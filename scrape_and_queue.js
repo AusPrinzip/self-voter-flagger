@@ -245,7 +245,7 @@ function doProcess (startAtBlockNum, callback) {
             if (voterInfos === null || voterInfos === undefined) {
               voterInfos = {
                 voter: opDetail.voter,
-                total_self_vote_payout: 0.0,
+                total_self_vote_payout: selfVotePayout,
                 total_extrapolated_roi: roi,
                 steem_power: steemPower,
                 comments: [
