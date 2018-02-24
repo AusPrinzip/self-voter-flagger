@@ -296,42 +296,51 @@ function doProcess (startAtBlockNum, callback) {
               });
               */
 
-              var idx = -1;
+              // update voter object if exists in queue already
+              var updatedExistingQueueVoter = false;
               for (m = 0; m < queue.length; m++) {
                 if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
-                  idx = m;
+                  queue[m] = voterInfos;
+                  console.log(' - - voter already in queue, updating');
+                  updatedExistingQueueVoter = true;
                   break;
                 }
               }
-              if (idx < 0) {
-                var lowest = roi;
-                for (m = 0; m < queue.length; m++) {
-                  if (queue[m].total_extrapolated_roi < lowest) {
-                    lowest = queue[m].total_extrapolated_roi;
-                    idx = m;
+
+              // add voter object if didn't update existing
+              if (!updatedExistingQueueVoter) {
+                // if queue full then remove the lowest total ROI voter if below this voter
+                if (queue.length >= MAX_POSTS_TO_CONSIDER) {
+                  var idx = -1;
+                  var lowest = roi;
+                  for (m = 1; m < queue.length; m++) { // skip first list item, as set before loop
+                    if (queue[m].total_extrapolated_roi < lowest) {
+                      lowest = queue[m].total_extrapolated_roi;
+                      idx = m;
+                    }
+                  }
+
+                  if (idx >= 0) {
+                    // remove lowest total ROI voter
+                    console.log(' - - - removing existing lower roi user ' +
+                        queue[idx].voter + ' with total extrapolated roi of ' +
+                        queue[idx].total_extrapolated_roi);
+                    var newPosts = [];
+                    for (m = 0; m < queue.length; m++) {
+                      if (m !== idx) {
+                        newPosts.push(queue[m]);
+                      }
+                    }
+                    queue = newPosts;
                   }
                 }
-              }
-
-              if (idx >= 0) {
-                console.log(' - - - removing existing lower roi user ' +
-                    queue[idx].voter + ' with total extrapolated roi of ' +
-                    queue[idx].total_extrapolated_roi);
-                var newPosts = [];
-                for (m = 0; m < queue.length; m++) {
-                  if (m !== idx) {
-                    newPosts.push(queue[m]);
-                  }
+                if (queue.length < MAX_POSTS_TO_CONSIDER) {
+                  // add to queue
+                  console.log(' - - - adding user to list');
+                  queue.push(voterInfos);
+                } else {
+                  console.log(' - - - dont add user to list, below min in queue');
                 }
-                queue = newPosts;
-                console.log(' - - - keeping ' + queue.length + ' queue');
-              }
-
-              if (queue.length < MAX_POSTS_TO_CONSIDER) {
-                console.log(' - - - adding user to top list');
-                queue.push(voterInfos);
-              } else {
-                console.log(' - - - not adding post to top list');
               }
             }
 
