@@ -248,7 +248,7 @@ function doProcess (startAtBlockNum, callback) {
                 total_self_vote_payout: selfVotePayout,
                 total_extrapolated_roi: roi,
                 steem_power: steemPower,
-                comments: [
+                posts: [
                   {
                     permlink: content.permlink,
                     self_vote_payout: selfVotePayout,
@@ -262,21 +262,21 @@ function doProcess (startAtBlockNum, callback) {
               voterInfos.total_extrapolated_roi += roi;
               // check for duplicate permlink, if so then update roi
               var isDuplicate = false;
-              for (m = 0; m < voterInfos.comments.length; m++) {
-                if (voterInfos.comments[m].permlink.localeCompare(content.permlink) === 0) {
+              for (m = 0; m < voterInfos.posts.length; m++) {
+                if (voterInfos.posts[m].permlink.localeCompare(content.permlink) === 0) {
                   console.log(' - - - new vote is duplicate on top list, replacing value');
-                  voterInfos.comments[m].extrapolated_roi = roi;
+                  voterInfos.posts[m].extrapolated_roi = roi;
                   // update total_extrapolated_roi
                   voterInfos.total_extrapolated_roi = 0;
-                  for (var n = 0; n < voterInfos.comments.length; n++) {
-                    voterInfos.total_extrapolated_roi += voterInfos.comments[n].extrapolated_roi;
+                  for (var n = 0; n < voterInfos.posts.length; n++) {
+                    voterInfos.total_extrapolated_roi += voterInfos.posts[n].extrapolated_roi;
                   }
                   isDuplicate = true;
                   break;
                 }
               }
               if (!isDuplicate) {
-                voterInfos.comments.push(
+                voterInfos.posts.push(
                   {
                     permlink: content.permlink,
                     self_vote_payout: selfVotePayout,
