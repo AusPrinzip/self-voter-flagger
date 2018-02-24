@@ -112,7 +112,7 @@ function doProcess (startAtBlockNum, callback) {
             */
 
             // try to get voter info from db
-            var voterInfos = wait.for(lib.getVoterFromDb, opDetail.voter);
+            var voterInfos = wait.for(lib.getRecordFromDb, lib.DB_VOTERS, {voter: opDetail.voter});
 
             // THEN, check vote is a self vote
             if (opDetail.voter.localeCompare(opDetail.author) !== 0) {

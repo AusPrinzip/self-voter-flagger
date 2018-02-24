@@ -73,12 +73,6 @@ function init (callback) {
   });
 }
 
-function getVoterFromDb (voter, callback) {
-  db.collection(DB_VOTERS).find({voter: voter}).toArray(function (err, data) {
-    callback(err, data !== null && data.length > 0 ? data[0] : null);
-  });
-}
-
 function fetchLastInfos (callback) {
   db.collection(DB_RECORDS).find({}).toArray(function (err, data) {
     if (err || data === null || data === undefined || data.length === 0) {
