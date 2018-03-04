@@ -5,7 +5,6 @@ const moment = require('moment');
 const wait = require('wait.for');
 const lib = require('./lib.js');
 
-var MAX_MINS_TO_RUN = 5;
 var MAX_POSTS_TO_CONSIDER = 20; // default
 
 function main () {
@@ -60,7 +59,7 @@ function doProcess (startAtBlockNum, callback) {
     var firstBlockMoment = null;
     var currentBlockNum = startAtBlockNum;
     var dayBlocked = false;
-    var endTime = moment(new Date()).add(MAX_MINS_TO_RUN, 'minute');
+    var endTime = moment(new Date()).add(process.env.MAX_MINS_TO_RUN, 'minute');
     for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number; i++) {
       currentBlockNum = i;
       if (moment(new Date()).isAfter(endTime)) {
