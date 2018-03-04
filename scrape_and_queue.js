@@ -6,6 +6,8 @@ const wait = require('wait.for');
 const lib = require('./lib.js');
 
 var MAX_POSTS_TO_CONSIDER = 20; // default
+var MIN_SELF_VOTE_TO_CONSIDER = 0.001;
+var MIN_ROI_TO_CONSIDER = 0.000001;
 
 function main () {
   // get more information on unhandled promise rejections
@@ -199,7 +201,7 @@ function doProcess (startAtBlockNum, callback) {
               console.log(' - - self vote negated');
             }
 
-            console.log('- self vote at b ' + i + ':t ' + j + ':op ' +
+            console.log(':: self vote at b ' + i + ':t ' + j + ':op ' +
               k + ', detail:' + JSON.stringify(opDetail));
 
             // consider for flag queue
@@ -232,10 +234,11 @@ function doProcess (startAtBlockNum, callback) {
             } else {
               selfVotePayout = maxPayout * (voteDetail.rshares / Number(netRshares));
             }
-            if (selfVotePayout < 0) {
-              selfVotePayout = 0;
-            }
             console.log('selfVotePayout: ' + selfVotePayout);
+            if (selfVotePayout < MIN_SELF_VOTE_TO_CONSIDER) {
+              console.log(' - self vote too small to consider');
+              continue;
+            }
 
             // calculate cumulative extrapolated ROI
             var roi = 0;
@@ -244,6 +247,11 @@ function doProcess (startAtBlockNum, callback) {
             }
             // cap at 10^(-20) precision to avoid exponent form
             roi = Number(roi.toFixed(20));
+
+            if (roi < MIN_ROI_TO_CONSIDER) {
+              console.log(' - self roi too small to consider');
+              continue;
+            }
 
             // update voter info
             if (voterInfos === null || voterInfos === undefined) {
