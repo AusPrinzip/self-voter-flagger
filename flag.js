@@ -78,6 +78,83 @@ function doProcess (callback) {
         }
       }
 
+      // TODO : reject if item.self_vote_payout < some min
+
+      // calculate voting percentage for vote
+      // first update account
+      var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
+      lib.setAccount(accounts[0]);
+      var vp = recalcVotingPower(latestBlockMoment);
+
+      console.log('\n - VP is at ' + (vp / 100).toFixed(2) + ' %');
+      if ((vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
+        console.log('\n - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, exiting');
+        // TODO : keep this?
+        // skipToFinish = true;
+        break;
+      }
+
+      var vestingSharesParts = lib.getAccount().vesting_shares.split(' ');
+      var vestingSharesNum = Number(vestingSharesParts[0]);
+      var receivedSharesParts = lib.getAccount().received_vesting_shares.split(' ');
+      var receivedSharesNum = Number(receivedSharesParts[0]);
+      var delegatedSharesParts = lib.getAccount().delegated_vesting_shares.split(' ');
+      var delegatedSharesNum = Number(delegatedSharesParts[0]);
+      var totalVests = vestingSharesNum + receivedSharesNum - delegatedSharesNum;
+
+      var steempower = lib.getSteemPowerFromVest(totalVests);
+      // console.log('steem power: ' + steempower);
+      var spScaledVests = steempower / steemPerVest;
+      var oneval = ((item.self_vote_payout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
+      var votingpower = ((oneval / (100 * vp)) * lib.VOTE_POWER_1_PC) / 100;
+
+      console.log('\n - strength to vote at: ' + votingpower.toFixed(2) + ' %');
+
+      if (votingpower > 100) {
+        console.log('\n - cant vote at ' + votingpower.toFixed(2) + '%, capping at 100%');
+        votingpower = 100;
+      }
+
+      var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
+
+      if (percentageInt === 0) {
+        console.log('\n - percentage less than abs(0.01 %), skip.');
+        continue;
+      }
+
+      // flip sign on percentage to turn into flagger
+      percentageInt *= -1;
+
+      console.log('\n - voting...');
+      if (process.env.ACTIVE !== undefined &&
+          process.env.ACTIVE !== null &&
+          process.env.ACTIVE.localeCompare('true') === 0) {
+        try {
+          var voteResult = wait.for(steem.broadcast.vote,
+            process.env.POSTING_KEY_PRV,
+            process.env.STEEM_USER,
+            voter,
+            item.permlink,
+            percentageInt);
+          console.log('Vote result: ' + JSON.stringify(voteResult));
+        } catch (err) {
+          console.log('Error voting: ' + JSON.stringify(err));
+          callback();
+          return;
+        }
+        console.log('\n - - wait 3.5 seconds to allow vote limit to reset');
+        wait.for(lib.timeoutWait, 3500);
+        console.log('\n - - - finished waiting');
+      } else {
+        console.log('\n - - bot not in active state, not voting');
+      }
+
+
+
+      // OLD STUFF, REMOVE
+
+
+
       console.log('** processing item ' + k + ': ' + JSON.stringify(item));
       // update account
       var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);

@@ -9,6 +9,7 @@
     "POSTING_KEY_PRV": "",
     "MIN_SP": 500,
     "MAX_MINS_TO_RUN": "25",
+    "MIN_VP": 50,
     "ACTIVE": "false",
     "STARTING_BLOCK_NUM": "13247766",
     "TEST_AUTHOR_LIST": "null",
