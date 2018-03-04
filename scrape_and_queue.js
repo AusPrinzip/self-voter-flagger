@@ -316,7 +316,7 @@ function doProcess (startAtBlockNum, callback) {
                 // if queue full then remove the lowest total ROI voter if below this voter
                 if (queue.length >= MAX_POSTS_TO_CONSIDER) {
                   var idx = -1;
-                  var lowest = roi;
+                  var lowest = voterInfos.total_extrapolated_roi;
                   for (m = 0; m < queue.length; m++) {
                     if (queue[m].total_extrapolated_roi < lowest) {
                       lowest = queue[m].total_extrapolated_roi;
