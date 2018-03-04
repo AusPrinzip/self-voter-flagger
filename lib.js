@@ -3,7 +3,7 @@
 const steem = require('steem');
 // const path = require('path');
 const mongodb = require('mongodb');
-// const moment = require('moment');
+const moment = require('moment');
 // const S = require('string');
 const wait = require('wait.for');
 
@@ -81,12 +81,14 @@ function fetchLastInfos (callback) {
           process.env.STARTING_BLOCK_NUM !== null) {
         mLastInfos = {
           lastBlock: Number(process.env.STARTING_BLOCK_NUM),
-          blocked: false
+          blocked: false,
+          update_time: moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString()
         };
       } else {
         mLastInfos = {
           lastBlock: 0,
-          blocked: false
+          blocked: false,
+          update_time: moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString()
         };
       }
     } else {
