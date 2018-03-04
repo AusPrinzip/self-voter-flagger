@@ -24,7 +24,6 @@ var mAccount = null;
 var mProperties = null;
 var mChainInfo = null;
 var mLastInfos = null;
-var mTestAuthorList = null;
 
 // Connect to the database first
 
@@ -60,15 +59,6 @@ function init (callback) {
     console.log('account: ' + JSON.stringify(mAccount));
     // set up some vars
     MIN_SP = Number(process.env.MIN_SP);
-    // get test list, if any
-    if (process.env.TEST_AUTHOR_LIST !== undefined &&
-        process.env.TEST_AUTHOR_LIST !== null &&
-        process.env.TEST_AUTHOR_LIST.localeCompare('null') !== 0) {
-      mTestAuthorList = process.env.TEST_AUTHOR_LIST.split(',');
-      for (var i = 0; i < mTestAuthorList.length; i++) {
-        mTestAuthorList[i] = mTestAuthorList[i].toLowerCase().trim();
-      }
-    }
     callback();
   });
 }
@@ -338,7 +328,6 @@ module.exports.MIN_SP = MIN_SP;
 module.exports.getAccount = function () { return mAccount; };
 module.exports.getProperties = function () { return mProperties; };
 module.exports.getLastInfos = function () { return mLastInfos; };
-module.exports.getTestAuthorList = function () { return mTestAuthorList; };
 
 // setters
 module.exports.setLastInfos = function (lastInfos) { mLastInfos = lastInfos; };
