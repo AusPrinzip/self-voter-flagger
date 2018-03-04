@@ -44,7 +44,7 @@ function doProcess (callback) {
         wait.for(lib.saveDb, lib.DB_FLAGLIST, queue[i]);
       }
       // make new update time
-      lib.getLastInfos().update_time = updateTimeMoment.add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString();
+      lib.getLastInfos().update_time = moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString();
       wait.for(lib.saveDb, lib.DB_RECORDS, lib.getLastInfos());
     } else {
       console.log('* Not updating flag list, not time to update yet');
