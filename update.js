@@ -17,7 +17,7 @@ function main () {
 
 function doProcess (callback) {
   wait.launchFiber(function () {
-    var headBlock = wait.for(lib.steem_getBlockHeader_wrapper, lib.getProperties().head_block_number);
+    var headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
     var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
     if (lib.getLastInfos().update_time === undefined ||
         lib.getLastInfos().update_time === null) {
