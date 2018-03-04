@@ -218,6 +218,11 @@ function doProcess (startAtBlockNum, callback) {
             }
             console.log('netRshares: ' + netRshares);
 
+            if (netRshares <= 0) {
+              console.log(' - self vote does not contribute to a reward, skipping');
+              continue;
+            }
+
             var selfVotePayout;
             if (maxPayout <= 0.00) {
               selfVotePayout = 0;
