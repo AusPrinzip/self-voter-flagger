@@ -16,8 +16,6 @@ const DB_FLAGLIST = 'flaglist';
 const VOTE_POWER_1_PC = 100;
 // const DATE_FORMAT = 'dddd, MMMM Do YYYY, h:mm:ss a';
 
-var MIN_SP = 1000;
-
 var db;
 
 var mAccount = null;
@@ -57,8 +55,6 @@ function init (callback) {
     var accounts = wait.for(getSteemAccounts, process.env.STEEM_USER);
     mAccount = accounts[0];
     console.log('account: ' + JSON.stringify(mAccount));
-    // set up some vars
-    MIN_SP = Number(process.env.MIN_SP);
     callback();
   });
 }
@@ -320,8 +316,6 @@ module.exports.DB_VOTERS = DB_VOTERS;
 module.exports.DB_RUNS = DB_RUNS;
 module.exports.DB_QUEUE = DB_QUEUE;
 module.exports.DB_FLAGLIST = DB_FLAGLIST;
-
-module.exports.MIN_SP = MIN_SP;
 
 // getters
 

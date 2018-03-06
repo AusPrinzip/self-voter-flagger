@@ -284,8 +284,8 @@ function doProcess (startAtBlockNum, callback) {
               // don't worry if this fails
             }
 
-            if (steemPower < lib.MIN_SP) {
-              console.log('SP of ' + opDetail.voter + ' < min of ' + lib.MIN_SP + ', skipping');
+            if (steemPower < process.env.MIN_SP) {
+              console.log('SP of ' + opDetail.voter + ' < min of ' + process.env.MIN_SP + ', skipping');
               continue;
             }
 
