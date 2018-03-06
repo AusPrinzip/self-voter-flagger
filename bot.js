@@ -6,7 +6,7 @@ const moment = require('moment');
 const wait = require('wait.for');
 const lib = require('./lib.js');
 
-var MAX_POSTS_TO_CONSIDER = 20; // default
+var MAX_POSTS_TO_CONSIDER = 100; // default
 var MIN_SELF_VOTE_TO_CONSIDER = 0.001;
 var MIN_ROI_TO_CONSIDER = 0.000001;
 
