@@ -3,16 +3,15 @@
   "description": "Bot to auto flag self voters",
   "repository": "https://github.com/steem-fossbot/self-voting-flagger",
   "keywords": ["node", "steem", "bot", "blockchain", "voter", "flag"],
-  "addons": ["mongolab", "scheduler:standard", "sendgrid:starter"],
+  "addons": ["mongolab"],
   "env": {
     "STEEM_USER": "",
     "POSTING_KEY_PRV": "",
-    "MIN_SP": 1000,
-    "ACTIVE": "true",
-    "STARTING_BLOCK_NUM": "13247766",
-    "TEST_AUTHOR_LIST": "null",
-    "SENDGRID_API_KEY": "none",
-    "EMAIL_ADDRESS_LIST": "none",
-    "EMAIL_ADDRESS_SENDER": "report@self-voting-flagger.com"
+    "MIN_SP": 10,
+    "MAX_MINS_TO_RUN": "25",
+    "MIN_VP": 50,
+    "DAYS_UNTIL_UPDATE": 1,
+    "ACTIVE": "false",
+    "STARTING_BLOCK_NUM": "20931033",
   }
 }
