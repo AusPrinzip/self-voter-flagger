@@ -68,10 +68,10 @@ function startChildProcess (proc, arg, callback) {
   var child = require('child_process').spawn(proc, [arg]);
 
   child.stdout.on('data', function (data) {
-    console.log(data);
+    console.log(`${data}`);
   });
   child.stderr.on('data', function (data) {
-    console.log('stderr: ' + data);
+    console.error(`${data}`);
   });
   child.on('close', function (code) {
     console.log('child process "' + proc + ' ' + arg + '" exited with code ' + code);
