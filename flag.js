@@ -2,7 +2,6 @@
 
 const steem = require('steem');
 const moment = require('moment');
-// const S = require('string');
 const wait = require('wait.for');
 const lib = require('./lib.js');
 
@@ -14,14 +13,7 @@ function main () {
     process.exit(1);
   });
   lib.start(function () {
-    if (lib.getLastInfos().blocked) {
-      console.log('Day blocked - edit value to unblock');
-      setTimeout(function () {
-        process.exit();
-      }, 5000);
-      return;
-    }
-    doProcess(lib.getLastInfos().lastBlock + 1, function () {
+    doProcess(function () {
       console.log('Finished');
       setTimeout(function () {
         process.exit();
@@ -32,7 +24,7 @@ function main () {
 
 var flaglist = [];
 
-function doProcess (startAtBlockNum, callback) {
+function doProcess (callback) {
   wait.launchFiber(function () {
     // set up initial variables
     console.log('Getting blockchain info');
