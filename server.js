@@ -1,15 +1,15 @@
 'use strict';
 
 const express = require('express');
-const path = require('path');
 const bodyParser = require('body-parser');
 const { exec } = require('child_process');
-const lib = require('./lib.js');
 
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
+
+const MAX_BUFFER_SIZE = 1024 * 2000; // 2MB
 
 /*  '/test'
  *    GET: tests this server is operational
@@ -48,7 +48,7 @@ app.get('/run', function (req, res) {
     status: '200',
     message: 'running bot'
   });
-  exec('node update.js && node bot.js && node flag.js', (err, stdout, stderr) => {
+  exec('node update.js && node bot.js && node flag.js', {maxBuffer: MAX_BUFFER_SIZE}, (err, stdout, stderr) => {
     if (err) {
       console.log('Run bot failed');
       console.error(err);
