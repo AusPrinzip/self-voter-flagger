@@ -7,10 +7,10 @@
   "env": {
     "STEEM_USER": "",
     "POSTING_KEY_PRV": "",
-    "MIN_SP": 10,
+    "MIN_SP": "10",
     "MAX_MINS_TO_RUN": "25",
-    "MIN_VP": 50,
-    "DAYS_UNTIL_UPDATE": 1,
+    "MIN_VP": "50",
+    "DAYS_UNTIL_UPDATE": "1",
     "ACTIVE": "false",
     "STARTING_BLOCK_NUM": "20931033"
   }
