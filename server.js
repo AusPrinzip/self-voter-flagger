@@ -48,19 +48,35 @@ app.get('/run', function (req, res) {
     status: '200',
     message: 'running bot'
   });
-  exec('node update.js && node bot.js && node flag.js', {maxBuffer: MAX_BUFFER_SIZE}, (err, stdout, stderr) => {
-    if (err) {
-      console.log('Run bot failed');
-      console.error(err);
-      return;
+  var files = ['update.js', 'bot.js', 'flag.js'];
+  var loopFunc = function () {
+    var file = files.pop();
+    if (file !== undefined && file !== null) {
+      startChildProcess('node', file, loopFunc);
+    } else {
+      console.log('FINISHED RUNNING SCRIPTS');
+      setTimeout(function () {
+        process.exit();
+      }, 5000);
     }
-    console.log('*** ERRORS *** (we expect node install errors because of weird request lib install)');
-    console.log(`stderr: ${stderr}`);
-    console.log('*** General bot run output ***');
-    console.log(`stdout: ${stdout}`);
-    console.log('Run bot finished');
-  });
+  };
+  startChildProcess('node', files.pop(), loopFunc);
 });
+
+function startChildProcess (proc, arg, callback) {
+  var child = process.spawn(proc, arg);
+
+  child.stdout.on('data', function (data) {
+    console.log('stdout: ' + data);
+  });
+  child.stderr.on('data', function (data) {
+    console.log('stderr: ' + data);
+  });
+  child.on('close', function (code) {
+    console.log('child process exited with code ' + code);
+    callback();
+  });
+}
 
 // Start server
 app.listen(app.get('port'), function () {
