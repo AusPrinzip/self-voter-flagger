@@ -64,7 +64,7 @@ app.get('/run', function (req, res) {
 });
 
 function startChildProcess (proc, arg, callback) {
-  var child = process.spawn(proc, arg);
+  var child = require('child_process').spawn(proc, arg);
 
   child.stdout.on('data', function (data) {
     console.log('stdout: ' + data);
