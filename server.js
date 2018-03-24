@@ -48,7 +48,8 @@ app.get('/run', function (req, res) {
     status: '200',
     message: 'running bot'
   });
-  var files = ['update.js', 'bot.js', 'flag.js'];
+  var files = ['flag.js', 'bot.js', 'update.js'];
+  // NOTE : these files are run in reverse order, like a stack popped from the end
   var loopFunc = function () {
     var file = files.pop();
     if (file !== undefined && file !== null) {
@@ -67,13 +68,13 @@ function startChildProcess (proc, arg, callback) {
   var child = require('child_process').spawn(proc, [arg]);
 
   child.stdout.on('data', function (data) {
-    console.log('stdout: ' + data);
+    console.log(data);
   });
   child.stderr.on('data', function (data) {
     console.log('stderr: ' + data);
   });
   child.on('close', function (code) {
-    console.log('child process exited with code ' + code);
+    console.log('child process "' + proc + ' ' + arg + '" exited with code ' + code);
     callback();
   });
 }
