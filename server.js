@@ -62,28 +62,9 @@ app.get('/run', function (req, res) {
   });
 });
 
-app.get('/laststats', function (req, res) {
-  lib.getRecordFromDb(lib.DB_GENERAL, {}, function (err, data) {
-    if (err || data === undefined || data === null ||
-        data.last_stats === undefined || data.last_stats === null) {
-      res.json({
-        status: '500',
-        error: 'internal error',
-        message: 'couldnt get last stats from db'
-      });
-      console.log('/laststats error, couldnt get last stats from db');
-      return;
-    }
-    res.json(data.last_stats);
-    console.log('/laststats success, returned last stats from general DB');
-  });
-});
-
 // Start server
 app.listen(app.get('port'), function () {
-  lib.startWithoutSteem(function () {
-    console.log('Node app is running on port', app.get('port'));
-  });
+  console.log('Node app is running on port', app.get('port'));
 });
 
 module.exports = app;
