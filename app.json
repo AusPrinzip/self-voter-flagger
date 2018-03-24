@@ -12,6 +12,7 @@
     "MIN_VP": "50",
     "DAYS_UNTIL_UPDATE": "1",
     "ACTIVE": "false",
-    "STARTING_BLOCK_NUM": "20931033"
+    "STARTING_BLOCK_NUM": "20931033",
+    "API_KEY": "replace_me_with_secret_key"
   }
 }
