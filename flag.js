@@ -86,14 +86,16 @@ function doProcess (callback) {
     var finish = false;
     for (var i = 0; i < flaglist.length; i++) {
       var voterDetails = flaglist[i];
+      console.log(' - voter: ' + voterDetails.voter + ' has ' + voterDetails.posts.length + ' recorded posts');
 
       for (var j = 0; j < voterDetails.posts; j++) {
         var postDetails = voterDetails.posts[j];
+        console.log(' - - processing post with permlink ' + postDetails.permlink);
 
         if (postDetails.flagged !== undefined &&
             postDetails.flagged !== null &&
             postDetails.flagged) {
-          console.log(' - already flagged post, continuing...');
+          console.log(' - - already flagged post, continuing...');
           continue;
         }
 
@@ -101,7 +103,7 @@ function doProcess (callback) {
         var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
         lib.setAccount(accounts[0]);
         var vp = recalcVotingPower(latestBlockMoment);
-        console.log(' - VP is at ' + (vp / 100).toFixed(2) + ' %');
+        console.log(' - - VP is at ' + (vp / 100).toFixed(2) + ' %');
         if ((vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
           console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, exiting');
           finish = true;
@@ -122,24 +124,24 @@ function doProcess (callback) {
         var oneval = ((postDetails.self_vote_payout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
         var votingpower = ((oneval / (100 * vp)) * lib.VOTE_POWER_1_PC) / 100;
 
-        console.log(' - strength to vote at: ' + votingpower.toFixed(2) + ' %');
+        console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
 
         if (votingpower > 100) {
-          console.log(' - cant vote at ' + votingpower.toFixed(2) + '%, capping at 100%');
+          console.log(' - - - cant vote at ' + votingpower.toFixed(2) + '%, capping at 100%');
           votingpower = 100;
         }
 
         var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
 
         if (percentageInt === 0) {
-          console.log(' - percentage less than abs(0.01 %), skip.');
+          console.log(' - - - percentage less than abs(0.01 %), skip.');
           continue;
         }
 
         // flip sign on percentage to turn into flagger
         percentageInt *= -1;
 
-        console.log(' - voting...');
+        console.log(' - - voting...');
         if (process.env.ACTIVE !== undefined &&
             process.env.ACTIVE !== null &&
             process.env.ACTIVE.localeCompare('true') === 0) {
@@ -150,18 +152,18 @@ function doProcess (callback) {
               voterDetails.voter,
               postDetails.permlink,
               percentageInt);
-            console.log('Vote result: ' + JSON.stringify(voteResult));
+            console.log(' - - - vote result: ' + JSON.stringify(voteResult));
           } catch (err) {
-            console.log('Error voting: ' + JSON.stringify(err));
-            console.log('fatal error, stopping');
+            console.log(' - - - error voting: ' + JSON.stringify(err));
+            console.log(' - - - fatal error, stopping');
             finish = true;
             break;
           }
-          console.log(' - - wait 3.5 seconds to allow vote limit to reset');
+          console.log(' - - - wait 3.5 seconds to allow vote limit to reset');
           wait.for(lib.timeoutWait, 3500);
           console.log(' - - - finished waiting');
         } else {
-          console.log(' - - bot not in active state, not voting');
+          console.log(' - - - bot not in active state, not voting');
         }
         flaglist[i].posts[j].flagged = true;
       }
