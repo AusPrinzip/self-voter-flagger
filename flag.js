@@ -100,7 +100,7 @@ function doProcess (callback) {
         }
 
         // check VP
-        var accounts = wait.for(lib.steem_getAccounts_wrapper, process.env.STEEM_USER);
+        var accounts = wait.for(lib.getSteemAccounts, process.env.STEEM_USER);
         lib.setAccount(accounts[0]);
         var vp = recalcVotingPower(latestBlockMoment);
         console.log(' - - VP is at ' + (vp / 100).toFixed(2) + ' %');
@@ -196,6 +196,7 @@ function doProcess (callback) {
         break;
       }
     }
+    callback();
   });
 }
 
