@@ -241,12 +241,13 @@ function doProcess (startAtBlockNum, callback) {
 
             // *** FLAG
             // check if voter is on the flag mTestAuthorList
-            var addPostToVoterList = false;
+            var voterIsOnFlagList = false;
+            var voterFlagObj = null;
             try {
-              var voterToFlag = wait.for(lib.getRecordFromDb, lib.DB_FLAGLIST, {voter: opDetail.voter});
-              if (voterToFlag !== undefined &&
-                  voterToFlag !== null) {
-                addPostToVoterList = true;
+              var voterFlagObj = wait.for(lib.getRecordFromDb, lib.DB_FLAGLIST, {voter: opDetail.voter});
+              if (voterFlagObj !== undefined &&
+                  voterFlagObj !== null) {
+                voterIsOnFlagList = true;
               }
             } catch (err) {
               // don't worry if this fails
@@ -279,8 +280,14 @@ function doProcess (startAtBlockNum, callback) {
                 steem_power: steemPower,
                 posts: []
               };
-              if (addPostToVoterList) {
+              if (voterIsOnFlagList) {
                 voterInfos.posts.push({
+                  permlink: content.permlink,
+                  self_vote_payout: selfVotePayout,
+                  extrapolated_roi: roi,
+                  flagged: false
+                });
+                voterFlagObj.posts.push({
                   permlink: content.permlink,
                   self_vote_payout: selfVotePayout,
                   extrapolated_roi: roi,
@@ -306,7 +313,7 @@ function doProcess (startAtBlockNum, callback) {
                   break;
                 }
               }
-              if (!isDuplicate && addPostToVoterList) {
+              if (!isDuplicate && voterIsOnFlagList) {
                 voterInfos.posts.push(
                   {
                     permlink: content.permlink,
@@ -315,6 +322,12 @@ function doProcess (startAtBlockNum, callback) {
                     flagged: false
                   }
                 );
+                voterFlagObj.posts.push({
+                  permlink: content.permlink,
+                  self_vote_payout: selfVotePayout,
+                  extrapolated_roi: roi,
+                  flagged: false
+                });
               }
             }
             // console.log(" - - updated voter info:
@@ -377,6 +390,9 @@ function doProcess (startAtBlockNum, callback) {
             }
 
             wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
+            if (voterIsOnFlagList) {
+              wait.for(lib.saveDb, lib.DB_FLAGLIST, voterFlagObj);
+            }
             // console.log("* voter updated: "+JSON.stringify(voterInfos));
           }
         }
