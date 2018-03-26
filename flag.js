@@ -88,7 +88,7 @@ function doProcess (callback) {
       var voterDetails = flaglist[i];
       console.log(' - voter: ' + voterDetails.voter + ' has ' + voterDetails.posts.length + ' recorded posts');
 
-      for (var j = 0; j < voterDetails.posts; j++) {
+      for (var j = 0; j < voterDetails.posts.length; j++) {
         var postDetails = voterDetails.posts[j];
         console.log(' - - processing post with permlink ' + postDetails.permlink);
 
@@ -175,7 +175,7 @@ function doProcess (callback) {
         if (queueObj !== undefined && queueObj !== null) {
           queueObj.posts = flaglist[i].posts;
           wait.for(lib.saveDb, lib.DB_QUEUE, queueObj);
-          console.log(' - - saved update obj to queue');
+          console.log(' -* saved update obj to queue');
         }
       } catch (err) {
         // nothing
@@ -186,7 +186,7 @@ function doProcess (callback) {
         if (masterVoterObj !== undefined && masterVoterObj !== null) {
           masterVoterObj.posts = flaglist[i].posts;
           wait.for(lib.saveDb, lib.DB_VOTERS, masterVoterObj);
-          console.log(' - - saved update obj to master voter list');
+          console.log(' -* saved update obj to master voter list');
         }
       } catch (err) {
         // nothing
