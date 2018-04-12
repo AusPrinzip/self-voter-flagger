@@ -182,6 +182,11 @@ function doProcess (callback) {
           var commentPermlink = steem.formatter.commentPermlink(voterDetails.voter, postDetails.permlink)
             .toLowerCase()
             .replace('.', '');
+          if (commentPermlink.length >= 256) {
+            commentPermlink = steem.formatter.commentPermlink(voterDetails.voter, voterDetails.voter + '-sadkitten')
+              .toLowerCase()
+              .replace('.', '');
+          }
           try {
             // TODO : remove this, just for test
             var commentResult = wait.for(steem.broadcast.comment,
@@ -205,17 +210,17 @@ function doProcess (callback) {
               {});
               */
             console.log(' - - comment result: ' + JSON.stringify(commentResult));
-            // TODO : remove this, just for test
-            // *************
-            callback();
-            return;
-            // *************
           } catch (err) {
             console.log(' - - comment posting error: ' + JSON.stringify(err));
           }
           console.log(' - - - Waiting for comment timeout...');
           wait.for(lib.timeoutWait, 20000);
           console.log(' - - - finished waiting');
+          // TODO : remove this, just for test
+          // *************
+          callback();
+          return;
+          // *************
         } else {
           console.log(' - - - bot not in active state, not voting');
         }
