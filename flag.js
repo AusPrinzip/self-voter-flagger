@@ -146,7 +146,6 @@ function doProcess (callback) {
         if (process.env.ACTIVE !== undefined &&
             process.env.ACTIVE !== null &&
             process.env.ACTIVE.localeCompare('true') === 0) {
-          /*
           try {
             var voteResult = wait.for(steem.broadcast.vote,
               process.env.POSTING_KEY_PRV,
@@ -165,7 +164,6 @@ function doProcess (callback) {
           console.log(' - - - wait 3.5 seconds to allow vote limit to reset');
           wait.for(lib.timeoutWait, 3500);
           console.log(' - - - finished waiting');
-          */
           // comment on post
           var message = 'Your self votes will be countered by @sadkitten for 1 week starting %s because your account is on of the highest self voters. For more details see [this post](https://steemit.com/steemit/@sadkitten/self-voter-return-on-investment-svroi-notoriety-flagging-bot).';
           var commentMsg = sprintf(message,
@@ -180,17 +178,6 @@ function doProcess (callback) {
               .replace('.', '');
           }
           try {
-            // TODO : remove this, just for test
-            var commentResult = wait.for(steem.broadcast.comment,
-              process.env.POSTING_KEY_PRV,
-              'roguelike',
-              'dv2ea-ignore',
-              process.env.STEEM_USER,
-              commentPermlink,
-              'sadkitten comment',
-              commentMsg,
-              {});
-            /*
             var commentResult = wait.for(steem.broadcast.comment,
               process.env.POSTING_KEY_PRV,
               voterDetails.voter,
@@ -200,7 +187,6 @@ function doProcess (callback) {
               'sadkitten comment',
               commentMsg,
               {});
-              */
             console.log(' - - comment result: ' + JSON.stringify(commentResult));
           } catch (err) {
             console.log(' - - comment posting error: ' + JSON.stringify(err));
@@ -208,11 +194,6 @@ function doProcess (callback) {
           console.log(' - - - Waiting for comment timeout...');
           wait.for(lib.timeoutWait, 20000);
           console.log(' - - - finished waiting');
-          // TODO : remove this, just for test
-          // *************
-          callback();
-          return;
-          // *************
         } else {
           console.log(' - - - bot not in active state, not voting');
         }
