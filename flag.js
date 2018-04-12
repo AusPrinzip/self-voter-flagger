@@ -4,6 +4,7 @@ const steem = require('steem');
 const moment = require('moment');
 const wait = require('wait.for');
 const lib = require('./lib.js');
+const sprintf = require('sprintf-js').sprintf;
 
 function main () {
   // get more information on unhandled promise rejections
@@ -146,14 +147,24 @@ function doProcess (callback) {
             process.env.ACTIVE !== null &&
             process.env.ACTIVE.localeCompare('true') === 0) {
           try {
+            // TODO : remove this, just for test
+            var voteResult = wait.for(steem.broadcast.vote,
+              process.env.POSTING_KEY_PRV,
+              process.env.STEEM_USER,
+              'roguelike',
+              'dv2ea-ignore',
+              percentageInt);
+            /*
             var voteResult = wait.for(steem.broadcast.vote,
               process.env.POSTING_KEY_PRV,
               process.env.STEEM_USER,
               voterDetails.voter,
               postDetails.permlink,
               percentageInt);
+              */
             console.log(' - - - vote result: ' + JSON.stringify(voteResult));
-            flaglist[i].posts[j].flagged = true;
+            // TODO : RESTORE this, just for test
+            // flaglist[i].posts[j].flagged = true;
           } catch (err) {
             console.log(' - - - error voting: ' + JSON.stringify(err));
             console.log(' - - - fatal error, stopping');
@@ -162,6 +173,48 @@ function doProcess (callback) {
           }
           console.log(' - - - wait 3.5 seconds to allow vote limit to reset');
           wait.for(lib.timeoutWait, 3500);
+          console.log(' - - - finished waiting');
+          // comment on post
+          var message = 'Your self votes will be countered by @sadkitten for 1 week starting %s because your account is within the highest 100 self voters. For more details see [this post]().';
+          var commentMsg = sprintf(message,
+            moment(lib.getLastInfos().update_time, moment.ISO_8601).subtract(Number(process.env.DAYS_UNTIL_UPDATE), 'day').format('dddd, MMMM Do YYYY, h:mm'));
+          console.log('Commenting: ' + commentMsg);
+          var commentPermlink = steem.formatter.commentPermlink(voterDetails.voter, postDetails.permlink)
+            .toLowerCase()
+            .replace('.', '');
+          try {
+            // TODO : remove this, just for test
+            var commentResult = wait.for(steem.broadcast.comment,
+              process.env.POSTING_KEY_PRV,
+              'roguelike',
+              'dv2ea-ignore',
+              process.env.STEEM_USER,
+              commentPermlink,
+              'sadkitten comment',
+              commentMsg,
+              {});
+            /*
+            var commentResult = wait.for(steem.broadcast.comment,
+              process.env.POSTING_KEY_PRV,
+              voterDetails.voter,
+              postDetails.permlink,
+              process.env.STEEM_USER,
+              commentPermlink,
+              'sadkitten comment',
+              commentMsg,
+              {});
+              */
+            console.log(' - - comment result: ' + JSON.stringify(commentResult));
+            // TODO : remove this, just for test
+            // *************
+            callback();
+            return;
+            // *************
+          } catch (err) {
+            console.log(' - - comment posting error: ' + JSON.stringify(err));
+          }
+          console.log(' - - - Waiting for comment timeout...');
+          wait.for(lib.timeoutWait, 20000);
           console.log(' - - - finished waiting');
         } else {
           console.log(' - - - bot not in active state, not voting');
