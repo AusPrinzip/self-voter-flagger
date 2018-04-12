@@ -122,10 +122,20 @@ function doProcess (callback) {
           continue;
         }
 
+        // check for < 0 rshares
         if (content.net_rshares <= 0) {
           console.log(' - - - already flagged at least to zero (rshares = ' + content.net_rshares + '), mark as flagged but skipping');
           flaglist[i].posts[j].flagged = true;
           continue;
+        }
+
+        // check if already voted (can happen that vote was not recorded if script interupted last time)
+        for (var m = 0; m < content.active_votes.length; m++) {
+          if (content.active_votes[m].voter.localeCompare(process.env.STEEM_USER) === 0) {
+            console.log(' - - - already flagged this, mark as flagged but skipping');
+            flaglist[i].posts[j].flagged = true;
+            continue;
+          }
         }
 
         // check VP
