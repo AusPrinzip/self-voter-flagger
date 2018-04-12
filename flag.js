@@ -153,6 +153,7 @@ function doProcess (callback) {
               postDetails.permlink,
               percentageInt);
             console.log(' - - - vote result: ' + JSON.stringify(voteResult));
+            flaglist[i].posts[j].flagged = true;
           } catch (err) {
             console.log(' - - - error voting: ' + JSON.stringify(err));
             console.log(' - - - fatal error, stopping');
@@ -165,7 +166,6 @@ function doProcess (callback) {
         } else {
           console.log(' - - - bot not in active state, not voting');
         }
-        flaglist[i].posts[j].flagged = true;
       }
       // save updated voter object to flaglist
       wait.for(lib.saveDb, lib.DB_FLAGLIST, flaglist[i]);
