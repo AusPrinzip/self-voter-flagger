@@ -146,25 +146,16 @@ function doProcess (callback) {
         if (process.env.ACTIVE !== undefined &&
             process.env.ACTIVE !== null &&
             process.env.ACTIVE.localeCompare('true') === 0) {
+          /*
           try {
-            // TODO : remove this, just for test
-            var voteResult = wait.for(steem.broadcast.vote,
-              process.env.POSTING_KEY_PRV,
-              process.env.STEEM_USER,
-              'roguelike',
-              'dv2ea-ignore',
-              percentageInt);
-            /*
             var voteResult = wait.for(steem.broadcast.vote,
               process.env.POSTING_KEY_PRV,
               process.env.STEEM_USER,
               voterDetails.voter,
               postDetails.permlink,
               percentageInt);
-              */
             console.log(' - - - vote result: ' + JSON.stringify(voteResult));
-            // TODO : RESTORE this, just for test
-            // flaglist[i].posts[j].flagged = true;
+            flaglist[i].posts[j].flagged = true;
           } catch (err) {
             console.log(' - - - error voting: ' + JSON.stringify(err));
             console.log(' - - - fatal error, stopping');
@@ -174,6 +165,7 @@ function doProcess (callback) {
           console.log(' - - - wait 3.5 seconds to allow vote limit to reset');
           wait.for(lib.timeoutWait, 3500);
           console.log(' - - - finished waiting');
+          */
           // comment on post
           var message = 'Your self votes will be countered by @sadkitten for 1 week starting %s because your account is within the highest 100 self voters. For more details see [this post]().';
           var commentMsg = sprintf(message,
