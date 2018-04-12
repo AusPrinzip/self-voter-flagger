@@ -100,6 +100,34 @@ function doProcess (callback) {
           continue;
         }
 
+        // check post age
+        var content = null;
+        try {
+          content = wait.for(lib.getPostContent, voterDetails.voter, postDetails.permlink);
+        } catch (err) {
+          console.log(' - - - get post content failed (API error), skip this post');
+          console.error(err);
+          continue;
+        }
+        if (content === undefined || content === null) {
+          console.log(' - - - get post content failed (content null), skip this post');
+          continue;
+        }
+        var cashoutTime = moment(content.cashout_time);
+        var nowTime = moment(new Date());
+        cashoutTime.subtract(7, 'hours');
+        if (!nowTime.isBefore(cashoutTime)) {
+          console.log(' - - - payout window now closed, mark as flagged but skipping');
+          flaglist[i].posts[j].flagged = true;
+          continue;
+        }
+
+        if (content.net_rshares <= 0) {
+          console.log(' - - - already flagged at least to zero (rshares = ' + content.net_rshares + '), mark as flagged but skipping');
+          flaglist[i].posts[j].flagged = true;
+          continue;
+        }
+
         // check VP
         var accounts = wait.for(lib.getSteemAccounts, process.env.STEEM_USER);
         lib.setAccount(accounts[0]);
