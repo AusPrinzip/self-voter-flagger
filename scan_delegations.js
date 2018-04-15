@@ -83,31 +83,31 @@ function doProcess (startAtBlockNum, callback) {
             if (vests > 0) {
               sp = lib.getSteemPowerFromVest(opDetail.vesting_shares);
             } else {
-              var vestingDelegations = null;
+              var accountHistory = null;
               try {
-                vestingDelegations = wait.for(lib.getVestingDelegations, opDetail.delegator);
+                accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, null, 1000);
               } catch (err) {
                 console.error(err);
-                console.log('couldnt get vesting delegations, exiting');
+                console.log('couldnt get account history, exiting');
                 finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                   callback();
                 });
                 return;
               }
-              if (vestingDelegations === undefined || vestingDelegations === null) {
-                console.log('couldnt get vesting delegations, exiting');
+              if (accountHistory === undefined || accountHistory === null) {
+                console.log('couldnt get account history, exiting');
                 finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                   callback();
                 });
                 return;
               }
               var match = false;
-              if (vestingDelegations.length > 0) {
-                console.log(' - DEBUG: ' + JSON.stringify(vestingDelegations));
-                for (var m = 0; m < vestingDelegations.length; m++) {
-                  if (vestingDelegations[m].delegatee.localeCompare(opDetail.delegatee) === 0) {
-                    vests = Number(vestingDelegations[m].vesting_shares.replace(' VESTS', ''));
-                    sp = lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares);
+              if (accountHistory.length > 0) {
+                console.log(' - DEBUG: ' + JSON.stringify(accountHistory));
+                for (var m = 0; m < accountHistory.length; m++) {
+                  if (accountHistory[m].delegatee.localeCompare(opDetail.delegatee) === 0) {
+                    vests = Number(accountHistory[m].vesting_shares.replace(' VESTS', ''));
+                    sp = lib.getSteemPowerFromVest(accountHistory[m].vesting_shares);
                     match = true;
                     break;
                   }
