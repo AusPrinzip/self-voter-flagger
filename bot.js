@@ -174,8 +174,10 @@ function doProcess (startAtBlockNum, callback) {
 
             var voteDetail = null;
             var countedNetRshares = 0;
+            console.log(' - num active votes: ' + content.active_votes.length);
             for (var m = 0; m < content.active_votes.length; m++) {
               countedNetRshares += content.active_votes[m].rshares;
+              console.log(' - - rshares vote: ' + content.active_votes[m].rshares);
               if (content.active_votes[m].voter.localeCompare(opDetail.voter) === 0) {
                 voteDetail = content.active_votes[m];
                 if (!recordOnly) {
