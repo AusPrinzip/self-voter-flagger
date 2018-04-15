@@ -109,7 +109,7 @@ function doProcess (startAtBlockNum, callback) {
                   var accHistOpDetail = operations[1];
                   if (accHistOpName !== undefined && accHistOpName !== null &&
                       accHistOpName.localeCompare('delegate_vesting_shares') === 0) {
-                    console.log(' - found acc hist delegation: ' + accHistOpDetail);
+                    console.log(' - found acc hist delegation: ' + JSON.stringify(accHistOpDetail));
                     if (accHistOpDetail.delegatee.localeCompare(opDetail.delegatee) === 0 &&
                         Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
                       vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', ''));
