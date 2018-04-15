@@ -124,7 +124,7 @@ function doProcess (startAtBlockNum, callback) {
                   }
                 }
               }
-              if (match) {
+              if (!match) {
                 vests = 0;
                 sp = 0;
                 console.log(' - - failed to get SP from account delegation history');
