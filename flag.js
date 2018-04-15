@@ -130,12 +130,50 @@ function doProcess (callback) {
         }
 
         // check if already voted (can happen that vote was not recorded if script interupted last time)
+        var selfVoteRshares = 0;
         for (var m = 0; m < content.active_votes.length; m++) {
           if (content.active_votes[m].voter.localeCompare(process.env.STEEM_USER) === 0) {
             console.log(' - - - already flagged this, mark as flagged but skipping');
             flaglist[i].posts[j].flagged = true;
             continue;
+          } else if (content.active_votes[m].voter.localeCompare(voterDetails.voter) === 0) {
+            selfVoteRshares = content.active_votes[m].rshares;
           }
+        }
+
+        if (selfVoteRshares <= 0) {
+          console.log(' - self vote rshares negative or zero (' + selfVoteRshares + '), skipping');
+          flaglist[i].posts[j].flagged = true;
+          continue;
+        }
+
+        // recalcuate post self payout
+        var maxPayout = 0;
+        var netRshares = 0;
+        console.log('content.pending_payout_value: ' + content.pending_payout_value);
+        var pendingPayoutValue = content.pending_payout_value.split(' ');
+        maxPayout = Number(pendingPayoutValue[0]);
+        netRshares = Number(content.net_rshares);
+        console.log('netRshares: ' + netRshares);
+
+        var selfVotePayout;
+        if (maxPayout <= 0.00) {
+          selfVotePayout = 0;
+        } else if (content.active_votes.length === 1) {
+          console.log(' - - only one voter');
+          selfVotePayout = maxPayout;
+        } else if (selfVoteRshares >= netRshares) {
+          console.log(' - - self vote higher than existing net rshares (indicates already flagged), counter only to remaining amount');
+          selfVotePayout = maxPayout;
+        } else {
+          selfVotePayout = maxPayout * (selfVoteRshares / netRshares);
+        }
+        console.log('initially recorded self vote payout: ' + postDetails.self_vote_payout);
+        console.log('recalculated self vote payout: ' + selfVotePayout);
+        if (selfVotePayout < lib.MIN_SELF_VOTE_TO_CONSIDER) {
+          console.log(' - self vote too small to consider, skipping');
+          flaglist[i].posts[j].flagged = true;
+          continue;
         }
 
         // check VP
@@ -160,7 +198,7 @@ function doProcess (callback) {
         var steempower = lib.getSteemPowerFromVest(totalVests);
         // console.log('steem power: ' + steempower);
         var spScaledVests = steempower / steemPerVest;
-        var oneval = ((postDetails.self_vote_payout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
+        var oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
         var votingpower = ((oneval / (100 * vp)) * lib.VOTE_POWER_1_PC) / 100;
 
         console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');

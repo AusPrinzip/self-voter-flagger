@@ -6,10 +6,6 @@ const moment = require('moment');
 const wait = require('wait.for');
 const lib = require('./lib.js');
 
-var MAX_POSTS_TO_CONSIDER = 100; // default
-var MIN_SELF_VOTE_TO_CONSIDER = 0.001;
-var MIN_ROI_TO_CONSIDER = 0.000001;
-
 function main () {
   // get more information on unhandled promise rejections
   process.on('unhandledRejection', (reason, p) => {
@@ -228,13 +224,13 @@ function doProcess (startAtBlockNum, callback) {
             if (maxPayout <= 0.00) {
               selfVotePayout = 0;
             } else if (content.active_votes.length === 1 ||
-                  voteDetail.rshares === Number(netRshares)) {
+                  voteDetail.rshares >= Number(netRshares)) {
               selfVotePayout = maxPayout;
             } else {
               selfVotePayout = maxPayout * (voteDetail.rshares / Number(netRshares));
             }
             console.log('selfVotePayout: ' + selfVotePayout);
-            if (selfVotePayout < MIN_SELF_VOTE_TO_CONSIDER) {
+            if (selfVotePayout < lib.MIN_SELF_VOTE_TO_CONSIDER) {
               console.log(' - self vote too small to consider');
               continue;
             }
@@ -266,7 +262,7 @@ function doProcess (startAtBlockNum, callback) {
             // cap at 10^(-20) precision to avoid exponent form
             roi = Number(roi.toFixed(20));
 
-            if (roi < MIN_ROI_TO_CONSIDER) {
+            if (roi < lib.MIN_ROI_TO_CONSIDER) {
               console.log(' - self roi too small to consider');
               continue;
             }
@@ -355,7 +351,7 @@ function doProcess (startAtBlockNum, callback) {
               // add voter object if didn't update existing
               if (!updatedExistingQueueVoter) {
                 // if queue full then remove the lowest total ROI voter if below this voter
-                if (queue.length >= MAX_POSTS_TO_CONSIDER) {
+                if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
                   var idx = -1;
                   var lowest = voterInfos.total_extrapolated_roi;
                   for (m = 0; m < queue.length; m++) {
@@ -379,7 +375,7 @@ function doProcess (startAtBlockNum, callback) {
                     queue = newPosts;
                   }
                 }
-                if (queue.length < MAX_POSTS_TO_CONSIDER) {
+                if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
                   // add to queue
                   console.log(' - - - adding user to list');
                   queue.push(voterInfos);
