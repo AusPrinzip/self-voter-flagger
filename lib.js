@@ -245,8 +245,8 @@ function getSteemAccountCount (callback) {
   });
 }
 
-function getSteemAccountHistory (start, limit, callback) {
-  steem.api.getAccountHistory(process.env.STEEM_USER, start, limit, function (err, result) {
+function getSteemAccountHistory (user, start, limit, callback) {
+  steem.api.getAccountHistory(user, start, limit, function (err, result) {
     callback(err, result);
   });
 }
