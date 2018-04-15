@@ -130,7 +130,7 @@ function doProcess (startAtBlockNum, callback) {
               }
             }
             // skip if nothing to record
-            if (vests < 0) {
+            if (vests === 0) {
               console.log(' - couldnt update undelegation amount, skipping');
               continue;
             }
