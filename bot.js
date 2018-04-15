@@ -249,6 +249,22 @@ function doProcess (startAtBlockNum, callback) {
               // don't worry if this fails
             }
 
+            var vestingDelegations = null;
+            try {
+              vestingDelegations = wait.for(lib.getVestingDelegations, opDetail.voter);
+              console.log(JSON.stringify(vestingDelegations));
+            } catch (err) {
+              console.error(err);
+              console.log('couldnt get vesting delegations, exiting');
+              callback();
+              return;
+            }
+            if (vestingDelegations === undefined || vestingDelegations === null) {
+              console.log('couldnt get vesting delegations, exiting');
+              callback();
+              return;
+            }
+
             if (steemPower < Number(process.env.MIN_SP)) {
               console.log('SP of ' + opDetail.voter + ' < min of ' + Number(process.env.MIN_SP) + ', skipping');
               continue;

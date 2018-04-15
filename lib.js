@@ -207,6 +207,12 @@ function getChainProperties (callback) {
   });
 }
 
+function getVestingDelegations (account, callback) {
+  steem.api.getVestingDelegations(account, null, 100, function (err, result) {
+    callback(err, result);
+  });
+}
+
 /**
  *
  * @param type, can be "post" or "comment"
@@ -349,6 +355,7 @@ module.exports.getPostsByCreated = getPostsByCreated;
 module.exports.getGlobalProperties = getGlobalProperties;
 module.exports.getCurrentMedianHistoryPrice = getCurrentMedianHistoryPrice;
 module.exports.getChainProperties = getChainProperties;
+module.exports.getVestingDelegations = getVestingDelegations;
 module.exports.getRewardFund = getRewardFund;
 module.exports.getSteemAccounts = getSteemAccounts;
 module.exports.getSteemAccountCount = getSteemAccountCount;
