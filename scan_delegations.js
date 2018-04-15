@@ -75,7 +75,6 @@ function doProcess (startAtBlockNum, callback) {
           if (opName !== undefined && opName !== null &&
               opName.localeCompare('delegate_vesting_shares') === 0) {
             // keep track of delegations manually
-            // delegator
             console.log('* recording delegation: ' + JSON.stringify(opDetail));
             // first check if zeroed, need to get value from general call
             var vests = Number(opDetail.vesting_shares.replace(' VESTS', ''));
@@ -109,7 +108,8 @@ function doProcess (startAtBlockNum, callback) {
                   if (operations !== undefined && operations !== null) {
                     for (var n = 0; n < operations.length; n++) {
                       var accHistOpName = operations[n][0];
-                      var accHistOpDetail = operations[k][1];
+                      console.log(' - - op: ' + accHistOpName);
+                      var accHistOpDetail = operations[n][1];
                       if (accHistOpName !== undefined && accHistOpName !== null &&
                           accHistOpName.localeCompare('delegate_vesting_shares') === 0) {
                         console.log(' - found acc hist delegation: ' + accHistOpDetail);
@@ -122,6 +122,8 @@ function doProcess (startAtBlockNum, callback) {
                         }
                       }
                     }
+                  } else {
+                    console.log(' - failed to get operations in account history');
                   }
                   if (match) {
                     break;
