@@ -75,7 +75,7 @@ function doProcess (startAtBlockNum, callback) {
           if (opName !== undefined && opName !== null &&
               opName.localeCompare('delegate_vesting_shares') === 0) {
             // keep track of delegations manually
-            console.log('* recording delegation: ' + JSON.stringify(opDetail));
+            console.log(' - recording delegation: ' + JSON.stringify(opDetail));
             // first check if zeroed, need to get value from general call
             var vests = Number(opDetail.vesting_shares.replace(' VESTS', ''));
             var sp = 0;
@@ -87,14 +87,14 @@ function doProcess (startAtBlockNum, callback) {
                 accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 10000);
               } catch (err) {
                 console.error(err);
-                console.log('couldnt get account history, exiting');
+                console.log(' *** couldnt get account history, exiting');
                 finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                   callback();
                 });
                 return;
               }
               if (accountHistory === undefined || accountHistory === null) {
-                console.log('couldnt get account history, exiting');
+                console.log(' *** couldnt get account history, exiting');
                 finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                   callback();
                 });
@@ -109,12 +109,12 @@ function doProcess (startAtBlockNum, callback) {
                   var accHistOpDetail = operations[1];
                   if (accHistOpName !== undefined && accHistOpName !== null &&
                       accHistOpName.localeCompare('delegate_vesting_shares') === 0) {
-                    console.log(' - found acc hist delegation: ' + JSON.stringify(accHistOpDetail));
+                    // console.log(' - found acc hist delegation: ' + JSON.stringify(accHistOpDetail));
                     if (accHistOpDetail.delegatee.localeCompare(opDetail.delegatee) === 0 &&
                         Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
                       vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', ''));
                       sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares);
-                      console.log(' - - match!!!');
+                      console.log(' - updated delegation amount to ' + accHistOpDetail.vesting_shares);
                       match = true;
                       break;
                     }
@@ -127,8 +127,12 @@ function doProcess (startAtBlockNum, callback) {
               if (!match) {
                 vests = 0;
                 sp = 0;
-                console.log(' - - failed to get SP from account delegation history');
               }
+            }
+            // skip if nothing to record
+            if (vests < 0) {
+              console.log(' - couldnt update undelegation amount, skipping');
+              continue;
             }
             var delegatorInfos = null;
             try {
