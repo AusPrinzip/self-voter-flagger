@@ -85,7 +85,7 @@ function doProcess (startAtBlockNum, callback) {
             } else {
               var accountHistory = null;
               try {
-                accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, null, 1000);
+                accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 1000);
               } catch (err) {
                 console.error(err);
                 console.log('couldnt get account history, exiting');
