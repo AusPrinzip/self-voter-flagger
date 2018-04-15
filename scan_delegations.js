@@ -84,7 +84,7 @@ function doProcess (startAtBlockNum, callback) {
             } else {
               var accountHistory = null;
               try {
-                accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 1000);
+                accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 10000);
               } catch (err) {
                 console.error(err);
                 console.log('couldnt get account history, exiting');
@@ -114,6 +114,7 @@ function doProcess (startAtBlockNum, callback) {
                         Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
                       vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', ''));
                       sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares);
+                      console.log(' - - match!!!');
                       match = true;
                       break;
                     }
