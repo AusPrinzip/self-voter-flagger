@@ -292,15 +292,15 @@ function doProcess (startAtBlockNum, callback) {
                 steem_power: steemPower,
                 posts: []
               };
+              voterInfos.posts.push({
+                permlink: content.permlink,
+                self_vote_payout: selfVotePayout,
+                extrapolated_roi: roi,
+                flagged: false,
+                to_flag: true,
+                weight: opDetail.weight
+              });
               if (voterIsOnFlagList) {
-                voterInfos.posts.push({
-                  permlink: content.permlink,
-                  self_vote_payout: selfVotePayout,
-                  extrapolated_roi: roi,
-                  flagged: false,
-                  to_flag: true,
-                  weight: opDetail.weight
-                });
                 voterFlagObj.posts.push({
                   permlink: content.permlink,
                   self_vote_payout: selfVotePayout,
@@ -346,14 +346,16 @@ function doProcess (startAtBlockNum, callback) {
                     weight: opDetail.weight
                   }
                 );
-                voterFlagObj.posts.push({
-                  permlink: content.permlink,
-                  self_vote_payout: selfVotePayout,
-                  extrapolated_roi: roi,
-                  flagged: false,
-                  to_flag: voterIsOnFlagList,
-                  weight: opDetail.weight
-                });
+                if (voterIsOnFlagList) {
+                  voterFlagObj.posts.push({
+                    permlink: content.permlink,
+                    self_vote_payout: selfVotePayout,
+                    extrapolated_roi: roi,
+                    flagged: false,
+                    to_flag: voterIsOnFlagList,
+                    weight: opDetail.weight
+                  });
+                }
               }
             }
             // console.log(" - - updated voter info:
