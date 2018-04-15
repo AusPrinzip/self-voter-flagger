@@ -112,9 +112,9 @@ function doProcess (startAtBlockNum, callback) {
                     // console.log(' - found acc hist delegation: ' + JSON.stringify(accHistOpDetail));
                     if (accHistOpDetail.delegatee.localeCompare(opDetail.delegatee) === 0 &&
                         Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
-                      vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', ''));
-                      sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares);
-                      console.log(' - updated delegation amount to ' + accHistOpDetail.vesting_shares);
+                      vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) * -1;
+                      sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares) * -1;
+                      console.log(' - updated delegation amount to negative ' + accHistOpDetail.vesting_shares);
                       match = true;
                       break;
                     }
