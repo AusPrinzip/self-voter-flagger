@@ -114,7 +114,7 @@ function doProcess (startAtBlockNum, callback) {
                         Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
                       vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) * -1;
                       sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares) * -1;
-                      console.log(' - updated delegation amount to negative ' + accHistOpDetail.vesting_shares);
+                      console.log(' - - updated delegation amount to negative ' + accHistOpDetail.vesting_shares);
                       match = true;
                       break;
                     }
@@ -131,7 +131,7 @@ function doProcess (startAtBlockNum, callback) {
             }
             // skip if nothing to record
             if (vests === 0) {
-              console.log(' - couldnt update undelegation amount, skipping');
+              console.log(' - - couldnt update undelegation amount, skipping');
               continue;
             }
             var delegatorInfos = null;
