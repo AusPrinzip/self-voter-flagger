@@ -252,7 +252,6 @@ function doProcess (startAtBlockNum, callback) {
             var vestingDelegations = null;
             try {
               vestingDelegations = wait.for(lib.getVestingDelegations, opDetail.voter);
-              console.log(JSON.stringify(vestingDelegations));
             } catch (err) {
               console.error(err);
               console.log('couldnt get vesting delegations, exiting');
@@ -263,6 +262,17 @@ function doProcess (startAtBlockNum, callback) {
               console.log('couldnt get vesting delegations, exiting');
               callback();
               return;
+            }
+            if (vestingDelegations.length > 0) {
+              console.log(' - has vesting delegations');
+              for (m = 0; m < vestingDelegations.length; m++) {
+                console.log(' - - from ' + vestingDelegations[m].delegator + ', to ' + vestingDelegations[m].delegatee);
+                console.log(' - - - SP: ' + lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares));
+                console.log(' - - - time: ' + vestingDelegations[m].min_delegation_time);
+              }
+              console.log(' - voter account, own vesting' + lib.getSteemPowerFromVest(voterAccount.vesting_shares));
+              console.log(' - voter account, received vesting' + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares));
+              console.log(' - voter account, delegated vesting' + lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares));
             }
 
             if (steemPower < Number(process.env.MIN_SP)) {
