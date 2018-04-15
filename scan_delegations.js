@@ -80,7 +80,7 @@ function doProcess (startAtBlockNum, callback) {
             // first check if zeroed, need to get value from general call
             var vests = Number(opDetail.vesting_shares.replace(' VESTS', ''));
             var sp = 0;
-            if (vests === 0) {
+            if (vests > 0) {
               sp = lib.getSteemPowerFromVest(opDetail.vesting_shares);
             } else {
               var vestingDelegations = null;
