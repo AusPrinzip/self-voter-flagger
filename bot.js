@@ -281,13 +281,17 @@ function doProcess (startAtBlockNum, callback) {
                   permlink: content.permlink,
                   self_vote_payout: selfVotePayout,
                   extrapolated_roi: roi,
-                  flagged: false
+                  flagged: false,
+                  to_flag: true,
+                  weight: opDetail.weight
                 });
                 voterFlagObj.posts.push({
                   permlink: content.permlink,
                   self_vote_payout: selfVotePayout,
                   extrapolated_roi: roi,
-                  flagged: false
+                  flagged: false,
+                  to_flag: true,
+                  weight: opDetail.weight
                 });
               }
             } else {
@@ -305,24 +309,34 @@ function doProcess (startAtBlockNum, callback) {
                   for (var n = 0; n < voterInfos.posts.length; n++) {
                     voterInfos.total_extrapolated_roi += voterInfos.posts[n].extrapolated_roi;
                   }
+                  if (voterInfos.to_flag === undefined) {
+                    voterInfos.to_flag = voterIsOnFlagList;
+                  }
+                  if (voterInfos.weight === undefined) {
+                    voterInfos.weight = opDetail.weight;
+                  }
                   isDuplicate = true;
                   break;
                 }
               }
-              if (!isDuplicate && voterIsOnFlagList) {
+              if (!isDuplicate) {
                 voterInfos.posts.push(
                   {
                     permlink: content.permlink,
                     self_vote_payout: selfVotePayout,
                     extrapolated_roi: roi,
-                    flagged: false
+                    flagged: false,
+                    to_flag: voterIsOnFlagList,
+                    weight: opDetail.weight
                   }
                 );
                 voterFlagObj.posts.push({
                   permlink: content.permlink,
                   self_vote_payout: selfVotePayout,
                   extrapolated_roi: roi,
-                  flagged: false
+                  flagged: false,
+                  to_flag: voterIsOnFlagList,
+                  weight: opDetail.weight
                 });
               }
             }

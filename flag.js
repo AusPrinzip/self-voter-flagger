@@ -96,7 +96,14 @@ function doProcess (callback) {
         if (postDetails.flagged !== undefined &&
             postDetails.flagged !== null &&
             postDetails.flagged) {
-          console.log(' - - already flagged post, continuing...');
+          console.log(' - - already flagged post, skipping...');
+          continue;
+        }
+
+        if (postDetails.to_flag !== undefined &&
+            postDetails.to_flag !== null &&
+            !postDetails.to_flag) {
+          console.log(' - - marked do not flag, skipping...');
           continue;
         }
 
