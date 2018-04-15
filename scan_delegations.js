@@ -105,8 +105,7 @@ function doProcess (startAtBlockNum, callback) {
               if (vestingDelegations.length > 0) {
                 console.log(' - DEBUG: ' + JSON.stringify(vestingDelegations));
                 for (var m = 0; m < vestingDelegations.length; m++) {
-                  if (vestingDelegations[m].delegatee.localeCompare(opDetail.delegatee) === 0 &&
-                      lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares) > 0) {
+                  if (vestingDelegations[m].delegatee.localeCompare(opDetail.delegatee) === 0) {
                     vests = Number(vestingDelegations[m].vesting_shares.replace(' VESTS', ''));
                     sp = lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares);
                     match = true;
@@ -122,7 +121,7 @@ function doProcess (startAtBlockNum, callback) {
             }
             var delegatorInfos = null;
             try {
-              delegatorInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {voter: opDetail.delegator});
+              delegatorInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: opDetail.delegator});
             } catch (err) {
               // do nothing
             }

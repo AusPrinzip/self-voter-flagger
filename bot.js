@@ -262,7 +262,7 @@ function doProcess (startAtBlockNum, callback) {
 
             var delegationsInfos = null;
             try {
-              delegationsInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {voter: opDetail.voter});
+              delegationsInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: opDetail.voter});
             } catch (err) {
               // do nothing
             }
