@@ -174,10 +174,8 @@ function doProcess (startAtBlockNum, callback) {
 
             var voteDetail = null;
             var countedNetRshares = 0;
-            console.log(' - num active votes: ' + content.active_votes.length);
             for (var m = 0; m < content.active_votes.length; m++) {
-              countedNetRshares += content.active_votes[m].rshares;
-              console.log(' - - rshares vote: ' + content.active_votes[m].rshares);
+              countedNetRshares += Number(content.active_votes[m].rshares);
               if (content.active_votes[m].voter.localeCompare(opDetail.voter) === 0) {
                 voteDetail = content.active_votes[m];
                 if (!recordOnly) {
@@ -192,9 +190,9 @@ function doProcess (startAtBlockNum, callback) {
 
             // THEN, check if vote rshares are > 0
             // note: cancelled self votes have rshares == 0
-            if (voteDetail.rshares < 0) {
+            if (Number(voteDetail.rshares) < 0) {
               console.log(' - - self flag');
-            } else if (voteDetail.rshares === 0) {
+            } else if (Number(voteDetail.rshares) === 0) {
               console.log(' - - self vote negated');
             }
 
@@ -208,7 +206,7 @@ function doProcess (startAtBlockNum, callback) {
               console.log('content.pending_payout_value: ' + content.pending_payout_value);
               var pendingPayoutValue = content.pending_payout_value.split(' ');
               maxPayout = Number(pendingPayoutValue[0]);
-              netRshares = content.net_rshares;
+              netRshares = Number(content.net_rshares);
             } else {
               console.log('content.total_payout_value: ' + content.total_payout_value);
               var totalPayoutValue = content.total_payout_value.split(' ');
@@ -226,10 +224,10 @@ function doProcess (startAtBlockNum, callback) {
             if (maxPayout <= 0.00) {
               selfVotePayout = 0;
             } else if (content.active_votes.length === 1 ||
-                  voteDetail.rshares >= Number(netRshares)) {
+                  Number(voteDetail.rshares) === Number(netRshares)) {
               selfVotePayout = maxPayout;
             } else {
-              selfVotePayout = maxPayout * (voteDetail.rshares / Number(netRshares));
+              selfVotePayout = maxPayout * (Number(voteDetail.rshares) / Number(netRshares));
             }
             console.log('selfVotePayout: ' + selfVotePayout);
             if (selfVotePayout < lib.MIN_SELF_VOTE_TO_CONSIDER) {
@@ -242,7 +240,7 @@ function doProcess (startAtBlockNum, callback) {
             var voterIsOnFlagList = false;
             var voterFlagObj = null;
             try {
-              var voterFlagObj = wait.for(lib.getRecordFromDb, lib.DB_FLAGLIST, {voter: opDetail.voter});
+              voterFlagObj = wait.for(lib.getRecordFromDb, lib.DB_FLAGLIST, {voter: opDetail.voter});
               if (voterFlagObj !== undefined &&
                   voterFlagObj !== null) {
                 voterIsOnFlagList = true;
