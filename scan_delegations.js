@@ -77,6 +77,49 @@ function doProcess (startAtBlockNum, callback) {
             // keep track of delegations manually
             // delegator
             console.log('* recording delegation: ' + JSON.stringify(opDetail));
+            // first check if zeroed, need to get value from general call
+            var vests = Number(opDetail.vesting_shares.replace(' VESTS', ''));
+            var sp = 0;
+            if (vests === 0) {
+              sp = lib.getSteemPowerFromVest(opDetail.vesting_shares);
+            } else {
+              var vestingDelegations = null;
+              try {
+                vestingDelegations = wait.for(lib.getVestingDelegations, opDetail.delegator);
+              } catch (err) {
+                console.error(err);
+                console.log('couldnt get vesting delegations, exiting');
+                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
+                  callback();
+                });
+                return;
+              }
+              if (vestingDelegations === undefined || vestingDelegations === null) {
+                console.log('couldnt get vesting delegations, exiting');
+                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
+                  callback();
+                });
+                return;
+              }
+              var match = false;
+              if (vestingDelegations.length > 0) {
+                console.log(' - DEBUG: ' + JSON.stringify(vestingDelegations));
+                for (var m = 0; m < vestingDelegations.length; m++) {
+                  if (vestingDelegations[m].delegatee.localeCompare(opDetail.delegatee) === 0 &&
+                      lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares) > 0) {
+                    vests = Number(vestingDelegations[m].vesting_shares.replace(' VESTS', ''));
+                    sp = lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares);
+                    match = true;
+                    break;
+                  }
+                }
+              }
+              if (match) {
+                vests = 0;
+                sp = 0;
+                console.log(' - - failed to get SP from account delegation history');
+              }
+            }
             var delegatorInfos = null;
             try {
               delegatorInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {voter: opDetail.delegator});
@@ -93,8 +136,8 @@ function doProcess (startAtBlockNum, callback) {
             delegatorInfos.delegated.push(
               {
                 user: opDetail.delegatee,
-                vests: opDetail.vesting_shares,
-                sp: lib.getSteemPowerFromVest(opDetail.vesting_shares),
+                vests: vests,
+                sp: sp,
                 timestamp: block.timestamp
               }
             );
@@ -115,8 +158,8 @@ function doProcess (startAtBlockNum, callback) {
             delegateeInfos.received.push(
               {
                 user: opDetail.delegator,
-                vests: opDetail.vesting_shares,
-                sp: lib.getSteemPowerFromVest(opDetail.vesting_shares),
+                vests: vests,
+                sp: sp,
                 timestamp: block.timestamp
               }
             );
