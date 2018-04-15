@@ -255,12 +255,16 @@ function doProcess (startAtBlockNum, callback) {
             } catch (err) {
               console.error(err);
               console.log('couldnt get vesting delegations, exiting');
-              callback();
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
+                callback();
+              });
               return;
             }
             if (vestingDelegations === undefined || vestingDelegations === null) {
               console.log('couldnt get vesting delegations, exiting');
-              callback();
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
+                callback();
+              });
               return;
             }
             if (vestingDelegations.length > 0) {
@@ -270,9 +274,9 @@ function doProcess (startAtBlockNum, callback) {
                 console.log(' - - - SP: ' + lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares));
                 console.log(' - - - time: ' + vestingDelegations[m].min_delegation_time);
               }
-              console.log(' - voter account, own vesting' + lib.getSteemPowerFromVest(voterAccount.vesting_shares));
-              console.log(' - voter account, received vesting' + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares));
-              console.log(' - voter account, delegated vesting' + lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares));
+              console.log(' - voter account, SP: ' + steemPower + ' = ' + lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
+                ' - ' + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) +
+                ' + ' + lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares));
             }
 
             if (steemPower < Number(process.env.MIN_SP)) {
