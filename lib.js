@@ -12,6 +12,7 @@ const DB_VOTERS = 'voters';
 const DB_RUNS = 'runs';
 const DB_QUEUE = 'queue';
 const DB_FLAGLIST = 'flaglist';
+const DB_DELEGATIONS = 'delegations';
 
 const VOTE_POWER_1_PC = 100;
 var MAX_POSTS_TO_CONSIDER = 100;
@@ -327,6 +328,7 @@ module.exports.DB_VOTERS = DB_VOTERS;
 module.exports.DB_RUNS = DB_RUNS;
 module.exports.DB_QUEUE = DB_QUEUE;
 module.exports.DB_FLAGLIST = DB_FLAGLIST;
+module.exports.DB_DELEGATIONS = DB_DELEGATIONS;
 
 // getters
 

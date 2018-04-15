@@ -36,9 +36,19 @@ function doProcess (startAtBlockNum, callback) {
   wait.launchFiber(function () {
     // set up initial variables
     console.log('Getting blockchain info');
+    var maxBlockNum = lib.getProperties().head_block_number;
+    if (lib.getLastInfos().last_delegation_block !== undefined) {
+      if (maxBlockNum > lib.getLastInfos().last_delegation_block) {
+        maxBlockNum = lib.getLastInfos().last_delegation_block;
+      }
+    } else {
+      console.log(' * delegation information not available, run delegation script before bot script');
+      callback();
+      return;
+    }
     try {
-      var headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
-      var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
+      var latestBlock = wait.for(lib.getBlockHeader, maxBlockNum);
+      var latestBlockMoment = moment(latestBlock.timestamp, moment.ISO_8601);
       // chain stuff
       var priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
       console.log('Price info: ' + JSON.stringify(priceInfo));
@@ -64,7 +74,7 @@ function doProcess (startAtBlockNum, callback) {
     var currentBlockNum = startAtBlockNum;
     var dayBlocked = false;
     var endTime = moment(new Date()).add(Number(process.env.MAX_MINS_TO_RUN), 'minute');
-    for (var i = startAtBlockNum; i <= lib.getProperties().head_block_number; i++) {
+    for (var i = startAtBlockNum; i <= maxBlockNum; i++) {
       currentBlockNum = i;
       if (moment(new Date()).isAfter(endTime)) {
         console.log('Max time reached, stopping');
@@ -91,6 +101,7 @@ function doProcess (startAtBlockNum, callback) {
           break;
         }
       }
+      var thisBlockMoment = moment(block.timestamp, moment.ISO_8601);
       // console.log("block info: "+JSON.stringify(block));
       var transactions = block.transactions;
       for (var j = 0; j < transactions.length; j++) {
@@ -249,34 +260,34 @@ function doProcess (startAtBlockNum, callback) {
               // don't worry if this fails
             }
 
-            var vestingDelegations = null;
+            var delegationsInfos = null;
             try {
-              vestingDelegations = wait.for(lib.getVestingDelegations, opDetail.voter);
+              delegationsInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {voter: opDetail.voter});
             } catch (err) {
-              console.error(err);
-              console.log('couldnt get vesting delegations, exiting');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
-                callback();
-              });
-              return;
+              // do nothing
             }
-            if (vestingDelegations === undefined || vestingDelegations === null) {
-              console.log('couldnt get vesting delegations, exiting');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
-                callback();
-              });
-              return;
-            }
-            if (vestingDelegations.length > 0) {
-              console.log(' - has vesting delegations');
-              for (m = 0; m < vestingDelegations.length; m++) {
-                console.log(' - - from ' + vestingDelegations[m].delegator + ', to ' + vestingDelegations[m].delegatee);
-                console.log(' - - - SP: ' + lib.getSteemPowerFromVest(vestingDelegations[m].vesting_shares));
-                console.log(' - - - time: ' + vestingDelegations[m].min_delegation_time);
+            if (delegationsInfos !== undefined && delegationsInfos !== null) {
+              console.log(' - checking delegation information');
+              console.log(' - - voter account, SP: ' + steemPower + ' = ' + lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
+                ' + ' + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) +
+                ' - ' + lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares));
+              var correctionSP = 0;
+              for (m = 0; m < delegationsInfos.received.length; m++) {
+                var delegationMoment = moment(delegationsInfos.received[m].timestamp, moment.ISO_8601);
+                if (delegationMoment.isAfter(thisBlockMoment)) {
+                  console.log(' - - - receieved ' + delegationsInfos.received[m].sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
+                  correctionSP -= delegationsInfos.received[m].sp;
+                }
               }
-              console.log(' - voter account, SP: ' + steemPower + ' = ' + lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
-                ' - ' + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) +
-                ' + ' + lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares));
+              for (m = 0; m < delegationsInfos.delegated.length; m++) {
+                delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
+                if (delegationMoment.isAfter(thisBlockMoment)) {
+                  console.log(' - - - delegated ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
+                  correctionSP += delegationsInfos.delegated[m].sp;
+                }
+              }
+              console.log(' - - correcting SP for historical events by ' + correctionSP + ', SP now = ' + steemPower);
+              steemPower += correctionSP;
             }
 
             if (steemPower < Number(process.env.MIN_SP)) {
