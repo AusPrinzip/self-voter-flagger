@@ -103,12 +103,27 @@ function doProcess (startAtBlockNum, callback) {
               }
               var match = false;
               if (accountHistory.length > 0) {
-                console.log(' - DEBUG: ' + JSON.stringify(accountHistory));
+                // console.log(' - DEBUG: ' + JSON.stringify(accountHistory));
                 for (var m = 0; m < accountHistory.length; m++) {
-                  if (accountHistory[m].delegatee.localeCompare(opDetail.delegatee) === 0) {
-                    vests = Number(accountHistory[m].vesting_shares.replace(' VESTS', ''));
-                    sp = lib.getSteemPowerFromVest(accountHistory[m].vesting_shares);
-                    match = true;
+                  var operations = accountHistory[m][1]['op'];
+                  if (operations !== undefined && operations !== null) {
+                    for (var n = 0; n < operations.length; n++) {
+                      var accHistOpName = operations[n][0];
+                      var accHistOpDetail = operations[k][1];
+                      if (accHistOpName !== undefined && accHistOpName !== null &&
+                          accHistOpName.localeCompare('delegate_vesting_shares') === 0) {
+                        console.log(' - found acc hist delegation: ' + accHistOpDetail);
+                        if (accHistOpDetail.delegatee.localeCompare(opDetail.delegatee) === 0 &&
+                            Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
+                          vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', ''));
+                          sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares);
+                          match = true;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                  if (match) {
                     break;
                   }
                 }
