@@ -18,6 +18,7 @@ const VOTE_POWER_1_PC = 100;
 var MAX_POSTS_TO_CONSIDER = 100;
 var MIN_SELF_VOTE_TO_CONSIDER = 0.001;
 var MIN_ROI_TO_CONSIDER = 0.000001;
+const API_RETRIES = 10;
 
 var db;
 
@@ -159,6 +160,12 @@ function saveDb (dbName, obj, callback) {
     if (callback !== undefined && callback !== null) {
       callback(err, data);
     }
+  });
+}
+
+function countDbRecords (dbName, callback) {
+  db.collection(dbName).count(function (err, count) {
+    callback(err, count);
   });
 }
 
@@ -324,6 +331,7 @@ module.exports.VOTE_POWER_1_PC = VOTE_POWER_1_PC;
 module.exports.MAX_POSTS_TO_CONSIDER = MAX_POSTS_TO_CONSIDER;
 module.exports.MIN_SELF_VOTE_TO_CONSIDER = MIN_SELF_VOTE_TO_CONSIDER;
 module.exports.MIN_ROI_TO_CONSIDER = MIN_ROI_TO_CONSIDER;
+module.exports.API_RETRIES = API_RETRIES;
 
 module.exports.DB_RECORDS = DB_RECORDS;
 module.exports.DB_VOTERS = DB_VOTERS;
@@ -351,6 +359,7 @@ module.exports.getRecordFromDb = getRecordFromDb;
 module.exports.addAllToDb = addAllToDb;
 module.exports.dropDb = dropDb;
 module.exports.saveDb = saveDb;
+module.exports.countDbRecords = countDbRecords;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.getBlockHeader = getBlockHeader;

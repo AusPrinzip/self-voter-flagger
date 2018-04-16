@@ -5,8 +5,7 @@ const moment = require('moment');
 // const S = require('string');
 const wait = require('wait.for');
 const lib = require('./lib.js');
-
-const API_RETRIES = 10;
+const { exec } = require('child_process');
 
 function main () {
   // get more information on unhandled promise rejections
@@ -16,11 +15,20 @@ function main () {
     process.exit(1);
   });
   lib.start(function () {
-    doProcess(lib.getLastInfos().last_delegation_block + 1, function () {
-      console.log('Finished');
+    if (lib.getLastInfos().blocked) {
+      console.log(' --- state is blocked, do not process more delegations yet, skipping script');
       setTimeout(function () {
         process.exit();
       }, 5000);
+      return;
+    }
+    doProcess(lib.getLastInfos().last_delegation_block + 1, function () {
+      checkFinished(function () {
+        console.log('Finished');
+        setTimeout(function () {
+          process.exit();
+        }, 5000);
+      });
     });
   });
 }
@@ -31,7 +39,7 @@ function doProcess (startAtBlockNum, callback) {
     console.log('Getting blockchain info');
     var headBlock = null;
     var tries = 0;
-    while (tries < API_RETRIES) {
+    while (tries < lib.API_RETRIES) {
       console.log(' - (re)trying to get head block ' + lib.getProperties().head_block_number);
       tries++;
       try {
@@ -61,7 +69,7 @@ function doProcess (startAtBlockNum, callback) {
       }
       var block = null;
       tries = 0;
-      while (tries < API_RETRIES) {
+      while (tries < lib.API_RETRIES) {
         console.log(' - (re)trying to get block ' + currentBlockNum);
         tries++;
         try {
@@ -108,7 +116,7 @@ function doProcess (startAtBlockNum, callback) {
             } else {
               var accountHistory = null;
               tries = 0;
-              while (tries < API_RETRIES) {
+              while (tries < lib.API_RETRIES) {
                 console.log(' - (re)trying to get account history');
                 tries++;
                 try {
@@ -221,6 +229,38 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, callback) {
   wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
   lib.setLastInfos(lastInfos);
   callback();
+}
+
+function checkFinished (callback) {
+  // check if scanned up to the current head block at time of start scan
+  if (lib.getLastInfos().last_delegation_block === lib.getProperties().head_block_number) {
+    console.log(' - delegation script reached recent head, blocking for main bot to run after SP snapshot is taken');
+    startChildProcess('node', 'job_snapshot_sp.js', function () {
+      var lastInfos = lib.getLastInfos();
+      lastInfos.blocked = true;
+      wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
+      lib.setLastInfos(lastInfos);
+    });
+  } else {
+    var diff = lib.getProperties().head_block_number - lib.getLastInfos().last_delegation_block;
+    console.log(' - delegation last processed block still ' + diff + ' blocks (' + (diff / (20 * 60)) + ' hr) away from head, will continue next run');
+    callback();
+  }
+}
+
+function startChildProcess (proc, arg, callback) {
+  var child = require('child_process').spawn(proc, [arg]);
+
+  child.stdout.on('data', function (data) {
+    console.log(`${data}`);
+  });
+  child.stderr.on('data', function (data) {
+    console.error(`${data}`);
+  });
+  child.on('close', function (code) {
+    console.log('child process "' + proc + ' ' + arg + '" exited with code ' + code);
+    callback();
+  });
 }
 
 // START THIS SCRIPT

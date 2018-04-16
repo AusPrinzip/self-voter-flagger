@@ -14,18 +14,20 @@ function main () {
     process.exit(1);
   });
   lib.start(function () {
-    if (lib.getLastInfos().blocked) {
-      console.log('Day blocked - edit value to unblock');
+    if (!lib.getLastInfos().blocked) {
+      console.log(' --- delegation script not finished (blocked) yet, do not process main bot algo until up to date');
       setTimeout(function () {
         process.exit();
       }, 5000);
       return;
     }
     doProcess(lib.getLastInfos().lastBlock + 1, function () {
-      console.log('Finished');
-      setTimeout(function () {
-        process.exit();
-      }, 5000);
+      checkFinished(function () {
+        console.log('Finished');
+        setTimeout(function () {
+          process.exit();
+        }, 5000);
+      });
     });
   });
 }
@@ -47,8 +49,6 @@ function doProcess (startAtBlockNum, callback) {
       return;
     }
     try {
-      var latestBlock = wait.for(lib.getBlockHeader, maxBlockNum);
-      var latestBlockMoment = moment(latestBlock.timestamp, moment.ISO_8601);
       // chain stuff
       var priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
       console.log('Price info: ' + JSON.stringify(priceInfo));
@@ -70,9 +70,7 @@ function doProcess (startAtBlockNum, callback) {
       queue = [];
     }
     // set up vars
-    var firstBlockMoment = null;
     var currentBlockNum = startAtBlockNum;
-    var dayBlocked = false;
     var endTime = moment(new Date()).add(Number(process.env.MAX_MINS_TO_RUN), 'minute');
     for (var i = startAtBlockNum; i <= maxBlockNum; i++) {
       currentBlockNum = i;
@@ -85,22 +83,12 @@ function doProcess (startAtBlockNum, callback) {
         var block = wait.for(lib.getBlock, i);
       } catch (err) {
         console.log('Getting block failed, finish gracefully');
-        finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
+        finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
           callback();
         });
         return;
       }
       // create current time moment from block infos
-      if (firstBlockMoment === null) {
-        firstBlockMoment = latestBlockMoment;
-      } else {
-        if (firstBlockMoment.dayOfYear() < latestBlockMoment.dayOfYear()) {
-          // exit, the have processed entire day
-          dayBlocked = true;
-          currentBlockNum--;
-          break;
-        }
-      }
       var thisBlockMoment = moment(block.timestamp, moment.ISO_8601);
       // console.log("block info: "+JSON.stringify(block));
       var transactions = block.transactions;
@@ -137,7 +125,7 @@ function doProcess (startAtBlockNum, callback) {
               var accounts = wait.for(lib.getSteemAccounts, opDetail.voter);
             } catch (err) {
               console.log('Get accounts for voter failed, finish gracefully');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                 callback();
               });
               return;
@@ -149,7 +137,7 @@ function doProcess (startAtBlockNum, callback) {
                   lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
             } catch (err) {
               console.log('Get vesting shares for voter failed, finish gracefully');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                 callback();
               });
               return;
@@ -161,7 +149,7 @@ function doProcess (startAtBlockNum, callback) {
               content = wait.for(lib.getPostContent, opDetail.author, opDetail.permlink);
             } catch (err) {
               console.log('Get post content failed, finish gracefully');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, dayBlocked, function () {
+              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                 callback();
               });
               return;
@@ -451,13 +439,13 @@ function doProcess (startAtBlockNum, callback) {
         }
       }
     }
-    finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, dayBlocked, function () {
+    finishAndStoreLastInfos(startAtBlockNum, currentBlockNum, function () {
       callback();
     });
   });
 }
 
-function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, callback) {
+function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, callback) {
   console.log('Processed from block ' + startAtBlockNum + ' to ' + currentBlockNum);
   wait.for(lib.saveDb, lib.DB_RUNS,
     {
@@ -466,9 +454,6 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
     });
   var lastInfos = lib.getLastInfos();
   lastInfos.lastBlock = currentBlockNum;
-  if (dayBlocked) {
-    lastInfos.blocked = true;
-  }
   wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
   lib.setLastInfos(lastInfos);
   // save queue, but drop it first as we are performing an overwrite
@@ -484,6 +469,21 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, dayBlocked, 
     wait.for(lib.saveDb, lib.DB_QUEUE, queue[i]);
   }
   callback();
+}
+
+function checkFinished (callback) {
+  // check if scanned up to the current head block at time of start scan
+  if (lib.getLastInfos().lastBlock === lib.getProperties().head_block_number) {
+    console.log(' - main bot script reached recent head, unblocking delegation script, will continue next run');
+    var lastInfos = lib.getLastInfos();
+    lastInfos.blocked = false;
+    wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
+    lib.setLastInfos(lastInfos);
+  } else {
+    var diff = lib.getProperties().head_block_number - lib.getLastInfos().lastBlock;
+    console.log(' - main bot last processed block still ' + diff + ' blocks (' + (diff / (20 * 60)) + ' hr) away from head, will continue next run');
+    callback();
+  }
 }
 
 // START THIS SCRIPT
