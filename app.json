@@ -13,6 +13,7 @@
     "DAYS_UNTIL_UPDATE": "1",
     "ACTIVE": "false",
     "STARTING_BLOCK_NUM": "20931033",
-    "API_KEY": "replace_me_with_secret_key"
+    "API_KEY": "replace_me_with_secret_key",
+    "DELEGATION_SCAN_ONLY": "false"
   }
 }
