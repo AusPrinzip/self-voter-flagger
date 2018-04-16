@@ -6,6 +6,8 @@ const moment = require('moment');
 const wait = require('wait.for');
 const lib = require('./lib.js');
 
+const API_RETRIES = 10;
+
 function main () {
   // get more information on unhandled promise rejections
   process.on('unhandledRejection', (reason, p) => {
@@ -27,14 +29,25 @@ function doProcess (startAtBlockNum, callback) {
   wait.launchFiber(function () {
     // set up initial variables
     console.log('Getting blockchain info');
-    try {
-      var headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
-      var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
-    } catch (err) {
-      console.error(err);
+    var headBlock = null;
+    var tries = 0;
+    while (tries < API_RETRIES) {
+      console.log(' - (re)trying to get head block ' + lib.getProperties().head_block_number);
+      tries++;
+      try {
+        headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
+        break;
+      } catch (err) {
+        console.error(err);
+        console.log(' - failed to get head block');
+      }
+    }
+    if (headBlock === undefined || headBlock === null) {
+      console.log(' - failed to get head block');
       callback();
       return;
     }
+    var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
     // set up vars
     var firstBlockMoment = null;
     var currentBlockNum = startAtBlockNum;
@@ -46,9 +59,20 @@ function doProcess (startAtBlockNum, callback) {
         currentBlockNum--;
         break;
       }
-      try {
-        var block = wait.for(lib.getBlock, i);
-      } catch (err) {
+      var block = null;
+      tries = 0;
+      while (tries < API_RETRIES) {
+        console.log(' - (re)trying to get block ' + currentBlockNum);
+        tries++;
+        try {
+          block = wait.for(lib.getBlock, currentBlockNum);
+          break;
+        } catch (err) {
+          console.error(err);
+          console.log(' - failed to get block');
+        }
+      }
+      if (block === undefined || block === null) {
         console.log('Getting block failed, finish gracefully');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
           callback();
@@ -83,15 +107,17 @@ function doProcess (startAtBlockNum, callback) {
               sp = lib.getSteemPowerFromVest(opDetail.vesting_shares);
             } else {
               var accountHistory = null;
-              try {
-                accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 10000);
-              } catch (err) {
-                console.error(err);
-                console.log(' *** couldnt get account history, exiting');
-                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
-                  callback();
-                });
-                return;
+              tries = 0;
+              while (tries < API_RETRIES) {
+                console.log(' - (re)trying to get account history');
+                tries++;
+                try {
+                  accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 10000);
+                  break;
+                } catch (err) {
+                  console.error(err);
+                  console.log(' - failed to get account history');
+                }
               }
               if (accountHistory === undefined || accountHistory === null) {
                 console.log(' *** couldnt get account history, exiting');
