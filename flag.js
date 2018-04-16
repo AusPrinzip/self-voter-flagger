@@ -29,36 +29,71 @@ function doProcess (callback) {
   wait.launchFiber(function () {
     // set up initial variables
     console.log('Getting blockchain info');
-    try {
-      var headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
-      var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
-      // chain stuff
-      var rewardFundInfo = wait.for(lib.getRewardFund, 'post');
-      console.log('Reward fund info: ' + JSON.stringify(rewardFundInfo));
-      var priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
-      console.log('Price info: ' + JSON.stringify(priceInfo));
-
-      var rewardBalance = rewardFundInfo.reward_balance;
-      var recentClaims = rewardFundInfo.recent_claims;
-      var rewardPool = rewardBalance.replace(' STEEM', '') / recentClaims;
-
-      var sbdPerSteem = priceInfo.base.replace(' SBD', '') / priceInfo.quote.replace(' STEEM', '');
-
-      var steemPerVest = lib.getProperties().total_vesting_fund_steem.replace(' STEEM', '') /
-          lib.getProperties().total_vesting_shares.replace(' VESTS', '');
-
-      // var steemMarketData = wait.for(requestJsonFromUrlWrapper, lib.MARKET_VALUE_REQ_URL_STEEM);
-      // var sbdMarketData = wait.for(requestJsonFromUrlWrapper, lib.MARKET_VALUE_REQ_URL_SBD);
-      // console.log('from ' + lib.MARKET_VALUE_REQ_URL_STEEM + ': ' + JSON.stringify(steemMarketData));
-      // console.log('from ' + lib.MARKET_VALUE_REQ_URL_SBD + ': ' + JSON.stringify(sbdMarketData));
-      // var steemMarketPrice = steemMarketData[0].price_usd;
-      // var sbdMarketPrice = sbdMarketData[0].price_usd;
-      // console.log('Market prices: 1 STEEM = US$ ' + steemMarketPrice + ', 1 SBD = US$ ' + sbdMarketPrice);
-    } catch (err) {
-      console.error(err);
+    var headBlock = null;
+    var tries = 0;
+    while (tries < lib.API_RETRIES) {
+      tries++;
+      try {
+        headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
+        break;
+      } catch (err) {
+        console.error(err);
+        console.log(' - failed to get head block ' + lib.getProperties().head_block_number + ', retrying if possible');
+      }
+    }
+    if (headBlock === undefined || headBlock === null) {
+      console.log(' - completely failed to get head block, exiting');
       callback();
       return;
     }
+    var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
+
+    var rewardFundInfo = null;
+    tries = 0;
+    while (tries < lib.API_RETRIES) {
+      tries++;
+      try {
+        rewardFundInfo = (lib.getRewardFund, 'post');
+        break;
+      } catch (err) {
+        console.error(err);
+        console.log(' - failed to get reward fund info, retrying if possible');
+      }
+    }
+    if (rewardFundInfo === undefined || rewardFundInfo === null) {
+      console.log(' - completely failed to get reward fund info, exiting');
+      callback();
+      return;
+    }
+    console.log('Reward fund info: ' + JSON.stringify(rewardFundInfo));
+
+    var priceInfo = null;
+    tries = 0;
+    while (tries < lib.API_RETRIES) {
+      tries++;
+      try {
+        priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
+        break;
+      } catch (err) {
+        console.error(err);
+        console.log(' - failed to get price info, retrying if possible');
+      }
+    }
+    if (priceInfo === undefined || priceInfo === null) {
+      console.log(' - completely failed to get price info, exiting');
+      callback();
+      return;
+    }
+    console.log('Price info: ' + JSON.stringify(priceInfo));
+
+    var rewardBalance = rewardFundInfo.reward_balance;
+    var recentClaims = rewardFundInfo.recent_claims;
+    var rewardPool = rewardBalance.replace(' STEEM', '') / recentClaims;
+
+    var sbdPerSteem = priceInfo.base.replace(' SBD', '') / priceInfo.quote.replace(' STEEM', '');
+
+    var steemPerVest = lib.getProperties().total_vesting_fund_steem.replace(' STEEM', '') /
+        lib.getProperties().total_vesting_shares.replace(' VESTS', '');
 
     // get queue
     console.log('getting flaglist...');
@@ -109,15 +144,19 @@ function doProcess (callback) {
 
         // check post age
         var content = null;
-        try {
-          content = wait.for(lib.getPostContent, voterDetails.voter, postDetails.permlink);
-        } catch (err) {
-          console.log(' - - - get post content failed (API error), skip this post');
-          console.error(err);
-          continue;
+        tries = 0;
+        while (tries < lib.API_RETRIES) {
+          tries++;
+          try {
+            content = wait.for(lib.getPostContent, voterDetails.voter, postDetails.permlink);
+            break;
+          } catch (err) {
+            console.error(err);
+            console.log(' - failed to get post content, retrying if possible');
+          }
         }
         if (content === undefined || content === null) {
-          console.log(' - - - get post content failed (content null), skip this post');
+          console.log(' - completely failed to get post content, skipping');
           continue;
         }
         var cashoutTime = moment(content.cashout_time);
@@ -184,8 +223,6 @@ function doProcess (callback) {
         }
 
         // check VP
-        var accounts = wait.for(lib.getSteemAccounts, process.env.STEEM_USER);
-        lib.setAccount(accounts[0]);
         var vp = recalcVotingPower(latestBlockMoment);
         console.log(' - - VP is at ' + (vp / 100).toFixed(2) + ' %');
         if ((vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
@@ -229,17 +266,27 @@ function doProcess (callback) {
         if (process.env.ACTIVE !== undefined &&
             process.env.ACTIVE !== null &&
             process.env.ACTIVE.localeCompare('true') === 0) {
-          try {
-            var voteResult = wait.for(steem.broadcast.vote,
-              process.env.POSTING_KEY_PRV,
-              process.env.STEEM_USER,
-              voterDetails.voter,
-              postDetails.permlink,
-              percentageInt);
-            console.log(' - - - vote result: ' + JSON.stringify(voteResult));
-            flaglist[i].posts[j].flagged = true;
-          } catch (err) {
-            console.log(' - - - error voting: ' + JSON.stringify(err));
+          var voted = false;
+          tries = 0;
+          while (tries < lib.API_RETRIES) {
+            tries++;
+            try {
+              var voteResult = wait.for(steem.broadcast.vote,
+                process.env.POSTING_KEY_PRV,
+                process.env.STEEM_USER,
+                voterDetails.voter,
+                postDetails.permlink,
+                percentageInt);
+              console.log(' - - - vote result: ' + JSON.stringify(voteResult));
+              flaglist[i].posts[j].flagged = true;
+              voted = true;
+              break;
+            } catch (err) {
+              console.error(err);
+              console.log(' - failed to voter, retrying if possible');
+            }
+          }
+          if (!voted) {
             console.log(' - - - fatal error, stopping');
             finish = true;
             break;
@@ -260,23 +307,35 @@ function doProcess (callback) {
               .toLowerCase()
               .replace('.', '');
           }
-          try {
-            var commentResult = wait.for(steem.broadcast.comment,
-              process.env.POSTING_KEY_PRV,
-              voterDetails.voter,
-              postDetails.permlink,
-              process.env.STEEM_USER,
-              commentPermlink,
-              'sadkitten comment',
-              commentMsg,
-              {});
-            console.log(' - - comment result: ' + JSON.stringify(commentResult));
-          } catch (err) {
-            console.log(' - - comment posting error: ' + JSON.stringify(err));
+          var commented = false;
+          tries = 0;
+          while (tries < lib.API_RETRIES) {
+            tries++;
+            try {
+              var commentResult = wait.for(steem.broadcast.comment,
+                process.env.POSTING_KEY_PRV,
+                voterDetails.voter,
+                postDetails.permlink,
+                process.env.STEEM_USER,
+                commentPermlink,
+                'sadkitten comment',
+                commentMsg,
+                {});
+              console.log(' - - comment result: ' + JSON.stringify(commentResult));
+              commented = true;
+              break;
+            } catch (err) {
+              console.error(err);
+              console.log(' - failed to voter, retrying if possible');
+            }
           }
-          console.log(' - - - Waiting for comment timeout...');
-          wait.for(lib.timeoutWait, 20000);
-          console.log(' - - - finished waiting');
+          if (!commented) {
+            console.log(' - - completely failed to post comment');
+          } else {
+            console.log(' - - - Waiting for reduced comment timeout...');
+            wait.for(lib.timeoutWait, 16500);
+            console.log(' - - - finished waiting');
+          }
         } else {
           console.log(' - - - bot not in active state, not voting');
         }
@@ -316,14 +375,20 @@ function doProcess (callback) {
 
 function recalcVotingPower (latestBlockMoment) {
   // update account
-  try {
-    var accounts = wait.for(lib.getSteemAccounts, process.env.STEEM_USER);
-  } catch (err) {
-    console.error(err);
-    return 0;
+  var accounts = null;
+  var tries = 0;
+  while (tries < lib.API_RETRIES) {
+    tries++;
+    try {
+      accounts = wait.for(lib.getSteemAccounts, process.env.STEEM_USER);
+      break;
+    } catch (err) {
+      console.error(err);
+      console.log(' - failed to get account for bot, retrying if possible');
+    }
   }
-  if (accounts === null || accounts === undefined) {
-    console.log('Could not get bot account detail');
+  if (accounts === undefined || accounts === null) {
+    console.log(' - completely failed to get bot account, continue without updating it');
     return 0;
   }
   var account = accounts[0];
