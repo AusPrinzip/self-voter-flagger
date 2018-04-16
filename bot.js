@@ -48,16 +48,25 @@ function doProcess (startAtBlockNum, callback) {
       callback();
       return;
     }
-    try {
-      // chain stuff
-      var priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
-      console.log('Price info: ' + JSON.stringify(priceInfo));
-      var sbdPerSteem = priceInfo.base.replace(' SBD', '') / priceInfo.quote.replace(' STEEM', '');
-    } catch (err) {
-      console.error(err);
+    var priceInfo = null;
+    var tries = 0;
+    while (tries < lib.API_RETRIES) {
+      tries++;
+      try {
+        priceInfo = wait.for(lib.getCurrentMedianHistoryPrice);
+        break;
+      } catch (err) {
+        console.error(err);
+        console.log(' - failed to get price info, retrying if possible');
+      }
+    }
+    if (priceInfo === undefined || priceInfo === null) {
+      console.log(' - completely failed to get price info, exiting');
       callback();
       return;
     }
+    console.log('Price info: ' + JSON.stringify(priceInfo));
+    var sbdPerSteem = priceInfo.base.replace(' SBD', '') / priceInfo.quote.replace(' STEEM', '');
 
     // get queue
     console.log('getting queue...');
@@ -79,10 +88,20 @@ function doProcess (startAtBlockNum, callback) {
         currentBlockNum--;
         break;
       }
-      try {
-        var block = wait.for(lib.getBlock, i);
-      } catch (err) {
-        console.log('Getting block failed, finish gracefully');
+      var block = null;
+      tries = 0;
+      while (tries < lib.API_RETRIES) {
+        tries++;
+        try {
+          block = wait.for(lib.getBlock, currentBlockNum);
+          break;
+        } catch (err) {
+          console.error(err);
+          console.log(' - failed to get block ' + currentBlockNum + ', retrying if possible');
+        }
+      }
+      if (block === undefined || block === null) {
+        console.log(' - completely failed to get block, exiting');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
           callback();
         });
@@ -120,44 +139,25 @@ function doProcess (startAtBlockNum, callback) {
               continue;
             }
 
-            // get account for voter
-            try {
-              var accounts = wait.for(lib.getSteemAccounts, opDetail.voter);
-            } catch (err) {
-              console.log('Get accounts for voter failed, finish gracefully');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
-                callback();
-              });
-              return;
-            }
-            var voterAccount = accounts[0];
-            try {
-              var steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
-                  lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) -
-                  lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
-            } catch (err) {
-              console.log('Get vesting shares for voter failed, finish gracefully');
-              finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
-                callback();
-              });
-              return;
-            }
-
             // get post content and rshares of vote
             var content = null;
-            try {
-              content = wait.for(lib.getPostContent, opDetail.author, opDetail.permlink);
-            } catch (err) {
-              console.log('Get post content failed, finish gracefully');
+            tries = 0;
+            while (tries < lib.API_RETRIES) {
+              tries++;
+              try {
+                content = wait.for(lib.getPostContent, opDetail.author, opDetail.permlink);
+                break;
+              } catch (err) {
+                console.error(err);
+                console.log(' - failed to get post content, retrying if possible');
+              }
+            }
+            if (content === undefined || content === null) {
+              console.log(' - completely failed to get post content, exiting');
               finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                 callback();
               });
               return;
-            }
-            if (content === undefined || content === null) {
-              console.log('Couldnt process operation, continuing.' +
-                ' Error: post content response not defined');
-              continue;
             }
 
             // check payout window still open
@@ -254,11 +254,10 @@ function doProcess (startAtBlockNum, callback) {
             } catch (err) {
               // do nothing
             }
+            var steemPower = null;
             if (delegationsInfos !== undefined && delegationsInfos !== null) {
-              console.log(' - checking delegation information');
-              console.log(' - - voter account, SP: ' + steemPower + ' = ' + lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
-                ' + ' + lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) +
-                ' - ' + lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares));
+              steemPower = delegationsInfos.sp;
+              console.log(' - checking delegation information, most recent SP is ' + steemPower);
               var correctionSP = 0;
               for (m = 0; m < delegationsInfos.received.length; m++) {
                 var delegationMoment = moment(delegationsInfos.received[m].timestamp, moment.ISO_8601);
@@ -276,6 +275,36 @@ function doProcess (startAtBlockNum, callback) {
               }
               console.log(' - - correcting SP for historical events by ' + correctionSP + ', SP now = ' + steemPower);
               steemPower += correctionSP;
+            } else {
+              // get from API instead, no delegations info
+              var accounts = null;
+              tries = 0;
+              while (tries < lib.API_RETRIES) {
+                tries++;
+                try {
+                  accounts = wait.for(lib.getSteemAccounts, opDetail.voter);
+                  break;
+                } catch (err) {
+                  console.error(err);
+                  console.log(' - failed to get account for voter ' + opDetail.voter + ', retrying if possible');
+                }
+              }
+              if (accounts === undefined || accounts === null) {
+                console.log(' - completely failed to get voter account, exiting');
+                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
+                  callback();
+                });
+                return;
+              }
+              var voterAccount = accounts[0];
+              try {
+                steemPower = lib.getSteemPowerFromVest(voterAccount.vesting_shares) +
+                    lib.getSteemPowerFromVest(voterAccount.received_vesting_shares) -
+                    lib.getSteemPowerFromVest(voterAccount.delegated_vesting_shares);
+              } catch (err) {
+                console.log('Get vesting shares for voter failed, skip this one');
+                continue;
+              }
             }
 
             if (steemPower < Number(process.env.MIN_SP)) {
