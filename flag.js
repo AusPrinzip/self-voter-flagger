@@ -53,7 +53,7 @@ function doProcess (callback) {
     while (tries < lib.API_RETRIES) {
       tries++;
       try {
-        rewardFundInfo = (lib.getRewardFund, 'post');
+        rewardFundInfo = wait.for(lib.getRewardFund, 'post');
         break;
       } catch (err) {
         console.error(err);
