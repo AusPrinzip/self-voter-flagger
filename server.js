@@ -50,7 +50,7 @@ app.get('/run', function (req, res) {
   });
   var files;
   if (process.env.DELEGATION_SCAN_ONLY !== undefined &&
-      process.env.DELEGATION_SCAN_ONLY.localeCompare('true')) {
+      process.env.DELEGATION_SCAN_ONLY.localeCompare('true') === 0) {
     files = ['flag.js', 'scan_delegations.js'];
   } else {
     files = ['flag.js', 'bot.js', 'scan_delegations.js', 'update.js'];
