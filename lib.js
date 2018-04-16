@@ -38,7 +38,7 @@ function start (callback) {
     db = database;
     console.log('Database connection ready');
 
-    // steem.config.set('websocket','wss://gtg.steem.house:8090');
+    steem.config.set('websocket', 'wss://rpc.buildteam.io');
     init(function () {
       fetchLastInfos(function () {
         callback();
