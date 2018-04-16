@@ -40,18 +40,17 @@ function doProcess (startAtBlockNum, callback) {
     var headBlock = null;
     var tries = 0;
     while (tries < lib.API_RETRIES) {
-      console.log(' - (re)trying to get head block ' + lib.getProperties().head_block_number);
       tries++;
       try {
         headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
         break;
       } catch (err) {
         console.error(err);
-        console.log(' - failed to get head block');
+        console.log(' - failed to get head block ' + lib.getProperties().head_block_number + ', retrying if possible');
       }
     }
     if (headBlock === undefined || headBlock === null) {
-      console.log(' - failed to get head block');
+      console.log(' - completely failed to get head block, exiting');
       callback();
       return;
     }
@@ -70,18 +69,17 @@ function doProcess (startAtBlockNum, callback) {
       var block = null;
       tries = 0;
       while (tries < lib.API_RETRIES) {
-        console.log(' - (re)trying to get block ' + currentBlockNum);
         tries++;
         try {
           block = wait.for(lib.getBlock, currentBlockNum);
           break;
         } catch (err) {
           console.error(err);
-          console.log(' - failed to get block');
+          console.log(' - failed to get block ' + currentBlockNum + ', retrying if possible');
         }
       }
       if (block === undefined || block === null) {
-        console.log('Getting block failed, finish gracefully');
+        console.log(' - completely failed to get block, exiting');
         finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
           callback();
         });
@@ -117,18 +115,17 @@ function doProcess (startAtBlockNum, callback) {
               var accountHistory = null;
               tries = 0;
               while (tries < lib.API_RETRIES) {
-                console.log(' - (re)trying to get account history');
                 tries++;
                 try {
                   accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 10000);
                   break;
                 } catch (err) {
                   console.error(err);
-                  console.log(' - failed to get account history');
+                  console.log(' - failed to get account history, retrying if possible');
                 }
               }
               if (accountHistory === undefined || accountHistory === null) {
-                console.log(' *** couldnt get account history, exiting');
+                console.log(' - completely failed to get account history, exiting');
                 finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
                   callback();
                 });
