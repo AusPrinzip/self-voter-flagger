@@ -7,6 +7,7 @@ const lib = require('./lib.js');
 const sprintf = require('sprintf-js').sprintf;
 
 function main () {
+  console.log(' *** FLAG.js');
   // get more information on unhandled promise rejections
   process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);

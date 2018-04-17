@@ -5,7 +5,15 @@ const wait = require('wait.for');
 const lib = require('./lib.js');
 
 function main () {
+  console.log(' *** UPDATE.js');
   lib.start(function () {
+    if (!lib.getLastInfos().blocked) {
+      console.log(' --- delegation script not finished (blocked) yet, do not process update script until up to date');
+      setTimeout(function () {
+        process.exit();
+      }, 5000);
+      return;
+    }
     doProcess(function () {
       console.log('Finished');
       setTimeout(function () {

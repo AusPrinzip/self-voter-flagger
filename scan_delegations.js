@@ -8,6 +8,7 @@ const lib = require('./lib.js');
 const { exec } = require('child_process');
 
 function main () {
+  console.log(' *** SCAN_DELEGATIONS.js');
   // get more information on unhandled promise rejections
   process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);

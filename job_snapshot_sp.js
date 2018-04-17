@@ -4,6 +4,7 @@ const wait = require('wait.for');
 const lib = require('./lib.js');
 
 function main () {
+  console.log(' *** JOB_SNAPSHOT_SP.js');
   // get more information on unhandled promise rejections
   process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
