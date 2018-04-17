@@ -30,7 +30,8 @@ function doProcess (callback) {
       return;
     }
     var recordsCount = count;
-    lib.getDbCursor(lib.DB_DELEGATIONS).forEach(function (userInfos) {
+    var cursor = lib.getDbCursor(lib.DB_DELEGATIONS);
+    cursor.forEach(function (userInfos) {
       if (userInfos === null) {
         console.log('finished processing user list');
         callback();
@@ -65,7 +66,7 @@ function doProcess (callback) {
         console.log(' - ' + userInfos.user + ' sp = ' + steemPower);
         userInfos.sp = steemPower;
         try {
-          wait.for(lib.saveDb, lib.DB_DELEGATIONS, userInfos);
+          cursor.save(userInfos);
         } catch (err) {
           console.log(' - - couldnt save user infos for ' + userInfos.user);
           console.error(err);
