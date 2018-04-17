@@ -127,14 +127,15 @@ function doProcess (callback) {
 
       for (var j = 0; j < voterDetails.posts.length; j++) {
         var postDetails = voterDetails.posts[j];
-        console.log(' - - processing post with permlink ' + postDetails.permlink);
 
         if (postDetails.flagged !== undefined &&
             postDetails.flagged !== null &&
             postDetails.flagged) {
-          console.log(' - - already flagged post, skipping...');
+          // console.log(' - - already flagged post, skipping...');
           continue;
         }
+
+        console.log(' - - processing post with permlink ' + postDetails.permlink);
 
         if (postDetails.to_flag !== undefined &&
             postDetails.to_flag !== null &&
