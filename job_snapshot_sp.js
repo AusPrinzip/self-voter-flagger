@@ -31,6 +31,7 @@ function doProcess (callback) {
       callback();
       return;
     }
+    console.log(' - got ' + users.length + ' user names');
     if (users.length === 0) {
       console.log(' - couldnt get user names');
       callback();
@@ -95,16 +96,16 @@ function getUsers (callback) {
       return;
     }
     var recordsCount = count;
-    lib.getDbCursor(lib.DB_DELEGATIONS).each(function (userInfos) {
+    lib.getDbCursor(lib.DB_DELEGATIONS).forEach(function (userInfos) {
       if (userInfos === null) {
-        console.log('finished processing user list');
+        console.log(' - - got null userInfos, must be finished getting names');
         callback();
         return;
       }
       users.push(userInfos.user);
       if (--recordsCount <= 0) {
         // done
-        console.log('finished processing user list');
+        console.log(' - - index exausted for users, finished getting names');
         callback();
       }
     }, function (err) {
