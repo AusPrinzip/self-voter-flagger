@@ -21,23 +21,31 @@ function main () {
   });
 }
 
+var users = [];
+
 function doProcess (callback) {
   // iterate through delegated accounts, adding current SP to each
-  lib.getDbCursor(lib.DB_DELEGATIONS).count(function (err, count) {
+  getUsers(function (err) {
     if (err) {
       console.error(err);
       callback();
       return;
     }
-    var recordsCount = count;
-    var cursor = lib.getDbCursor(lib.DB_DELEGATIONS);
-    cursor.forEach(function (userInfos) {
-      if (userInfos === null) {
-        console.log('finished processing user list');
-        callback();
-        return;
-      }
-      wait.launchFiber(function () {
+    if (users.length === 0) {
+      console.log(' - couldnt get user names');
+      callback();
+      return;
+    }
+    wait.launchFiber(function () {
+      for (var i = 0; i < users.length; i++) {
+        var userInfos = null;
+        try {
+          userInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: users[i]});
+        } catch (err) {
+          console.error(err);
+          console.log(' - failed to delegation info for ' + users[i]);
+          continue;
+        }
         var accounts = null;
         var tries = 0;
         while (tries < lib.API_RETRIES) {
@@ -66,22 +74,42 @@ function doProcess (callback) {
         console.log(' - ' + userInfos.user + ' sp = ' + steemPower);
         userInfos.sp = steemPower;
         try {
-          cursor.save(userInfos);
+          wait.for(lib.saveDb, lib.DB_DELEGATIONS, userInfos);
         } catch (err) {
           console.log(' - - couldnt save user infos for ' + userInfos.user);
           console.error(err);
         }
-        if (--recordsCount <= 0) {
-          // done
-          console.log('finished processing user list');
-          callback();
-        }
-      });
-    }, function (err) {
-      if (err) {
-        console.error(err);
+      }
+      console.log('finished processing user list');
+      callback();
+    });
+  });
+}
+
+function getUsers (callback) {
+  // iterate through delegated accounts, adding current SP to each
+  lib.getDbCursor(lib.DB_DELEGATIONS).count(function (err, count) {
+    if (err) {
+      console.error(err);
+      callback(err);
+      return;
+    }
+    var recordsCount = count;
+    lib.getDbCursor(lib.DB_DELEGATIONS).each(function (userInfos) {
+      if (userInfos === null) {
+        console.log('finished processing user list');
+        callback();
+        return;
+      }
+      users.push(userInfos.user);
+      if (--recordsCount <= 0) {
+        // done
+        console.log('finished processing user list');
         callback();
       }
+    }, function (err) {
+      console.error(err);
+      callback(err);
     });
   });
 }
