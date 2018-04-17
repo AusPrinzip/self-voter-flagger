@@ -340,7 +340,7 @@ function doProcess (startAtBlockNum, callback) {
                 self_vote_payout: selfVotePayout,
                 extrapolated_roi: roi,
                 flagged: false,
-                to_flag: true,
+                to_flag: voterIsOnFlagList,
                 weight: opDetail.weight
               });
               if (voterIsOnFlagList) {
