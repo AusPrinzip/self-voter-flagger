@@ -7,8 +7,8 @@ const lib = require('./lib.js');
 function main () {
   console.log(' *** UPDATE.js');
   lib.start(function () {
-    if (!lib.getLastInfos().blocked) {
-      console.log(' --- delegation script not finished (blocked) yet, do not process update script until up to date');
+    if (!lib.getLastInfos().blocked || lib.getLastInfos().last_delegation_block !== lib.getLastInfos().lastBlock) {
+      console.log(' --- delegation script not finished (blocked) yet, or bot not finished scanning, do not process update script until up to date');
       setTimeout(function () {
         process.exit();
       }, 5000);
