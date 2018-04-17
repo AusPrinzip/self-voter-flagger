@@ -24,94 +24,65 @@ function main () {
 var users = [];
 
 function doProcess (callback) {
-  // iterate through delegated accounts, adding current SP to each
-  getUsers(function (err) {
-    if (err) {
-      console.error(err);
-      callback();
-      return;
+  wait.launchFiber(function () {
+    try {
+      users = wait.for(lib.getAllRecordsFromDb, lib.DB_DELEGATIONS);
+      if (users === undefined || users === null) {
+        users = [];
+      }
+    } catch (err) {
+      users = [];
     }
-    console.log(' - got ' + users.length + ' user names');
     if (users.length === 0) {
-      console.log(' - couldnt get user names');
+      console.log(' - couldnt get users from database');
       callback();
       return;
     }
-    wait.launchFiber(function () {
-      for (var i = 0; i < users.length; i++) {
-        var userInfos = null;
+    for (var i = 0; i < users.length; i++) {
+      var userInfos = null;
+      try {
+        userInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: users[i]});
+      } catch (err) {
+        console.error(err);
+        console.log(' - failed to delegation info for ' + users[i]);
+        continue;
+      }
+      var accounts = null;
+      var tries = 0;
+      while (tries < lib.API_RETRIES) {
+        tries++;
         try {
-          userInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: users[i]});
+          accounts = wait.for(lib.getSteemAccounts, userInfos.user);
+          break;
         } catch (err) {
           console.error(err);
-          console.log(' - failed to delegation info for ' + users[i]);
-          continue;
-        }
-        var accounts = null;
-        var tries = 0;
-        while (tries < lib.API_RETRIES) {
-          tries++;
-          try {
-            accounts = wait.for(lib.getSteemAccounts, userInfos.user);
-            break;
-          } catch (err) {
-            console.error(err);
-            console.log(' - failed to get account for ' + userInfos.user + ', retrying if possible');
-          }
-        }
-        if (accounts === undefined || accounts === null) {
-          console.log(' - completely failed to get account, skipping');
-          return;
-        }
-        var account = accounts[0];
-        try {
-          var steemPower = lib.getSteemPowerFromVest(account.vesting_shares) +
-              lib.getSteemPowerFromVest(account.received_vesting_shares) -
-              lib.getSteemPowerFromVest(account.delegated_vesting_shares);
-        } catch (err) {
-          console.log(' - couldnt calc vesting shares to SP for user ' + userInfos.user + ', skipping');
-          return;
-        }
-        console.log(' - ' + userInfos.user + ' sp = ' + steemPower);
-        userInfos.sp = steemPower;
-        try {
-          wait.for(lib.saveDb, lib.DB_DELEGATIONS, userInfos);
-        } catch (err) {
-          console.log(' - - couldnt save user infos for ' + userInfos.user);
-          console.error(err);
+          console.log(' - failed to get account for ' + userInfos.user + ', retrying if possible');
         }
       }
-      console.log('finished processing user list');
-      callback();
-    });
-  });
-}
-
-function getUsers (callback) {
-  // iterate through delegated accounts, adding current SP to each
-  lib.getDbCursor(lib.DB_DELEGATIONS).count(function (err, count) {
-    if (err) {
-      console.error(err);
-      callback(err);
-      return;
-    }
-    var recordsCount = count;
-    lib.getDbCursor(lib.DB_DELEGATIONS).forEach(function (userInfos) {
-      if (userInfos === null) {
-        console.log(' - - got null userInfos, must be finished getting names');
-        callback();
+      if (accounts === undefined || accounts === null) {
+        console.log(' - completely failed to get account, skipping');
         return;
       }
-      users.push(userInfos.user);
-      if (--recordsCount <= 0) {
-        // done
-        console.log(' - - index exausted for users, finished getting names');
-        callback();
+      var account = accounts[0];
+      try {
+        var steemPower = lib.getSteemPowerFromVest(account.vesting_shares) +
+            lib.getSteemPowerFromVest(account.received_vesting_shares) -
+            lib.getSteemPowerFromVest(account.delegated_vesting_shares);
+      } catch (err) {
+        console.log(' - couldnt calc vesting shares to SP for user ' + userInfos.user + ', skipping');
+        return;
       }
-    }, function (err) {
-      console.error(err);
-      callback(err);
-    });
+      console.log(' - ' + userInfos.user + ' sp = ' + steemPower);
+      userInfos.sp = steemPower;
+      try {
+        wait.for(lib.saveDb, lib.DB_DELEGATIONS, userInfos);
+      } catch (err) {
+        console.log(' - - couldnt save user infos for ' + userInfos.user);
+        console.error(err);
+      }
+    }
+    console.log('finished processing user list');
+    callback();
   });
 }
 
