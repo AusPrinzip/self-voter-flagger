@@ -507,6 +507,7 @@ function checkFinished (callback) {
     console.log(' - main bot script reached recent head, unblocking delegation script, will continue next run');
     var lastInfos = lib.getLastInfos();
     lastInfos.blocked = false;
+    lastInfos.do_update_queue = true;
     wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
     lib.setLastInfos(lastInfos);
   } else {
