@@ -73,6 +73,7 @@ function fetchLastInfos (callback) {
           lastBlock: Number(process.env.STARTING_BLOCK_NUM),
           last_delegation_block: Number(process.env.STARTING_BLOCK_NUM),
           blocked: false,
+          do_update_queue: false,
           update_time: moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString()
         };
       } else {
@@ -80,6 +81,7 @@ function fetchLastInfos (callback) {
           lastBlock: 0,
           last_delegation_block: 0,
           blocked: false,
+          do_update_queue: false,
           update_time: moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString()
         };
       }
