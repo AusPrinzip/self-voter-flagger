@@ -236,8 +236,10 @@ function checkFinished (callback) {
     startChildProcess('node', 'job_snapshot_sp.js', function () {
       var lastInfos = lib.getLastInfos();
       lastInfos.blocked = true;
-      wait.for(lib.saveDb, lib.DB_RECORDS, lastInfos);
-      lib.setLastInfos(lastInfos);
+      lib.saveDb(lib.DB_RECORDS, lastInfos, function () {
+        lib.setLastInfos(lastInfos);
+        callback();
+      });
     });
   } else {
     var diff = lib.getProperties().head_block_number - lib.getLastInfos().last_delegation_block;
