@@ -59,14 +59,16 @@ function doProcess (callback) {
               lib.getSteemPowerFromVest(account.received_vesting_shares) -
               lib.getSteemPowerFromVest(account.delegated_vesting_shares);
         } catch (err) {
-          console.log(' - couldny calc vesting shares to SP for user ' + userInfos.user + ', skipping');
+          console.log(' - couldnt calc vesting shares to SP for user ' + userInfos.user + ', skipping');
           return;
         }
+        console.log(' - ' + userInfos.user + ' sp = ' + steemPower);
         userInfos.sp = steemPower;
         try {
           wait.for(lib.saveDb, lib.DB_DELEGATIONS, userInfos);
         } catch (err) {
           console.log(' - - couldnt save user infos for ' + userInfos.user);
+          console.error(err);
         }
         if (--recordsCount <= 0) {
           // done
