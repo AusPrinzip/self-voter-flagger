@@ -31,7 +31,9 @@ function doProcess (callback) {
         users = [];
       }
     } catch (err) {
-      users = [];
+      console.error(err);
+      callback();
+      return;
     }
     if (users.length === 0) {
       console.log(' - couldnt get users from database');
