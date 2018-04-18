@@ -260,18 +260,62 @@ function doProcess (startAtBlockNum, callback) {
               steemPower = delegationsInfos.sp;
               console.log(' - checking delegation information, most recent SP is ' + steemPower);
               var correctionSP = 0;
+              var delegators = [];
               for (m = 0; m < delegationsInfos.received.length; m++) {
                 var delegationMoment = moment(delegationsInfos.received[m].timestamp, moment.ISO_8601);
                 if (delegationMoment.isAfter(thisBlockMoment)) {
-                  console.log(' - - - receieved ' + delegationsInfos.received[m].sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
-                  correctionSP += delegationsInfos.received[m].sp; // sign already correct on amount
+                  var alreadyProcessed = false;
+                  for (var n = 0; n < delegators.length; n++) {
+                    if (delegators[n].localeCompare(delegationsInfos.received[m].user) === 0) {
+                      alreadyProcessed = true;
+                    }
+                  }
+                  if (alreadyProcessed) {
+                    continue;
+                  }
+                  delegators.push(delegationsInfos.received[m].user);
+                  // make sure newest from from this delegator
+                  var idx = m;
+                  for (n = 0; n < delegationsInfos.received.length; n++) {
+                    if (m !== n) {
+                      var delegationMomentOther = moment(delegationsInfos.received[n].timestamp, moment.ISO_8601);
+                      if (delegationsInfos.received[m].user.localeCompare(delegationsInfos.received[n].user) === 0 &&
+                          delegationMomentOther.isAfter(delegationMoment)) {
+                        idx = n;
+                      }
+                    }
+                  }
+                  console.log(' - - - receieved ' + delegationsInfos.received[idx].sp + ' from ' + delegationsInfos.received[idx].user + ' after this vote, reverse');
+                  correctionSP += delegationsInfos.received[idx].sp; // sign already correct on amount
                 }
               }
+              delegators = [];
               for (m = 0; m < delegationsInfos.delegated.length; m++) {
                 delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
                 if (delegationMoment.isAfter(thisBlockMoment)) {
-                  console.log(' - - - delegated ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
-                  correctionSP += delegationsInfos.delegated[m].sp; // sign already correct on amount
+                  alreadyProcessed = false;
+                  for (n = 0; n < delegators.length; n++) {
+                    if (delegators[n].localeCompare(delegationsInfos.delegated[m].user) === 0) {
+                      alreadyProcessed = true;
+                    }
+                  }
+                  if (alreadyProcessed) {
+                    continue;
+                  }
+                  delegators.push(delegationsInfos.delegated[m].user);
+                  // make sure newest from from this delegator
+                  idx = m;
+                  for (n = 0; n < delegationsInfos.delegated.length; n++) {
+                    if (m !== n) {
+                      delegationMomentOther = moment(delegationsInfos.delegated[n].timestamp, moment.ISO_8601);
+                      if (delegationsInfos.delegated[m].user.localeCompare(delegationsInfos.delegated[n].user) === 0 &&
+                          delegationMomentOther.isAfter(delegationMoment)) {
+                        idx = n;
+                      }
+                    }
+                  }
+                  console.log(' - - - delegated ' + delegationsInfos.delegated[idx].sp + ' to ' + delegationsInfos.delegated[idx].user + ' after this vote, reverse');
+                  correctionSP += delegationsInfos.delegated[idx].sp; // sign already correct on amount
                 }
               }
               steemPower -= correctionSP; // subtract to reverse effect
