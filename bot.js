@@ -291,7 +291,7 @@ function doProcess (startAtBlockNum, callback) {
                     }
                   }
                   console.log(' - - - receieved ' + sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
-                  correctionSP += sp; // sign already correct on amount
+                  correctionSP += sp; // restore outward delegations
                 }
               }
               delegators = [];
@@ -325,7 +325,7 @@ function doProcess (startAtBlockNum, callback) {
                     }
                   }
                   console.log(' - - - delegated ' + sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
-                  correctionSP += sp; // sign already correct on amount
+                  correctionSP -= sp; // remove receieved delegations
                 }
               }
               steemPower -= correctionSP; // subtract to reverse effect
