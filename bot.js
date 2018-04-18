@@ -274,8 +274,8 @@ function doProcess (startAtBlockNum, callback) {
                   correctionSP += delegationsInfos.delegated[m].sp; // sign already correct on amount
                 }
               }
-              console.log(' - - correcting SP for historical events by ' + correctionSP + ', SP now = ' + steemPower);
               steemPower -= correctionSP; // subtract to reverse effect
+              console.log(' - - correcting SP for historical events by ' + correctionSP + ', SP now = ' + steemPower);
             } else {
               // get from API instead, no delegations info
               var accounts = null;
