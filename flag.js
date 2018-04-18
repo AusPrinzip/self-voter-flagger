@@ -179,14 +179,19 @@ function doProcess (callback) {
 
         // check if already voted (can happen that vote was not recorded if script interupted last time)
         var selfVoteRshares = 0;
+        var alreadyFlagged = false;
         for (var m = 0; m < content.active_votes.length; m++) {
           if (content.active_votes[m].voter.localeCompare(process.env.STEEM_USER) === 0) {
             console.log(' - - - already flagged this, mark as flagged but skipping');
             flaglist[i].posts[j].flagged = true;
-            continue;
+            alreadyFlagged = true;
+            break;
           } else if (content.active_votes[m].voter.localeCompare(voterDetails.voter) === 0) {
             selfVoteRshares = content.active_votes[m].rshares;
           }
+        }
+        if (alreadyFlagged) {
+          continue;
         }
 
         if (selfVoteRshares <= 0) {
