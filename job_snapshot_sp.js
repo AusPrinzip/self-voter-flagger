@@ -28,7 +28,7 @@ function doProcess (callback) {
     console.log(' - fetching all users from db');
     var keepGoing = true;
     var cursor = lib.getDbCursor(lib.DB_DELEGATIONS, 1000);
-    while (!keepGoing) {
+    while (keepGoing) {
       try {
         users = wait.for(cursor.toArray);
         if (users === undefined || users === null) {
