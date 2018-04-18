@@ -41,7 +41,8 @@ function doProcess (callback) {
       return;
     }
     for (var i = 0; i < users.length; i++) {
-      var userInfos = null;
+      var userInfos = users[i];
+      /*
       try {
         userInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: users[i]});
       } catch (err) {
@@ -49,6 +50,7 @@ function doProcess (callback) {
         console.log(' - failed to delegation info for ' + users[i]);
         continue;
       }
+      */
       var accounts = null;
       var tries = 0;
       while (tries < lib.API_RETRIES) {
