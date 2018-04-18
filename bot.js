@@ -309,19 +309,19 @@ function doProcess (startAtBlockNum, callback) {
                     continue;
                   }
                   delegators.push(delegationsInfos.delegated[m].user);
-                  sp = delegationsInfos.received[m].sp;
+                  sp = delegationsInfos.delegated[m].sp;
                   idx = m;
                   for (n = 0; n < delegationsInfos.delegated.length; n++) {
                     if (m !== n) {
-                      delegationMomentOther = moment(delegationsInfos.received[n].timestamp, moment.ISO_8601);
-                      if (delegationsInfos.received[m].user.localeCompare(delegationsInfos.received[n].user) === 0 &&
+                      delegationMomentOther = moment(delegationsInfos.delegated[n].timestamp, moment.ISO_8601);
+                      if (delegationsInfos.delegated[m].user.localeCompare(delegationsInfos.delegated[n].user) === 0 &&
                           delegationMomentOther.isAfter(delegationMoment) &&
-                          sp !== delegationsInfos.received[n].sp) { // don't compound a duplicate delegation transaction
-                        if ((sp > 0 && delegationsInfos.received[n].sp > 0) ||
-                            (sp < 0 && delegationsInfos.received[n].sp < 0)) { // if same sign, replace
-                          sp = delegationsInfos.received[n].sp;
+                          sp !== delegationsInfos.delegated[n].sp) { // don't compound a duplicate delegation transaction
+                        if ((sp > 0 && delegationsInfos.delegated[n].sp > 0) ||
+                            (sp < 0 && delegationsInfos.delegated[n].sp < 0)) { // if same sign, replace
+                          sp = delegationsInfos.delegated[n].sp;
                         } else {
-                          sp += delegationsInfos.received[n].sp; // otherwise add
+                          sp += delegationsInfos.delegated[n].sp; // otherwise add
                         }
                       }
                     }
