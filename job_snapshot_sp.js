@@ -93,7 +93,6 @@ function doProcess (callback) {
         }
       }
       console.log('finished processing user list');
-      callback();
     }
   });
 }
