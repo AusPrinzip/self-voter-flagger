@@ -264,18 +264,18 @@ function doProcess (startAtBlockNum, callback) {
                 var delegationMoment = moment(delegationsInfos.received[m].timestamp, moment.ISO_8601);
                 if (delegationMoment.isAfter(thisBlockMoment)) {
                   console.log(' - - - receieved ' + delegationsInfos.received[m].sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
-                  correctionSP -= delegationsInfos.received[m].sp;
+                  correctionSP += delegationsInfos.received[m].sp; // sign already correct on amount
                 }
               }
               for (m = 0; m < delegationsInfos.delegated.length; m++) {
                 delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
                 if (delegationMoment.isAfter(thisBlockMoment)) {
                   console.log(' - - - delegated ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
-                  correctionSP += delegationsInfos.delegated[m].sp;
+                  correctionSP += delegationsInfos.delegated[m].sp; // sign already correct on amount
                 }
               }
               console.log(' - - correcting SP for historical events by ' + correctionSP + ', SP now = ' + steemPower);
-              steemPower += correctionSP;
+              steemPower -= correctionSP; // subtract to reverse effect
             } else {
               // get from API instead, no delegations info
               var accounts = null;
