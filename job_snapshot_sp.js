@@ -27,7 +27,7 @@ function doProcess (callback) {
   wait.launchFiber(function () {
     console.log(' - fetching all users from db');
     var keepGoing = true;
-    var cursor = lib.getDbCursor(lib.DB_DELEGATIONS, 1000);
+    var cursor = lib.getDbCursor(lib.DB_DELEGATIONS, 100);
     while (keepGoing) {
       try {
         users = wait.for(cursor.toArray);
