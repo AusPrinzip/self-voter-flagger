@@ -275,7 +275,6 @@ function doProcess (startAtBlockNum, callback) {
                   }
                   delegators.push(delegationsInfos.received[m].user);
                   var sp = delegationsInfos.received[m].sp;
-                  var idx = m;
                   for (n = 0; n < delegationsInfos.received.length; n++) {
                     if (m !== n) {
                       var delegationMomentOther = moment(delegationsInfos.received[n].timestamp, moment.ISO_8601);
@@ -291,8 +290,8 @@ function doProcess (startAtBlockNum, callback) {
                       }
                     }
                   }
-                  console.log(' - - - receieved ' + delegationsInfos.received[idx].sp + ' from ' + delegationsInfos.received[idx].user + ' after this vote, reverse');
-                  correctionSP += delegationsInfos.received[idx].sp; // sign already correct on amount
+                  console.log(' - - - receieved ' + sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
+                  correctionSP += sp; // sign already correct on amount
                 }
               }
               delegators = [];
@@ -310,7 +309,6 @@ function doProcess (startAtBlockNum, callback) {
                   }
                   delegators.push(delegationsInfos.delegated[m].user);
                   sp = delegationsInfos.delegated[m].sp;
-                  idx = m;
                   for (n = 0; n < delegationsInfos.delegated.length; n++) {
                     if (m !== n) {
                       delegationMomentOther = moment(delegationsInfos.delegated[n].timestamp, moment.ISO_8601);
@@ -326,8 +324,8 @@ function doProcess (startAtBlockNum, callback) {
                       }
                     }
                   }
-                  console.log(' - - - delegated ' + delegationsInfos.delegated[idx].sp + ' to ' + delegationsInfos.delegated[idx].user + ' after this vote, reverse');
-                  correctionSP += delegationsInfos.delegated[idx].sp; // sign already correct on amount
+                  console.log(' - - - delegated ' + sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
+                  correctionSP += sp; // sign already correct on amount
                 }
               }
               steemPower -= correctionSP; // subtract to reverse effect
@@ -460,61 +458,54 @@ function doProcess (startAtBlockNum, callback) {
             // console.log(" - - updated voter info:
             // "+JSON.stringify(voterInfos));
 
-            if (!recordOnly) {
-              // first sort with lowest first
-              /*
-              queue.sort(function (a, b) {
-                return a.total_extrapolated_roi - b.total_extrapolated_roi;
-              });
-              */
-
-              // update voter object if exists in queue already
-              var updatedExistingQueueVoter = false;
-              for (m = 0; m < queue.length; m++) {
-                if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
-                  queue[m] = voterInfos;
-                  console.log(' - - voter already in queue, updating');
-                  updatedExistingQueueVoter = true;
-                  break;
-                }
-              }
-
-              // add voter object if didn't update existing
-              if (!updatedExistingQueueVoter) {
-                // if queue full then remove the lowest total ROI voter if below this voter
-                if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
-                  var idx = -1;
-                  var lowest = voterInfos.total_extrapolated_roi;
-                  for (m = 0; m < queue.length; m++) {
-                    if (queue[m].total_extrapolated_roi < lowest) {
-                      lowest = queue[m].total_extrapolated_roi;
-                      idx = m;
-                    }
-                  }
-
-                  if (idx >= 0) {
-                    // remove lowest total ROI voter
-                    console.log(' - - - removing existing lower roi user ' +
-                        queue[idx].voter + ' with total extrapolated roi of ' +
-                        queue[idx].total_extrapolated_roi);
-                    var newPosts = [];
-                    for (m = 0; m < queue.length; m++) {
-                      if (m !== idx) {
-                        newPosts.push(queue[m]);
-                      }
-                    }
-                    queue = newPosts;
-                  }
-                }
-                if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
-                  // add to queue
-                  console.log(' - - - adding user to list');
-                  queue.push(voterInfos);
-                } else {
-                  console.log(' - - - dont add user to list, below min in queue');
-                }
+            // if (!recordOnly) {
+            // update voter object if exists in queue already
+            var updatedExistingQueueVoter = false;
+            for (m = 0; m < queue.length; m++) {
+              if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
+                queue[m] = voterInfos;
+                console.log(' - - voter already in queue, updating');
+                updatedExistingQueueVoter = true;
+                break;
               }
             }
+
+            // add voter object if didn't update existing
+            if (!updatedExistingQueueVoter) {
+              // if queue full then remove the lowest total ROI voter if below this voter
+              if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
+                var idx = -1;
+                var lowest = voterInfos.total_extrapolated_roi;
+                for (m = 0; m < queue.length; m++) {
+                  if (queue[m].total_extrapolated_roi < lowest) {
+                    lowest = queue[m].total_extrapolated_roi;
+                    idx = m;
+                  }
+                }
+
+                if (idx >= 0) {
+                  // remove lowest total ROI voter
+                  console.log(' - - - removing existing lower roi user ' +
+                      queue[idx].voter + ' with total extrapolated roi of ' +
+                      queue[idx].total_extrapolated_roi);
+                  var newPosts = [];
+                  for (m = 0; m < queue.length; m++) {
+                    if (m !== idx) {
+                      newPosts.push(queue[m]);
+                    }
+                  }
+                  queue = newPosts;
+                }
+              }
+              if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
+                // add to queue
+                console.log(' - - - adding user to list');
+                queue.push(voterInfos);
+              } else {
+                console.log(' - - - dont add user to list, below min in queue');
+              }
+            }
+            // }
 
             wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
             if (voterIsOnFlagList) {
