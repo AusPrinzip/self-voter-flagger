@@ -25,7 +25,7 @@ var users = [];
 
 function doProcess (callback) {
   wait.launchFiber(function () {
-    /*
+    console.log(' - fetching all users from db');
     try {
       users = wait.for(lib.getAllRecordsFromDb, lib.DB_DELEGATIONS);
       if (users === undefined || users === null) {
@@ -36,7 +36,6 @@ function doProcess (callback) {
       callback();
       return;
     }
-    */
     if (users.length === 0) {
       console.log(' - couldnt get users from database');
       callback();
