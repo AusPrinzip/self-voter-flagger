@@ -165,6 +165,12 @@ function saveDb (dbName, obj, callback) {
   });
 }
 
+function removeRecordFromDb (dbName, recordSearchObj, callback) {
+  db.collection(dbName).remove(recordSearchObj, function (err, data) {
+    callback(err, data);
+  });
+}
+
 function countDbRecords (dbName, callback) {
   db.collection(dbName).count(function (err, count) {
     callback(err, count);
@@ -362,6 +368,7 @@ module.exports.addAllToDb = addAllToDb;
 module.exports.dropDb = dropDb;
 module.exports.saveDb = saveDb;
 module.exports.countDbRecords = countDbRecords;
+module.exports.removeRecordFromDb = removeRecordFromDb;
 
 module.exports.getSteemPowerFromVest = getSteemPowerFromVest;
 module.exports.getBlockHeader = getBlockHeader;

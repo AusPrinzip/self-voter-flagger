@@ -105,6 +105,11 @@ function doProcess (startAtBlockNum, callback) {
           var opDetail = transaction.operations[k][1];
           if (opName !== undefined && opName !== null &&
               opName.localeCompare('delegate_vesting_shares') === 0) {
+            // dont process delegations from / to steem account, far too many and of small value
+            if (opDetail.delegator.localeCompare('steem') === 0 ||
+                opDetail.delegatee.localeCompare('steem') === 0) {
+              continue;
+            }
             // keep track of delegations manually
             console.log(' - recording delegation: ' + JSON.stringify(opDetail));
             // first check if zeroed, need to get value from general call
