@@ -48,7 +48,7 @@ app.get('/run', function (req, res) {
     status: '200',
     message: 'running bot'
   });
-  var files = ['flag.js', 'bot.js', 'scan_delegations.js', 'update.js'];
+  var files = ['flag.js', 'scan_delegations.js', 'bot.js', 'update.js'];
   // NOTE : these files are run in reverse order, like a stack popped from the end
   var loopFunc = function () {
     var file = files.pop();
