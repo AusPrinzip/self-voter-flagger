@@ -11,8 +11,8 @@ function main () {
       console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
       process.exit(1);
     });
-    if (!lib.getLastInfos().blocked || !lib.getLastInfos().do_update_queue) {
-      console.log(' --- delegation script not finished (blocked) yet, or bot not finished scanning, do not process update script until up to date');
+    if (!lib.getLastInfos().do_update_queue) {
+      console.log(' --- update not cleared for trigger yet (bot script not caught up with delegation script) do not process update script');
       setTimeout(function () {
         process.exit();
       }, 5000);

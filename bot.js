@@ -80,6 +80,7 @@ function doProcess (startAtBlockNum, callback) {
     // set up vars
     var currentBlockNum = startAtBlockNum;
     var endTime = moment(new Date()).add(Number(process.env.MAX_MINS_TO_RUN), 'minute');
+    console.log(' - processing block ' + startAtBlockNum + ' to block ' + maxBlockNum + ', as far as possible');
     for (var i = startAtBlockNum; i <= maxBlockNum; i++) {
       currentBlockNum = i;
       if (moment(new Date()).isAfter(endTime)) {
