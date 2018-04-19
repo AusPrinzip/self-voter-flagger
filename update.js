@@ -7,7 +7,11 @@ const lib = require('./lib.js');
 function main () {
   console.log(' *** UPDATE.js');
   lib.start(function () {
-    if (!lib.getLastInfos().blocked || lib.getLastInfos().do_update_queue) {
+    process.on('unhandledRejection', (reason, p) => {
+      console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+      process.exit(1);
+    });
+    if (!lib.getLastInfos().blocked || !lib.getLastInfos().do_update_queue) {
       console.log(' --- delegation script not finished (blocked) yet, or bot not finished scanning, do not process update script until up to date');
       setTimeout(function () {
         process.exit();
