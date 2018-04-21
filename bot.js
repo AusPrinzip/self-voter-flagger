@@ -564,8 +564,8 @@ function checkFinished (callback) {
   } else {
     var diff = lib.getProperties().head_block_number - lib.getLastInfos().lastBlock;
     console.log(' - main bot last processed block still ' + diff + ' blocks (' + (diff / (20 * 60)) + ' hr) away from head, will continue next run');
-    callback();
   }
+  callback();
 }
 
 // START THIS SCRIPT
