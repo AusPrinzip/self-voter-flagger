@@ -47,6 +47,11 @@ function doProcess (startAtBlockNum, callback) {
       callback();
       return;
     }
+    if (startAtBlockNum >= maxBlockNum) {
+      console.log(' - no blocks to run, have reached current max at ' + maxBlockNum);
+      callback();
+      return;
+    }
     var priceInfo = null;
     var tries = 0;
     while (tries < lib.API_RETRIES) {
@@ -549,7 +554,7 @@ function finishAndStoreLastInfos (startAtBlockNum, currentBlockNum, callback) {
 
 function checkFinished (callback) {
   // check if scanned up to the current head block at time of start scan
-  if (lib.getLastInfos().lastBlock === lib.getProperties().head_block_number) {
+  if (lib.getLastInfos().lastBlock >= lib.getLastInfos().last_delegation_block) {
     console.log(' - main bot script reached recent head, unblocking delegation script, will continue next run');
     var lastInfos = lib.getLastInfos();
     lastInfos.blocked = false;

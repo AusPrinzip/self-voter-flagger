@@ -79,9 +79,18 @@ function doProcess (callback) {
         wait.for(lib.saveDb, lib.DB_FLAGLIST, queue[i]);
       }
       // make new update time
+      var oldUpdateTime = lib.getLastInfos().update_time;
       lib.getLastInfos().update_time = moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString();
       lib.getLastInfos().do_update_queue = false;
       wait.for(lib.saveDb, lib.DB_RECORDS, lib.getLastInfos());
+      wait.for(lib.saveDb, lib.DB_RUNS,
+        {
+          old_update_time: oldUpdateTime,
+          new_update_time: lib.getLastInfos().update_time,
+          time_now: moment(new Date()).toISOString(),
+          delegation_script_block: lib.getLastInfos().lastBlock,
+          bot_script_block: lib.getLastInfos().last_delegation_block
+        });
     } else {
       console.log(' - - not updating flag list, not time to update yet');
     }
