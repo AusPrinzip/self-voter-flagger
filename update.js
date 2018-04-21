@@ -83,7 +83,7 @@ function doProcess (callback) {
       lib.getLastInfos().update_time = moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString();
       lib.getLastInfos().do_update_queue = false;
       wait.for(lib.saveDb, lib.DB_RECORDS, lib.getLastInfos());
-      wait.for(lib.saveDb, lib.DB_RUNS,
+      wait.for(lib.saveDb, lib.DB_UPDATES,
         {
           old_update_time: oldUpdateTime,
           new_update_time: lib.getLastInfos().update_time,
