@@ -257,6 +257,10 @@ function doProcess (callback) {
           votingpower = 100;
         }
 
+        votingpower *= 0.85;
+
+        console.log(' - - modifying vote percentage to 85% of full power counter, resulting at ' + votingpower);
+
         var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
 
         if (percentageInt === 0) {
