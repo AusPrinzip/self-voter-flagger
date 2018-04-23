@@ -301,6 +301,9 @@ function doProcess (startAtBlockNum, callback) {
               delegators = [];
               for (m = 0; m < delegationsInfos.delegated.length; m++) {
                 delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
+                if (delegationsInfos.delegated[m].sp <= 0) {
+                  delegationMoment = delegationMoment.add(Number(7, 'day'));
+                }
                 if (delegationMoment.isAfter(thisBlockMoment)) {
                   alreadyProcessed = false;
                   for (n = 0; n < delegators.length; n++) {
@@ -316,6 +319,9 @@ function doProcess (startAtBlockNum, callback) {
                   for (n = 0; n < delegationsInfos.delegated.length; n++) {
                     if (m !== n) {
                       delegationMomentOther = moment(delegationsInfos.delegated[n].timestamp, moment.ISO_8601);
+                      if (delegationsInfos.delegated[n].sp <= 0) {
+                        delegationMomentOther = delegationMomentOther.add(Number(7, 'day'));
+                      }
                       if (delegationsInfos.delegated[m].user.localeCompare(delegationsInfos.delegated[n].user) === 0 &&
                           delegationMomentOther.isAfter(delegationMoment) &&
                           sp !== delegationsInfos.delegated[n].sp) { // don't compound a duplicate delegation transaction
