@@ -125,7 +125,7 @@ function doProcess (startAtBlockNum, callback) {
                 while (tries < lib.API_RETRIES) {
                   tries++;
                   try {
-                    accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, pos, step);
+                    accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, pos, pos + step);
                     break;
                   } catch (err) {
                     console.error(err);
