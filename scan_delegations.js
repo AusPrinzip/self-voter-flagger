@@ -116,58 +116,67 @@ function doProcess (startAtBlockNum, callback) {
             if (vests > 0) {
               sp = lib.getSteemPowerFromVest(opDetail.vesting_shares);
             } else {
-              var accountHistory = null;
-              tries = 0;
-              while (tries < lib.API_RETRIES) {
-                tries++;
-                try {
-                  accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, -1, 10000);
-                  break;
-                } catch (err) {
-                  console.error(err);
-                  console.log(' - failed to get account history, retrying if possible');
+              var iterations = 10;
+              var step = 10000;
+              var pos = -1;
+              while (iterations >= 0) {
+                var accountHistory = null;
+                tries = 0;
+                while (tries < lib.API_RETRIES) {
+                  tries++;
+                  try {
+                    accountHistory = wait.for(lib.getSteemAccountHistory, opDetail.delegator, pos, step);
+                    break;
+                  } catch (err) {
+                    console.error(err);
+                    console.log(' - failed to get account history, retrying if possible');
+                  }
                 }
-              }
-              if (accountHistory === undefined || accountHistory === null) {
-                console.log(' - completely failed to get account history, exiting');
-                finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
-                  callback();
-                });
-                return;
-              }
-              var match = false;
-              if (accountHistory.length > 0) {
-                // console.log(' - DEBUG: ' + JSON.stringify(accountHistory));
-                for (var m = 0; m < accountHistory.length; m++) {
-                  var operations = accountHistory[m][1]['op'];
-                  var accHistOpName = operations[0];
-                  var accHistOpDetail = operations[1];
-                  if (accHistOpName !== undefined && accHistOpName !== null &&
-                      accHistOpName.localeCompare('delegate_vesting_shares') === 0) {
-                    // console.log(' - found acc hist delegation: ' + JSON.stringify(accHistOpDetail));
-                    if (accHistOpDetail.delegatee.localeCompare(opDetail.delegatee) === 0 &&
-                        Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
-                      vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) * -1;
-                      sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares) * -1;
-                      console.log(' - - updated delegation amount to negative ' + accHistOpDetail.vesting_shares);
-                      match = true;
+                if (accountHistory === undefined || accountHistory === null) {
+                  console.log(' - completely failed to get account history, exiting');
+                  finishAndStoreLastInfos(startAtBlockNum, currentBlockNum - 1, function () {
+                    callback();
+                  });
+                  return;
+                }
+                var match = false;
+                if (accountHistory.length > 0) {
+                  // console.log(' - DEBUG: ' + JSON.stringify(accountHistory));
+                  for (var m = 0; m < accountHistory.length; m++) {
+                    var operations = accountHistory[m][1]['op'];
+                    var accHistOpName = operations[0];
+                    var accHistOpDetail = operations[1];
+                    if (accHistOpName !== undefined && accHistOpName !== null &&
+                        accHistOpName.localeCompare('delegate_vesting_shares') === 0) {
+                      // console.log(' - found acc hist delegation: ' + JSON.stringify(accHistOpDetail));
+                      if (accHistOpDetail.delegatee.localeCompare(opDetail.delegatee) === 0 &&
+                          Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) > 0) {
+                        vests = Number(accHistOpDetail.vesting_shares.replace(' VESTS', '')) * -1;
+                        sp = lib.getSteemPowerFromVest(accHistOpDetail.vesting_shares) * -1;
+                        console.log(' - - updated delegation amount to negative ' + accHistOpDetail.vesting_shares);
+                        match = true;
+                        break;
+                      }
+                    }
+                    if (match) {
                       break;
                     }
                   }
-                  if (match) {
-                    break;
-                  }
+                } else {
+                  // no results, stop trying to get account history
+                  break;
                 }
+                if (!match) {
+                  vests = 0;
+                  sp = 0;
+                } else {
+                  // break out, got info
+                  break;
+                }
+                // iterate
+                iterations--;
+                pos += step;
               }
-              if (!match) {
-                vests = 0;
-                sp = 0;
-              }
-            }
-            // skip if nothing to record
-            if (vests === 0) {
-              console.log(' - - couldnt update undelegation amount, skipping');
-              continue;
             }
             var delegatorInfos = null;
             try {
@@ -179,7 +188,8 @@ function doProcess (startAtBlockNum, callback) {
               delegatorInfos = {
                 user: opDetail.delegator,
                 received: [],
-                delegated: []
+                delegated: [],
+                bad_record: false
               };
             }
             delegatorInfos.delegated.push(
@@ -190,6 +200,12 @@ function doProcess (startAtBlockNum, callback) {
                 timestamp: block.timestamp
               }
             );
+            // if zero vests after all this trying, mark as a bad record, but keep record
+            if (vests === 0) {
+              console.log(' - - couldnt update undelegation amount, marking');
+              delegatorInfos.bad_record = true;
+              continue;
+            }
             wait.for(lib.saveDb, lib.DB_DELEGATIONS, delegatorInfos);
             var delegateeInfos = null;
             try {
@@ -201,7 +217,8 @@ function doProcess (startAtBlockNum, callback) {
               delegateeInfos = {
                 user: opDetail.delegatee,
                 received: [],
-                delegated: []
+                delegated: [],
+                bad_record: false
               };
             }
             delegateeInfos.received.push(
@@ -212,6 +229,10 @@ function doProcess (startAtBlockNum, callback) {
                 timestamp: block.timestamp
               }
             );
+            if (vests === 0) {
+              delegateeInfos.bad_record = true;
+              continue;
+            }
             wait.for(lib.saveDb, lib.DB_DELEGATIONS, delegateeInfos);
           }
         }

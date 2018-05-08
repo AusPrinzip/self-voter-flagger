@@ -260,8 +260,10 @@ function doProcess (startAtBlockNum, callback) {
               // do nothing
             }
             var steemPower = null;
+            var delegationsInfosIsBad = true;
             if (delegationsInfos !== undefined && delegationsInfos !== null) {
               steemPower = delegationsInfos.sp;
+              delegationsInfosIsBad = delegationsInfos.bad_record;
               console.log(' - checking delegation information, most recent SP is ' + steemPower);
               var correctionSP = 0;
               var delegators = [];
@@ -465,57 +467,74 @@ function doProcess (startAtBlockNum, callback) {
                 }
               }
             }
-            // console.log(" - - updated voter info:
-            // "+JSON.stringify(voterInfos));
 
-            // if (!recordOnly) {
-            // update voter object if exists in queue already
-            var updatedExistingQueueVoter = false;
-            for (m = 0; m < queue.length; m++) {
-              if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
-                queue[m] = voterInfos;
-                console.log(' - - voter already in queue, updating');
-                updatedExistingQueueVoter = true;
-                break;
+            if (delegationsInfosIsBad) {
+              // remove existing voter from queue, if exists
+              var idx = -1;
+              for (m = 0; m < queue.length; m++) {
+                if (queue[m].voter.localeCompare(voterInfos.voter) === 0) {
+                  idx = m;
+                  break;
+                }
               }
-            }
-
-            // add voter object if didn't update existing
-            if (!updatedExistingQueueVoter) {
-              // if queue full then remove the lowest total ROI voter if below this voter
-              if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
-                var idx = -1;
-                var lowest = voterInfos.total_extrapolated_roi;
+              if (idx >= 0) {
+                console.log(' - - removing bad delegation voter from queue');
+                var newPosts = [];
                 for (m = 0; m < queue.length; m++) {
-                  if (queue[m].total_extrapolated_roi < lowest) {
-                    lowest = queue[m].total_extrapolated_roi;
-                    idx = m;
+                  if (m !== idx) {
+                    newPosts.push(queue[m]);
                   }
                 }
+                queue = newPosts;
+              }
+            } else {
+              // otherwise we can consider for queue
+              var updatedExistingQueueVoter = false;
+              for (m = 0; m < queue.length; m++) {
+                if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
+                  queue[m] = voterInfos;
+                  console.log(' - - voter already in queue, updating');
+                  updatedExistingQueueVoter = true;
+                  break;
+                }
+              }
 
-                if (idx >= 0) {
-                  // remove lowest total ROI voter
-                  console.log(' - - - removing existing lower roi user ' +
-                      queue[idx].voter + ' with total extrapolated roi of ' +
-                      queue[idx].total_extrapolated_roi);
-                  var newPosts = [];
+              // add voter object if didn't update existing
+              if (!updatedExistingQueueVoter) {
+                // if queue full then remove the lowest total ROI voter if below this voter
+                if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
+                  idx = -1;
+                  var lowest = voterInfos.total_extrapolated_roi;
                   for (m = 0; m < queue.length; m++) {
-                    if (m !== idx) {
-                      newPosts.push(queue[m]);
+                    if (queue[m].total_extrapolated_roi < lowest) {
+                      lowest = queue[m].total_extrapolated_roi;
+                      idx = m;
                     }
                   }
-                  queue = newPosts;
+
+                  if (idx >= 0) {
+                    // remove lowest total ROI voter
+                    console.log(' - - - removing existing lower roi user ' +
+                        queue[idx].voter + ' with total extrapolated roi of ' +
+                        queue[idx].total_extrapolated_roi);
+                    newPosts = [];
+                    for (m = 0; m < queue.length; m++) {
+                      if (m !== idx) {
+                        newPosts.push(queue[m]);
+                      }
+                    }
+                    queue = newPosts;
+                  }
+                }
+                if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
+                  // add to queue
+                  console.log(' - - - adding user to list');
+                  queue.push(voterInfos);
+                } else {
+                  console.log(' - - - dont add user to list, below min in queue');
                 }
               }
-              if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
-                // add to queue
-                console.log(' - - - adding user to list');
-                queue.push(voterInfos);
-              } else {
-                console.log(' - - - dont add user to list, below min in queue');
-              }
             }
-            // }
 
             wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
             if (voterIsOnFlagList) {
