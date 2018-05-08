@@ -193,7 +193,7 @@ function doProcess (startAtBlockNum, callback) {
             wait.for(lib.saveDb, lib.DB_DELEGATIONS, delegatorInfos);
             var delegateeInfos = null;
             try {
-              delegateeInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {voter: opDetail.delegatee});
+              delegateeInfos = wait.for(lib.getRecordFromDb, lib.DB_DELEGATIONS, {user: opDetail.delegatee});
             } catch (err) {
               // do nothing
             }
