@@ -190,7 +190,6 @@ function doProcess (startAtBlockNum, callback) {
             if (vests === 0) {
               console.log(' - - couldnt update undelegation amount, marking');
               delegatorInfos.bad_record = true;
-              continue;
             }
             wait.for(lib.saveDb, lib.DB_DELEGATIONS, delegatorInfos);
             var delegateeInfos = null;
@@ -217,7 +216,6 @@ function doProcess (startAtBlockNum, callback) {
             );
             if (vests === 0) {
               delegateeInfos.bad_record = true;
-              continue;
             }
             wait.for(lib.saveDb, lib.DB_DELEGATIONS, delegateeInfos);
           }
