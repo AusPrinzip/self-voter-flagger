@@ -382,7 +382,7 @@ function doProcess (startAtBlockNum, callback) {
             // calculate cumulative extrapolated ROI
             var roi = 0;
             if (selfVotePayout > 0) {
-              roi = (selfVotePayout / (steemPower * sbdPerSteem)) * 100;
+              roi = (selfVotePayout / steemPower) * 100;
             }
             // cap at 10^(-20) precision to avoid exponent form
             roi = Number(roi.toFixed(20));
