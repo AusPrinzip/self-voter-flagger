@@ -266,78 +266,21 @@ function doProcess (startAtBlockNum, callback) {
               delegationsInfosIsBad = delegationsInfos.bad_record;
               console.log(' - checking delegation information, most recent SP is ' + steemPower);
               var correctionSP = 0;
-              var delegators = [];
               for (m = 0; m < delegationsInfos.received.length; m++) {
                 var delegationMoment = moment(delegationsInfos.received[m].timestamp, moment.ISO_8601);
-                if (delegationMoment.isAfter(thisBlockMoment)) {
-                  var alreadyProcessed = false;
-                  for (var n = 0; n < delegators.length; n++) {
-                    if (delegators[n].localeCompare(delegationsInfos.received[m].user) === 0) {
-                      alreadyProcessed = true;
-                    }
-                  }
-                  if (alreadyProcessed) {
-                    continue;
-                  }
-                  delegators.push(delegationsInfos.received[m].user);
-                  var sp = delegationsInfos.received[m].sp;
-                  for (n = 0; n < delegationsInfos.received.length; n++) {
-                    if (m !== n) {
-                      var delegationMomentOther = moment(delegationsInfos.received[n].timestamp, moment.ISO_8601);
-                      if (delegationsInfos.received[m].user.localeCompare(delegationsInfos.received[n].user) === 0 &&
-                          delegationMomentOther.isAfter(delegationMoment) &&
-                          sp !== delegationsInfos.received[n].sp) { // don't compound a duplicate delegation transaction
-                        if ((sp > 0 && delegationsInfos.received[n].sp > 0) ||
-                            (sp < 0 && delegationsInfos.received[n].sp < 0)) { // if same sign, replace
-                          sp = delegationsInfos.received[n].sp;
-                        } else {
-                          sp += delegationsInfos.received[n].sp; // otherwise add
-                        }
-                      }
-                    }
-                  }
-                  console.log(' - - - receieved ' + sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
-                  correctionSP -= sp; // remove receieved delegations
+                if (delegationMoment.isBefore(thisBlockMoment)) {
+                  console.log(' - - - receieved ' + delegationsInfos.received[m].sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
+                  correctionSP -= delegationsInfos.received[m].sp; // remove receieved delegations
                 }
               }
-              delegators = [];
               for (m = 0; m < delegationsInfos.delegated.length; m++) {
                 delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
                 if (delegationsInfos.delegated[m].sp <= 0) {
                   delegationMoment = delegationMoment.add(Number(7, 'day'));
                 }
-                if (delegationMoment.isAfter(thisBlockMoment)) {
-                  alreadyProcessed = false;
-                  for (n = 0; n < delegators.length; n++) {
-                    if (delegators[n].localeCompare(delegationsInfos.delegated[m].user) === 0) {
-                      alreadyProcessed = true;
-                    }
-                  }
-                  if (alreadyProcessed) {
-                    continue;
-                  }
-                  delegators.push(delegationsInfos.delegated[m].user);
-                  sp = delegationsInfos.delegated[m].sp;
-                  for (n = 0; n < delegationsInfos.delegated.length; n++) {
-                    if (m !== n) {
-                      delegationMomentOther = moment(delegationsInfos.delegated[n].timestamp, moment.ISO_8601);
-                      if (delegationsInfos.delegated[n].sp <= 0) {
-                        delegationMomentOther = delegationMomentOther.add(Number(7, 'day'));
-                      }
-                      if (delegationsInfos.delegated[m].user.localeCompare(delegationsInfos.delegated[n].user) === 0 &&
-                          delegationMomentOther.isAfter(delegationMoment) &&
-                          sp !== delegationsInfos.delegated[n].sp) { // don't compound a duplicate delegation transaction
-                        if ((sp > 0 && delegationsInfos.delegated[n].sp > 0) ||
-                            (sp < 0 && delegationsInfos.delegated[n].sp < 0)) { // if same sign, replace
-                          sp = delegationsInfos.delegated[n].sp;
-                        } else {
-                          sp += delegationsInfos.delegated[n].sp; // otherwise add
-                        }
-                      }
-                    }
-                  }
+                if (delegationMoment.isBefore(thisBlockMoment)) {
                   console.log(' - - - delegated ' + sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
-                  correctionSP += sp; // restore outward delegations
+                  correctionSP += delegationsInfos.delegated[m].sp; // restore outward delegations
                 }
               }
               steemPower -= correctionSP; // subtract to reverse effect
