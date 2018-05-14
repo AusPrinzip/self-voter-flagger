@@ -268,7 +268,7 @@ function doProcess (startAtBlockNum, callback) {
               var correctionSP = 0;
               for (m = 0; m < delegationsInfos.received.length; m++) {
                 var delegationMoment = moment(delegationsInfos.received[m].timestamp, moment.ISO_8601);
-                if (delegationMoment.isBefore(thisBlockMoment)) {
+                if (delegationMoment.isAfter(thisBlockMoment)) {
                   console.log(' - - - receieved ' + delegationsInfos.received[m].sp + ' from ' + delegationsInfos.received[m].user + ' after this vote, reverse');
                   correctionSP -= delegationsInfos.received[m].sp; // remove receieved delegations
                 }
@@ -278,8 +278,8 @@ function doProcess (startAtBlockNum, callback) {
                 if (delegationsInfos.delegated[m].sp <= 0) {
                   delegationMoment = delegationMoment.add(Number(7, 'day'));
                 }
-                if (delegationMoment.isBefore(thisBlockMoment)) {
-                  console.log(' - - - delegated ' + sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
+                if (delegationMoment.isAfter(thisBlockMoment)) {
+                  console.log(' - - - delegated ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
                   correctionSP += delegationsInfos.delegated[m].sp; // restore outward delegations
                 }
               }
