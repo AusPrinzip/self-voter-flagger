@@ -283,7 +283,7 @@ function doProcess (startAtBlockNum, callback) {
                   correctionSP += delegationsInfos.delegated[m].sp; // restore outward delegations
                 }
               }
-              steemPower -= correctionSP; // subtract to reverse effect
+              steemPower += correctionSP;
               console.log(' - - correcting SP for historical events by ' + correctionSP + ', SP now = ' + steemPower);
             } else {
               // get from API instead, no delegations info
