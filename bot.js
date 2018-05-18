@@ -157,12 +157,6 @@ function doProcess (startAtBlockNum, callback) {
             }
             */
 
-            // TODO : REMOVE!!!!
-            // very temporary fix just to get interesting logs for testing
-            if (opDetail.voter.localeCompare('ribai') !== 0) {
-              continue;
-            }
-
             // try to get voter info from db
             var voterInfos = wait.for(lib.getRecordFromDb, lib.DB_VOTERS, {voter: opDetail.voter});
 
