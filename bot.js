@@ -303,7 +303,7 @@ function doProcess (startAtBlockNum, callback) {
               for (m = 0; m < delegationsInfos.delegated.length; m++) {
                 delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
                 if (delegationsInfos.delegated[m].sp <= 0) {
-                  delegationMoment = delegationMoment.add(Number(7, 'day'));
+                  delegationMoment = delegationMoment.add(7, 'day');
                   if (delegationMoment.isAfter(lastDelegationBlockMoment)) {
                     console.log(' - - - discarding reverse delegation of ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' as is after current delegation last scan block');
                     continue;
