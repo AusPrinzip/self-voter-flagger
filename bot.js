@@ -38,7 +38,28 @@ function doProcess (startAtBlockNum, callback) {
     // set up initial variables
     console.log('Getting blockchain info');
     var maxBlockNum = lib.getProperties().head_block_number;
+    var lastDelegationBlockMoment;
     if (lib.getLastInfos().last_delegation_block !== undefined) {
+      var lastDelegationBlock = null;
+      var tries = 0;
+      while (tries < lib.API_RETRIES) {
+        tries++;
+        try {
+          lastDelegationBlock = wait.for(lib.getBlock, lib.getLastInfos().last_delegation_block);
+          break;
+        } catch (err) {
+          console.error(err);
+          console.log(' - failed to get last delegation block ' + lib.getLastInfos().last_delegation_block + ', retrying if possible');
+        }
+      }
+      if (lastDelegationBlock === undefined || lastDelegationBlock === null) {
+        console.log(' - completely failed to get last delegation block, exiting');
+        finishAndStoreLastInfos(startAtBlockNum, startAtBlockNum, function () {
+          callback();
+        });
+        return;
+      }
+      lastDelegationBlockMoment = moment(lastDelegationBlock.timestamp, moment.ISO_8601);
       if (maxBlockNum > lib.getLastInfos().last_delegation_block) {
         maxBlockNum = lib.getLastInfos().last_delegation_block;
       }
@@ -283,6 +304,10 @@ function doProcess (startAtBlockNum, callback) {
                 delegationMoment = moment(delegationsInfos.delegated[m].timestamp, moment.ISO_8601);
                 if (delegationsInfos.delegated[m].sp <= 0) {
                   delegationMoment = delegationMoment.add(Number(7, 'day'));
+                  if (delegationMoment.isAfter(lastDelegationBlockMoment)) {
+                    console.log(' - - - discarding reverse delegation of ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' as is after current delegation last scan block');
+                    continue;
+                  }
                 }
                 if (delegationMoment.isAfter(thisBlockMoment)) {
                   console.log(' - - - delegated ' + delegationsInfos.delegated[m].sp + ' to ' + delegationsInfos.delegated[m].user + ' after this vote, reverse');
