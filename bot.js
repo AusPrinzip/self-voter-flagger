@@ -168,53 +168,41 @@ function doProcess (startAtBlockNum, callback) {
                 voterInfos.score += (score / OPTIMAL_NUM_VOTES);
                 console.log(' - - - added adjusted score of ' + (score / OPTIMAL_NUM_VOTES) + ' resulting in ' + voterInfos.score + ' total score for ' + opDetail.author);
               }
+              // finally, record this self vote
+              recordSelfVote(voterInfos, opDetail, thisBlockMoment);
             }
 
-            var updatedExistingQueueVoter = false;
-            for (var m = 0; m < queue.length; m++) {
-              if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
-                queue[m] = voterInfos;
-                // console.log(' - - voter already in queue, updating');
-                updatedExistingQueueVoter = true;
-                break;
+            // if queue full then remove the lowest total ROI voter if below this voter
+            if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
+              var idx = -1;
+              var lowest = voterInfos.score;
+              for (var m = 0; m < queue.length; m++) {
+                if (queue[m].score < lowest) {
+                  lowest = queue[m].score;
+                  idx = m;
+                }
               }
-            }
-            // add voter object if didn't update existing
-            if (!updatedExistingQueueVoter) {
-              // if queue full then remove the lowest total ROI voter if below this voter
-              if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
-                var idx = -1;
-                var lowest = voterInfos.score;
+
+              if (idx >= 0) {
+                // remove lowest total ROI voter
+                console.log(' - - - removing existing lower score user ' +
+                    queue[idx].voter + ' with score of ' +
+                    queue[idx].score);
+                var newPosts = [];
                 for (m = 0; m < queue.length; m++) {
-                  if (queue[m].score < lowest) {
-                    lowest = queue[m].score;
-                    idx = m;
+                  if (m !== idx) {
+                    newPosts.push(queue[m]);
                   }
                 }
-
-                if (idx >= 0) {
-                  // remove lowest total ROI voter
-                  /*
-                  console.log(' - - - removing existing lower score user ' +
-                      queue[idx].voter + ' with score of ' +
-                      queue[idx].score);
-                      */
-                  var newPosts = [];
-                  for (m = 0; m < queue.length; m++) {
-                    if (m !== idx) {
-                      newPosts.push(queue[m]);
-                    }
-                  }
-                  queue = newPosts;
-                }
+                queue = newPosts;
               }
-              if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
-                // add to queue
-                // console.log(' - - - adding user to list');
-                queue.push(voterInfos);
-              } else {
-                // console.log(' - - - dont add user to list, below min in queue');
-              }
+            }
+            if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
+              // add to queue
+              console.log(' - - - adding user to list');
+              queue.push(voterInfos);
+            } else {
+              console.log(' - - - dont add user to list, below min in queue');
             }
 
             wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
