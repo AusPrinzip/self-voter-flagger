@@ -145,22 +145,28 @@ function doProcess (startAtBlockNum, callback) {
               // case #3, if previous self vote exists and vote is self vote
               // * calc self vote score. score is normalized, i.e. between 0 and 1
               // 1. get difference in self vote times, in milliseconds
+              console.log('calc score for @' + opDetail.author + '/' + opDetail.permlink);
               var score = 0;
               var diff = thisBlockMoment.valueOf() - voterInfos.svt;
               if (diff < OPTIMAL_VOTING_INTERVAL_MS) {
+                console.log(' - earlier than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
                 score = diff / OPTIMAL_VOTING_INTERVAL_MS;
                 score *= score;
               } else if (score < (OPTIMAL_VOTING_INTERVAL_MS * (TAIL_FACTOR + 1))) {
+                console.log(' - later than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
                 score = (diff - OPTIMAL_VOTING_INTERVAL_MS) / (OPTIMAL_VOTING_INTERVAL_MS * TAIL_FACTOR);
                 score *= score;
                 score = 1 - score;
               }
+              console.log(' - - score = ' + score);
               // reduce score by adjusted amount of VP lost from outward votes
               // TODO : perhaps it's too much for it to be reduced by 100% to fully remove score? maybe a lower amount?
               score -= 1 - (voterInfos.bVP > 0 ? (voterInfos.bVP / 100) : 1);
+              console.log(' - - reduced score relative to ' + voterInfos.bVP + ' voting power balance, score = ' + score);
               // if we have a positive score, add it to the users score, adjusted for number of optimal votes
               if (score > 0) {
                 voterInfos.score += (score / OPTIMAL_NUM_VOTES);
+                console.log(' - - - added adjusted score of ' + (score / OPTIMAL_NUM_VOTES) + ' resulting in ' + voterInfos.score + ' total score for ' + opDetail.author);
               }
             }
 
@@ -168,7 +174,7 @@ function doProcess (startAtBlockNum, callback) {
             for (var m = 0; m < queue.length; m++) {
               if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
                 queue[m] = voterInfos;
-                console.log(' - - voter already in queue, updating');
+                // console.log(' - - voter already in queue, updating');
                 updatedExistingQueueVoter = true;
                 break;
               }
@@ -188,9 +194,11 @@ function doProcess (startAtBlockNum, callback) {
 
                 if (idx >= 0) {
                   // remove lowest total ROI voter
+                  /*
                   console.log(' - - - removing existing lower score user ' +
                       queue[idx].voter + ' with score of ' +
-                      queue[idx].total_extrapolated_roi);
+                      queue[idx].score);
+                      */
                   var newPosts = [];
                   for (m = 0; m < queue.length; m++) {
                     if (m !== idx) {
@@ -202,10 +210,10 @@ function doProcess (startAtBlockNum, callback) {
               }
               if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
                 // add to queue
-                console.log(' - - - adding user to list');
+                // console.log(' - - - adding user to list');
                 queue.push(voterInfos);
               } else {
-                console.log(' - - - dont add user to list, below min in queue');
+                // console.log(' - - - dont add user to list, below min in queue');
               }
             }
 
