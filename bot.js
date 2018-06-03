@@ -173,36 +173,40 @@ function doProcess (startAtBlockNum, callback) {
             }
 
             // if queue full then remove the lowest total ROI voter if below this voter
-            if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
-              var idx = -1;
-              var lowest = voterInfos.score;
-              for (var m = 0; m < queue.length; m++) {
-                if (queue[m].score < lowest) {
-                  lowest = queue[m].score;
-                  idx = m;
-                }
-              }
-
-              if (idx >= 0) {
-                // remove lowest total ROI voter
-                console.log(' - - - removing existing lower score user ' +
-                    queue[idx].voter + ' with score of ' +
-                    queue[idx].score);
-                var newPosts = [];
-                for (m = 0; m < queue.length; m++) {
-                  if (m !== idx) {
-                    newPosts.push(queue[m]);
+            if (voterInfos.score > 0) {
+              if (queue.length >= lib.MAX_POSTS_TO_CONSIDER) {
+                var idx = -1;
+                var lowest = voterInfos.score;
+                for (var m = 0; m < queue.length; m++) {
+                  if (queue[m].score < lowest) {
+                    lowest = queue[m].score;
+                    idx = m;
                   }
                 }
-                queue = newPosts;
+
+                if (idx >= 0) {
+                  // remove lowest total ROI voter
+                  console.log(' - - removing existing lower score user ' +
+                      queue[idx].voter + ' with score of ' +
+                      queue[idx].score);
+                  var newPosts = [];
+                  for (m = 0; m < queue.length; m++) {
+                    if (m !== idx) {
+                      newPosts.push(queue[m]);
+                    }
+                  }
+                  queue = newPosts;
+                }
               }
-            }
-            if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
-              // add to queue
-              console.log(' - - - adding user to list');
-              queue.push(voterInfos);
+              if (queue.length < lib.MAX_POSTS_TO_CONSIDER) {
+                // add to queue
+                console.log(' - - adding user to list');
+                queue.push(voterInfos);
+              } else {
+                // console.log(' - - dont add user to list, below min in queue');
+              }
             } else {
-              console.log(' - - - dont add user to list, below min in queue');
+              // console.log(' - - don't );
             }
 
             wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
