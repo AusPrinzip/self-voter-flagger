@@ -135,13 +135,6 @@ function doProcess (callback) {
 
         console.log(' - - processing post with permlink ' + postDetails.permlink);
 
-        if (postDetails.to_flag !== undefined &&
-            postDetails.to_flag !== null &&
-            !postDetails.to_flag) {
-          console.log(' - - marked do not flag, skipping...');
-          continue;
-        }
-
         // check post age
         var content = null;
         tries = 0;
@@ -219,7 +212,6 @@ function doProcess (callback) {
         } else {
           selfVotePayout = maxPayout * (selfVoteRshares / netRshares);
         }
-        console.log('initially recorded self vote payout: ' + postDetails.self_vote_payout);
         console.log('recalculated self vote payout: ' + selfVotePayout);
         if (selfVotePayout < lib.MIN_SELF_VOTE_TO_CONSIDER) {
           console.log(' - self vote too small to consider, skipping');

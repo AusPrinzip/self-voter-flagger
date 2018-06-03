@@ -66,10 +66,11 @@ function doProcess (callback) {
         return;
       }
       queue.sort(function (a, b) {
-        return b.total_extrapolated_roi - a.total_extrapolated_roi;
+        return b.score - a.score;
       });
       wait.for(lib.dropDb, lib.DB_FLAGLIST);
       for (var i = 0; i < queue.length; i++) {
+        queue.posts = [];
         wait.for(lib.saveDb, lib.DB_FLAGLIST, queue[i]);
       }
       // make new update time

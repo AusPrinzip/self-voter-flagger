@@ -96,6 +96,28 @@ function doProcess (startAtBlockNum, callback) {
             // THEN, check vote is a self vote
             var selfVote = opDetail.voter.localeCompare(opDetail.author) !== 0;
 
+            if (selfVote) {
+              // check if on flag list first to add this voted post to list for countering
+              var voterFlagObj = null;
+              try {
+                voterFlagObj = wait.for(lib.getRecordFromDb, lib.DB_FLAGLIST, {voter: opDetail.voter});
+              } catch (err) {
+                // fail silently
+              }
+              if (voterFlagObj !== undefined &&
+                  voterFlagObj != null) {
+                if (voterFlagObj.posts === undefined) {
+                  voterFlagObj.posts = [];
+                }
+                voterFlagObj.posts.push({
+                  permlink: opDetail.permlink,
+                  weight: opDetail.weight,
+                  flagged: false
+                });
+                wait.for(lib.saveDb, lib.DB_FLAGLIST, voterFlagObj);
+              }
+            }
+
             // case #1, if first self vote on record for user
             if (voterInfos === null || voterInfos === undefined) {
               if (selfVote) {
