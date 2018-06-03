@@ -11,13 +11,6 @@ function main () {
       console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
       process.exit(1);
     });
-    if (!lib.getLastInfos().do_update_queue) {
-      console.log(' --- update not cleared for trigger yet (bot script not caught up with delegation script) do not process update script');
-      setTimeout(function () {
-        process.exit();
-      }, 5000);
-      return;
-    }
     doProcess(function () {
       console.log('Finished');
       setTimeout(function () {
@@ -29,7 +22,7 @@ function main () {
 
 function doProcess (callback) {
   wait.launchFiber(function () {
-    var mostRecentBlockNum = lib.getLastInfos().last_delegation_block;
+    var mostRecentBlockNum = lib.getLastInfos().lastBlock;
     if (mostRecentBlockNum === undefined) {
       console.log(' - - last scanned block information not available, exiting');
       callback();
@@ -56,7 +49,8 @@ function doProcess (callback) {
     var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
     if (lib.getLastInfos().update_time === undefined ||
         lib.getLastInfos().update_time === null) {
-      console.log(' - Update time not defined, dont know when to update, fix by running scrape_and_queue.js');
+      console.log(' - Update time not defined, setting to default of ' + process.env.DAYS_UNTIL_UPDATE + ' days from now');
+      lib.getLastInfos().update_time = moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString();
       callback();
       return;
     }
@@ -81,15 +75,13 @@ function doProcess (callback) {
       // make new update time
       var oldUpdateTime = lib.getLastInfos().update_time;
       lib.getLastInfos().update_time = moment(new Date()).add(Number(process.env.DAYS_UNTIL_UPDATE), 'day').toISOString();
-      lib.getLastInfos().do_update_queue = false;
       wait.for(lib.saveDb, lib.DB_RECORDS, lib.getLastInfos());
       wait.for(lib.saveDb, lib.DB_UPDATES,
         {
           old_update_time: oldUpdateTime,
           new_update_time: lib.getLastInfos().update_time,
           time_now: moment(new Date()).toISOString(),
-          delegation_script_block: lib.getLastInfos().lastBlock,
-          bot_script_block: lib.getLastInfos().last_delegation_block
+          last_block: lib.getLastInfos().lastBlock
         });
     } else {
       console.log(' - - not updating flag list, not time to update yet');
