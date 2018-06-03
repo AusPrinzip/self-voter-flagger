@@ -94,7 +94,7 @@ function doProcess (startAtBlockNum, callback) {
             var voterInfos = wait.for(lib.getRecordFromDb, lib.DB_VOTERS, {voter: opDetail.voter});
 
             // THEN, check vote is a self vote
-            var selfVote = opDetail.voter.localeCompare(opDetail.author) !== 0;
+            var selfVote = opDetail.voter.localeCompare(opDetail.author) === 0;
 
             if (selfVote) {
               // check if on flag list first to add this voted post to list for countering
