@@ -6,6 +6,7 @@ const moment = require('moment');
 const wait = require('wait.for');
 const lib = require('./lib.js');
 
+const MIN_VOTE_WEIGHT_TO_CONSIDER = 30; // in percent, threshold of self vote considered big enough to count
 const OPTIMAL_NUM_VOTES = 70;
 const OPTIMAL_VOTING_INTERVAL_MS = 2.4 * 60 * 60 * 1000; // 2.4 hrs in milliseconds
 const TAIL_FACTOR = 3; // how long does the after optimal voting time take to fade to zero, as a factor of optimal voting interval time
@@ -93,6 +94,11 @@ function doProcess (startAtBlockNum, callback) {
             // try to get voter info from db
             var voterInfos = wait.for(lib.getRecordFromDb, lib.DB_VOTERS, {voter: opDetail.voter});
 
+            // completely ignore zero weight votes
+            if (opDetail.weight <= 0) {
+              continue;
+            }
+
             // THEN, check vote is a self vote
             var selfVote = opDetail.voter.localeCompare(opDetail.author) === 0;
 
@@ -136,41 +142,50 @@ function doProcess (startAtBlockNum, callback) {
             if (!selfVote) {
               // case #2, if previous self vote exists and vote is outward vote
               // reduce bVP by amount of vote
-              if (opDetail.weight > 0) { // note: we ignore reseting votes which vote again for some vote at zero
-                voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);
-              }
+              voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);
               // record last vote time
               voterInfos.last_vote_time = thisBlockMoment.valueOf();
-            } else {
-              // case #3, if previous self vote exists and vote is self vote
-              // * calc self vote score. score is normalized, i.e. between 0 and 1
-              // 1. get difference in self vote times, in milliseconds
-              console.log('calc score for @' + opDetail.voter + '/' + opDetail.permlink);
-              var score = 0;
-              var diff = thisBlockMoment.valueOf() - voterInfos.svt;
-              if (diff < OPTIMAL_VOTING_INTERVAL_MS) {
-                console.log(' - earlier than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
-                score = diff / OPTIMAL_VOTING_INTERVAL_MS;
-                score *= score;
-              } else if (score < (OPTIMAL_VOTING_INTERVAL_MS * (TAIL_FACTOR + 1))) {
-                console.log(' - later than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
-                score = (diff - OPTIMAL_VOTING_INTERVAL_MS) / (OPTIMAL_VOTING_INTERVAL_MS * TAIL_FACTOR);
-                score *= score;
-                score = 1 - score;
-              }
-              console.log(' - - score = ' + score);
-              // reduce score by adjusted amount of VP lost from outward votes
-              // TODO : perhaps it's too much for it to be reduced by 100% to fully remove score? maybe a lower amount?
-              score -= 1 - (voterInfos.bVP > 0 ? (voterInfos.bVP / 100) : 1);
-              console.log(' - - reduced score relative to ' + voterInfos.bVP + ' voting power balance, score = ' + score);
-              // if we have a positive score, add it to the users score, adjusted for number of optimal votes
-              if (score > 0) {
-                voterInfos.score += (score / OPTIMAL_NUM_VOTES);
-                console.log(' - - - added adjusted score of ' + (score / OPTIMAL_NUM_VOTES) + ' resulting in ' + voterInfos.score + ' total score for ' + opDetail.voter);
-              }
-              // finally, record this self vote
-              recordSelfVote(voterInfos, opDetail, thisBlockMoment);
+              continue;
+            } // else...
+
+            if ((opDetail.weight / 100) < MIN_VOTE_WEIGHT_TO_CONSIDER) {
+              console.log(' - self vote below min threshold of ' + MIN_VOTE_WEIGHT_TO_CONSIDER + ', ignoring, except to adjust bVP');
+              voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);
+              voterInfos.last_vote_time = thisBlockMoment.valueOf();
+              continue;
             }
+
+            // case #3, if previous self vote exists and vote is self vote
+            // * calc self vote score. score is normalized, i.e. between 0 and 1
+            // 1. get difference in self vote times, in milliseconds
+            console.log('calc score for @' + opDetail.voter + '/' + opDetail.permlink);
+            var score = 0;
+            var diff = thisBlockMoment.valueOf() - voterInfos.svt;
+            if (diff < OPTIMAL_VOTING_INTERVAL_MS) {
+              console.log(' - earlier than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
+              score = diff / OPTIMAL_VOTING_INTERVAL_MS;
+              score *= score;
+            } else if (score < (OPTIMAL_VOTING_INTERVAL_MS * (TAIL_FACTOR + 1))) {
+              console.log(' - later than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
+              score = (diff - OPTIMAL_VOTING_INTERVAL_MS) / (OPTIMAL_VOTING_INTERVAL_MS * TAIL_FACTOR);
+              score *= score;
+              score = 1 - score;
+            }
+            console.log(' - - score in progress = ' + score);
+            // attenuate by voting weight
+            score *= (opDetail.weight / 10000);
+            console.log(' - - score after weight adjustment of ' + (opDetail.weight / 100) + '% = ' + score);
+            // reduce score by adjusted amount of VP lost from outward votes
+            // TODO : perhaps it's too much for it to be reduced by 100% to fully remove score? maybe a lower amount?
+            score -= 1 - (voterInfos.bVP > 0 ? (voterInfos.bVP / 100) : 1);
+            console.log(' - - reduced score relative to ' + voterInfos.bVP + ' voting power balance, score = ' + score);
+            // if we have a positive score, add it to the users score, adjusted for number of optimal votes
+            if (score > 0) {
+              voterInfos.score += (score / OPTIMAL_NUM_VOTES);
+              console.log(' - - - added adjusted score of ' + (score / OPTIMAL_NUM_VOTES) + ' resulting in ' + voterInfos.score + ' total score for ' + opDetail.voter);
+            }
+            // finally, record this self vote
+            recordSelfVote(voterInfos, opDetail, thisBlockMoment);
 
             var updatedExistingQueueVoter = false;
             for (var m = 0; m < queue.length; m++) {
