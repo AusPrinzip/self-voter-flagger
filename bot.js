@@ -164,11 +164,11 @@ function doProcess (startAtBlockNum, callback) {
             if (diff < OPTIMAL_VOTING_INTERVAL_MS) {
               console.log(' - earlier than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
               score = diff / OPTIMAL_VOTING_INTERVAL_MS;
-              score *= score;
+              // score *= score;
             } else if (score < (OPTIMAL_VOTING_INTERVAL_MS * (TAIL_FACTOR + 1))) {
               console.log(' - later than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
               score = (diff - OPTIMAL_VOTING_INTERVAL_MS) / (OPTIMAL_VOTING_INTERVAL_MS * TAIL_FACTOR);
-              score *= score;
+              // score *= score;
               score = 1 - score;
             }
             console.log(' - - score in progress = ' + score);
