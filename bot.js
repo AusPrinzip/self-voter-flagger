@@ -9,7 +9,7 @@ const lib = require('./lib.js');
 const MIN_VOTE_WEIGHT_TO_CONSIDER = 30; // in percent, threshold of self vote considered big enough to count
 const OPTIMAL_NUM_VOTES = 70;
 const OPTIMAL_VOTING_INTERVAL_MS = 2.4 * 60 * 60 * 1000; // 2.4 hrs in milliseconds
-const TAIL_FACTOR = 3; // how long does the after optimal voting time take to fade to zero, as a factor of optimal voting interval time
+const TAIL_FACTOR = 2; // how long does the after optimal voting time take to fade to zero, as a factor of optimal voting interval time
 
 function main () {
   console.log(' *** BOT.js');
