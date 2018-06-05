@@ -84,6 +84,12 @@ function doProcess (callback) {
           time_now: moment(new Date()).toISOString(),
           last_block: lib.getLastInfos().lastBlock
         });
+      // drop voters info, start fresh
+      try {
+        wait.for(lib.dropDb, lib.DB_VOTERS);
+      } catch (err) {
+        console.log('Couldnt drop voters DB');
+      }
     } else {
       console.log(' - - not updating flag list, not time to update yet');
     }
