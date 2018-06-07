@@ -13,6 +13,8 @@ const TAIL_FACTOR = 2; // how long does the after optimal voting time take to fa
 
 const OUTGOING_VP_ADJ_PC_MIN = 80;
 const OUTGOING_VP_ADJ_PC_MAX = 100;
+const OUTGOING_VARI_LOCAL_GOOD_AMT = 4;
+const OUTGOING_VARI_GOOD_AMT = OUTGOING_VARI_LOCAL_GOOD_AMT * OPTIMAL_NUM_VOTES;
 
 const OPT_PERIOD_SCORE_FACTOR = 1;
 const OUTGOING_VP_ADJ_SCORE_FACTOR = -1;
@@ -252,15 +254,14 @@ function doProcess (startAtBlockNum, callback) {
             console.log(' - - outgoing VP adjustment score for bVP ' + voterInfos.bVP + '%, score = ' + outgoingVpAdjScore);
             // record outgoing vote variances
             if (voterInfos.outgoing_voter_list_local.length > 0) {
-              voterInfos.outgoing_vari_local_score = voterInfos.outgoing_voter_list_local_weight_sum / voterInfos.outgoing_voter_list_local.length;
+              var localVariScore = voterInfos.outgoing_voter_list_local_weight_sum / voterInfos.outgoing_voter_list_local.length;
+              voterInfos.outgoing_vari_local_score = localVariScore > OUTGOING_VARI_LOCAL_GOOD_AMT ? 1 : localVariScore / OUTGOING_VARI_LOCAL_GOOD_AMT;
               console.log(' - - outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_local_weight_sum + ' / size ' +
                   voterInfos.outgoing_voter_list_local.length + ') = ' + voterInfos.outgoing_vari_local_score);
             }
             if (voterInfos.outgoing_voter_list.length > 0) {
-              voterInfos.outgoing_vari_score += voterInfos.outgoing_voter_list_weight_sum / voterInfos.outgoing_voter_list.length;
-              console.log(' - - outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_weight_sum + ' / size ' +
-                  voterInfos.outgoing_voter_list.length + ') = ' + (voterInfos.outgoing_voter_list_weight_sum / voterInfos.outgoing_voter_list.length) +
-                  ', running total ' + voterInfos.outgoing_vari_score);
+              console.log(' - - tracking outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_weight_sum + ' / size ' +
+                  voterInfos.outgoing_voter_list.length + ')');
             }
             // create combination score
             var score = voterInfos.opt_period_score * OPT_PERIOD_SCORE_FACTOR;
