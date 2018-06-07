@@ -166,6 +166,11 @@ function doProcess (startAtBlockNum, callback) {
                 }
               }
               if (!match) {
+                if (opDetail.author == null) {
+                  console.log(' ** fatal error, author null for opDetail: ' + JSON.stringify(opDetail));
+                  callback();
+                  return;
+                }
                 voterInfos.outgoing_voter_list_local.push(opDetail.author);
               }
               voterInfos.outgoing_voter_list_local_weight_sum += opDetail.weight / 10000;
@@ -186,6 +191,11 @@ function doProcess (startAtBlockNum, callback) {
                 }
               }
               if (!match) {
+                if (opDetail.author == null) {
+                  console.log(' ** fatal error, author null for opDetail: ' + JSON.stringify(opDetail));
+                  callback();
+                  return;
+                }
                 voterInfos.outgoing_voter_list.push(opDetail.author);
               }
               voterInfos.outgoing_voter_list_weight_sum += opDetail.weight / 10000;
