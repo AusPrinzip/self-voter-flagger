@@ -152,6 +152,14 @@ function doProcess (startAtBlockNum, callback) {
               var match = false;
               // local
               for (var m = 0; m < voterInfos.outgoing_voter_list_local.length; m++) {
+                if (voterInfos.outgoing_voter_list_local[m] == null) {
+                  console.log(' ** fatal error, null entry in voterInfos.outgoing_voter_list_local[' + m + ']');
+                  console.log(' - ' + JSON.stringify(voterInfos));
+                  console.log(' - - outgoing_voter_list[]: ' + JSON.stringify(voterInfos.outgoing_voter_list));
+                  console.log(' - - outgoing_voter_list_local[]: ' + JSON.stringify(voterInfos.outgoing_voter_list_local));
+                  callback();
+                  return;
+                }
                 if (voterInfos.outgoing_voter_list_local[m].localeCompare(opDetail.author) === 0) {
                   match = true;
                   break;
@@ -164,6 +172,14 @@ function doProcess (startAtBlockNum, callback) {
               // general
               match = false;
               for (m = 0; m < voterInfos.outgoing_voter_list.length; m++) {
+                if (voterInfos.outgoing_voter_list[m] == null) {
+                  console.log(' ** fatal error, null entry in voterInfos.outgoing_voter_list[' + m + ']');
+                  console.log(' - ' + JSON.stringify(voterInfos));
+                  console.log(' - - outgoing_voter_list[]: ' + JSON.stringify(voterInfos.outgoing_voter_list));
+                  console.log(' - - outgoing_voter_list_local[]: ' + JSON.stringify(voterInfos.outgoing_voter_list_local));
+                  callback();
+                  return;
+                }
                 if (voterInfos.outgoing_voter_list[m].localeCompare(opDetail.author) === 0) {
                   match = true;
                   break;
