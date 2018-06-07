@@ -7,18 +7,18 @@ const wait = require('wait.for');
 const lib = require('./lib.js');
 
 const MIN_VOTE_WEIGHT_TO_CONSIDER = 30; // in percent, threshold of self vote considered big enough to count
-const OPTIMAL_NUM_VOTES = 70;
+// const OPTIMAL_NUM_VOTES = 70;
 const OPTIMAL_VOTING_INTERVAL_MS = 2.4 * 60 * 60 * 1000; // 2.4 hrs in milliseconds
 const TAIL_FACTOR = 2; // how long does the after optimal voting time take to fade to zero, as a factor of optimal voting interval time
 
 const OUTGOING_VP_ADJ_PC_MIN = 80;
 const OUTGOING_VP_ADJ_PC_MAX = 100;
 const OUTGOING_VARI_LOCAL_GOOD_AMT = 4;
-const OUTGOING_VARI_GOOD_AMT = OUTGOING_VARI_LOCAL_GOOD_AMT * OPTIMAL_NUM_VOTES;
+// const OUTGOING_VARI_GOOD_AMT = OUTGOING_VARI_LOCAL_GOOD_AMT * OPTIMAL_NUM_VOTES;
 
 const OPT_PERIOD_SCORE_FACTOR = 1;
-const OUTGOING_VP_ADJ_SCORE_FACTOR = -1;
-const OUTGOING_VARI_SCORE_FACTOR = -1;
+const OUTGOING_VP_ADJ_SCORE_FACTOR = -0.5;
+const OUTGOING_VARI_SCORE_FACTOR = -0.5;
 
 function main () {
   console.log(' *** BOT.js');
