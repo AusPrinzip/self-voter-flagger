@@ -101,8 +101,8 @@ function doProcess (startAtBlockNum, callback) {
             // try to get voter info from db
             var voterInfos = wait.for(lib.getRecordFromDb, lib.DB_VOTERS, {voter: opDetail.voter});
 
-            // completely ignore zero weight votes
-            if (opDetail.weight <= 0) {
+            // completely ignore zero weight votes and error in author
+            if (opDetail.weight <= 0 || voterInfos.author == null) {
               continue;
             }
 
