@@ -256,14 +256,14 @@ function doProcess (startAtBlockNum, callback) {
             voterInfos.outgoing_vp_adj_score = outgoingVpAdjScore;
             // record outgoing vote variances
             if (voterInfos.outgoing_voter_list_local.length > 0) {
-              var localVariScore = voterInfos.outgoing_voter_list_local_weight_sum / voterInfos.outgoing_voter_list_local.length;
+              var localVariScore = voterInfos.outgoing_voter_list_local.length / voterInfos.outgoing_voter_list_local_weight_sum;
               voterInfos.outgoing_vari_local_score = localVariScore > OUTGOING_VARI_LOCAL_GOOD_AMT ? 1 : localVariScore / OUTGOING_VARI_LOCAL_GOOD_AMT;
-              console.log(' - - outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_local_weight_sum + ' / size ' +
-                  voterInfos.outgoing_voter_list_local.length + ') = ' + voterInfos.outgoing_vari_local_score);
+              console.log(' - - outgoing vari local score (size ' + voterInfos.outgoing_voter_list_local.length + ' / sum ' +
+                   voterInfos.outgoing_voter_list_local_weight_sum + ') = ' + voterInfos.outgoing_vari_local_score);
             }
             if (voterInfos.outgoing_voter_list.length > 0) {
-              console.log(' - - tracking outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_weight_sum + ' / size ' +
-                  voterInfos.outgoing_voter_list.length + ')');
+              console.log(' - - tracking outgoing vari local score (size ' + voterInfos.outgoing_voter_list.length + ' / sum ' +
+                  voterInfos.outgoing_voter_list_weight_sum + ') = raw ' + (voterInfos.outgoing_voter_list.length / voterInfos.outgoing_voter_list_weight_sum));
             }
             // create combination score
             var score = voterInfos.opt_period_score * OPT_PERIOD_SCORE_FACTOR;
