@@ -239,6 +239,7 @@ function doProcess (startAtBlockNum, callback) {
             // attenuate by voting weight
             optPeriodScore *= (opDetail.weight / 10000);
             console.log(' - - score after weight adjustment of ' + (opDetail.weight / 100) + '% = ' + optPeriodScore);
+            voterInfos.opt_period_score = optPeriodScore;
             // reduce score by adjusted amount of VP lost from outward votes
             var outgoingVpAdjScore = voterInfos.bVP - OUTGOING_VP_ADJ_PC_MIN;
             if (outgoingVpAdjScore !== 0) {
@@ -252,6 +253,7 @@ function doProcess (startAtBlockNum, callback) {
               outgoingVpAdjScore = 1;
             }
             console.log(' - - outgoing VP adjustment score for bVP ' + voterInfos.bVP + '%, score = ' + outgoingVpAdjScore);
+            voterInfos.outgoing_vp_adj_score = outgoingVpAdjScore;
             // record outgoing vote variances
             if (voterInfos.outgoing_voter_list_local.length > 0) {
               var localVariScore = voterInfos.outgoing_voter_list_local_weight_sum / voterInfos.outgoing_voter_list_local.length;
