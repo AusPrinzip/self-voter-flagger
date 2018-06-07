@@ -17,8 +17,9 @@ const OUTGOING_VARI_LOCAL_GOOD_AMT = 4;
 // const OUTGOING_VARI_GOOD_AMT = OUTGOING_VARI_LOCAL_GOOD_AMT * OPTIMAL_NUM_VOTES;
 
 const OPT_PERIOD_SCORE_FACTOR = 1;
-const OUTGOING_VP_ADJ_SCORE_FACTOR = -0.5;
-const OUTGOING_VARI_SCORE_FACTOR = -0.5;
+const OUTGOING_VP_ADJ_SCORE_FACTOR = -0.4;
+const OUTGOING_VARI_SCORE_FACTOR = -0.2;
+const OUTGOING_VARI_ABS_SCORE_FACTOR = -0.4;
 
 function main () {
   console.log(' *** BOT.js');
@@ -256,10 +257,12 @@ function doProcess (startAtBlockNum, callback) {
             voterInfos.outgoing_vp_adj_score = outgoingVpAdjScore;
             // record outgoing vote variances
             if (voterInfos.outgoing_voter_list_local.length > 0) {
-              var localVariScore = voterInfos.outgoing_voter_list_local.length / voterInfos.outgoing_voter_list_local_weight_sum;
-              voterInfos.outgoing_vari_local_score = localVariScore > OUTGOING_VARI_LOCAL_GOOD_AMT ? 1 : localVariScore / OUTGOING_VARI_LOCAL_GOOD_AMT;
+              voterInfos.outgoing_vari_local_score = voterInfos.outgoing_voter_list_local.length / voterInfos.outgoing_voter_list_local_weight_sum;
+              voterInfos.outgoing_vari_abs_local_score = voterInfos.outgoing_voter_list_local.length > OUTGOING_VARI_LOCAL_GOOD_AMT ? 1 : voterInfos.outgoing_voter_list_local.length / OUTGOING_VARI_LOCAL_GOOD_AMT;
               console.log(' - - outgoing vari local score (size ' + voterInfos.outgoing_voter_list_local.length + ' / sum ' +
-                   voterInfos.outgoing_voter_list_local_weight_sum + ') = ' + voterInfos.outgoing_vari_local_score);
+                  voterInfos.outgoing_voter_list_local_weight_sum + ') = ' + voterInfos.outgoing_vari_local_score);
+              console.log(' - - outgoing vari abs local score (size ' + voterInfos.outgoing_voter_list_local.length + ' / TARGET_AMT ' +
+                  OUTGOING_VARI_LOCAL_GOOD_AMT + ') = ' + voterInfos.outgoing_vari_abs_local_score);
             }
             if (voterInfos.outgoing_voter_list.length > 0) {
               console.log(' - - tracking outgoing vari local score (size ' + voterInfos.outgoing_voter_list.length + ' / sum ' +
@@ -269,6 +272,7 @@ function doProcess (startAtBlockNum, callback) {
             var score = voterInfos.opt_period_score * OPT_PERIOD_SCORE_FACTOR;
             score += voterInfos.outgoing_vp_adj_score * OUTGOING_VP_ADJ_SCORE_FACTOR;
             score += voterInfos.outgoing_vari_local_score * OUTGOING_VARI_SCORE_FACTOR;
+            score += voterInfos.outgoing_vari_abs_local_score * OUTGOING_VARI_ABS_SCORE_FACTOR;
             console.log(' - - - combined score: ' + score);
             if (score > 0) {
               if (score > 1) {
@@ -352,6 +356,7 @@ function recordSelfVote (voterInfos, opDetail, blockMoment) {
       outgoing_vp_adj_score: 0,
       outgoing_vari_score: 0,
       outgoing_vari_local_score: 0,
+      outgoing_vari_abs_local_score: 0,
       bVP: 98,
       svt: blockMoment.valueOf(),
       last_vote_time: blockMoment.valueOf(),
