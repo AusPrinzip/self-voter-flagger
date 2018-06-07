@@ -102,7 +102,7 @@ function doProcess (startAtBlockNum, callback) {
             var voterInfos = wait.for(lib.getRecordFromDb, lib.DB_VOTERS, {voter: opDetail.voter});
 
             // completely ignore zero weight votes and error in author
-            if (opDetail.weight <= 0 || voterInfos.author == null) {
+            if (opDetail.weight <= 0 || opDetail.author == null) {
               continue;
             }
 
@@ -152,27 +152,27 @@ function doProcess (startAtBlockNum, callback) {
               var match = false;
               // local
               for (var m = 0; m < voterInfos.outgoing_voter_list_local.length; m++) {
-                if (voterInfos.outgoing_voter_list_local[m].localeCompare(voterInfos.author) === 0) {
+                if (voterInfos.outgoing_voter_list_local[m].localeCompare(opDetail.author) === 0) {
                   match = true;
                   break;
                 }
               }
               if (!match) {
-                voterInfos.outgoing_voter_list_local.push(voterInfos.author);
+                voterInfos.outgoing_voter_list_local.push(opDetail.author);
               }
-              voterInfos.outgoing_voter_list_local_weight_sum += voterInfos.weight / 10000;
+              voterInfos.outgoing_voter_list_local_weight_sum += opDetail.weight / 10000;
               // general
               match = false;
               for (m = 0; m < voterInfos.outgoing_voter_list.length; m++) {
-                if (voterInfos.outgoing_voter_list[m].localeCompare(voterInfos.author) === 0) {
+                if (voterInfos.outgoing_voter_list[m].localeCompare(opDetail.author) === 0) {
                   match = true;
                   break;
                 }
               }
               if (!match) {
-                voterInfos.outgoing_voter_list.push(voterInfos.author);
+                voterInfos.outgoing_voter_list.push(opDetail.author);
               }
-              voterInfos.outgoing_voter_list_weight_sum += voterInfos.weight / 10000;
+              voterInfos.outgoing_voter_list_weight_sum += opDetail.weight / 10000;
               // case #2, if previous self vote exists and vote is outward vote
               // reduce bVP by amount of vote
               voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);
