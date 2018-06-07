@@ -134,7 +134,7 @@ function doProcess (startAtBlockNum, callback) {
             // case #1, if first self vote on record for user
             if (voterInfos === null || voterInfos === undefined) {
               if (selfVote) {
-                recordSelfVote(voterInfos, opDetail, thisBlockMoment);
+                voterInfos = recordSelfVote(voterInfos, opDetail, thisBlockMoment);
                 wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
               }
               continue;
@@ -251,7 +251,7 @@ function doProcess (startAtBlockNum, callback) {
               console.log(' - - - not saving negative score');
             }
             // finally, record this self vote
-            recordSelfVote(voterInfos, opDetail, thisBlockMoment);
+            voterInfos = recordSelfVote(voterInfos, opDetail, thisBlockMoment);
 
             var updatedExistingQueueVoter = false;
             for (m = 0; m < queue.length; m++) {
@@ -337,6 +337,7 @@ function recordSelfVote (voterInfos, opDetail, blockMoment) {
     voterInfos.last_vote_time = blockMoment.valueOf();
     voterInfos.outgoing_voter_list_local = [];
   }
+  return voterInfos;
 }
 
 function calcVotingPowerRegen (fromTimestamp, toTimestamp) {
