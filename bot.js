@@ -11,6 +11,13 @@ const OPTIMAL_NUM_VOTES = 70;
 const OPTIMAL_VOTING_INTERVAL_MS = 2.4 * 60 * 60 * 1000; // 2.4 hrs in milliseconds
 const TAIL_FACTOR = 2; // how long does the after optimal voting time take to fade to zero, as a factor of optimal voting interval time
 
+const OUTGOING_VP_ADJ_PC_MIN = 80;
+const OUTGOING_VP_ADJ_PC_MAX = 100;
+
+const OPT_PERIOD_SCORE_FACTOR = 1;
+const OUTGOING_VP_ADJ_SCORE_FACTOR = -1;
+const OUTGOING_VARI_SCORE_FACTOR = -1;
+
 function main () {
   console.log(' *** BOT.js');
   process.on('unhandledRejection', (reason, p) => {
@@ -128,6 +135,7 @@ function doProcess (startAtBlockNum, callback) {
             if (voterInfos === null || voterInfos === undefined) {
               if (selfVote) {
                 recordSelfVote(voterInfos, opDetail, thisBlockMoment);
+                wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
               }
               continue;
             }
@@ -140,18 +148,46 @@ function doProcess (startAtBlockNum, callback) {
             }
 
             if (!selfVote) {
+              // record username for variance testing
+              var match = false;
+              // local
+              for (var m = 0; m < voterInfos.outgoing_voter_list_local.length; m++) {
+                if (voterInfos.outgoing_voter_list_local[m].localeCompare(voterInfos.author) === 0) {
+                  match = true;
+                  break;
+                }
+              }
+              if (!match) {
+                voterInfos.outgoing_voter_list_local.push(voterInfos.author);
+              }
+              voterInfos.outgoing_voter_list_local_weight_sum += voterInfos.weight / 10000;
+              // general
+              match = false;
+              for (m = 0; m < voterInfos.outgoing_voter_list.length; m++) {
+                if (voterInfos.outgoing_voter_list[m].localeCompare(voterInfos.author) === 0) {
+                  match = true;
+                  break;
+                }
+              }
+              if (!match) {
+                voterInfos.outgoing_voter_list.push(voterInfos.author);
+              }
+              voterInfos.outgoing_voter_list_weight_sum += voterInfos.weight / 10000;
               // case #2, if previous self vote exists and vote is outward vote
               // reduce bVP by amount of vote
               voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);
               // record last vote time
               voterInfos.last_vote_time = thisBlockMoment.valueOf();
+              wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
               continue;
-            } // else...
+            }
+            // else from here on is self vote...
 
             if ((opDetail.weight / 100) < MIN_VOTE_WEIGHT_TO_CONSIDER) {
               console.log(' - self vote below min threshold of ' + MIN_VOTE_WEIGHT_TO_CONSIDER + ', ignoring, except to adjust bVP');
               voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);
               voterInfos.last_vote_time = thisBlockMoment.valueOf();
+              wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
               continue;
             }
 
@@ -159,36 +195,66 @@ function doProcess (startAtBlockNum, callback) {
             // * calc self vote score. score is normalized, i.e. between 0 and 1
             // 1. get difference in self vote times, in milliseconds
             console.log('calc score for @' + opDetail.voter + '/' + opDetail.permlink);
-            var score = 0;
+            var optPeriodScore = 0;
             var diff = thisBlockMoment.valueOf() - voterInfos.svt;
             if (diff < OPTIMAL_VOTING_INTERVAL_MS) {
               console.log(' - earlier than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
-              score = diff / OPTIMAL_VOTING_INTERVAL_MS;
+              optPeriodScore = diff / OPTIMAL_VOTING_INTERVAL_MS;
               // score *= score;
-            } else if (score < (OPTIMAL_VOTING_INTERVAL_MS * (TAIL_FACTOR + 1))) {
+            } else if (optPeriodScore < (OPTIMAL_VOTING_INTERVAL_MS * (TAIL_FACTOR + 1))) {
               console.log(' - later than optimal voting, at ' + (diff / 1000 / 60) + ' mins');
-              score = (diff - OPTIMAL_VOTING_INTERVAL_MS) / (OPTIMAL_VOTING_INTERVAL_MS * TAIL_FACTOR);
+              optPeriodScore = (diff - OPTIMAL_VOTING_INTERVAL_MS) / (OPTIMAL_VOTING_INTERVAL_MS * TAIL_FACTOR);
               // score *= score;
-              score = 1 - score;
+              optPeriodScore = 1 - optPeriodScore;
             }
-            console.log(' - - score in progress = ' + score);
+            console.log(' - - optimal period score before weight attenuation = ' + optPeriodScore);
             // attenuate by voting weight
-            score *= (opDetail.weight / 10000);
-            console.log(' - - score after weight adjustment of ' + (opDetail.weight / 100) + '% = ' + score);
+            optPeriodScore *= (opDetail.weight / 10000);
+            console.log(' - - score after weight adjustment of ' + (opDetail.weight / 100) + '% = ' + optPeriodScore);
             // reduce score by adjusted amount of VP lost from outward votes
-            // TODO : perhaps it's too much for it to be reduced by 100% to fully remove score? maybe a lower amount?
-            score -= 1 - (voterInfos.bVP > 0 ? (voterInfos.bVP / 100) : 1);
-            console.log(' - - reduced score relative to ' + voterInfos.bVP + ' voting power balance, score = ' + score);
-            // if we have a positive score, add it to the users score, adjusted for number of optimal votes
+            var outgoingVpAdjScore = voterInfos.bVP - OUTGOING_VP_ADJ_PC_MIN;
+            if (outgoingVpAdjScore !== 0) {
+              outgoingVpAdjScore /= OUTGOING_VP_ADJ_PC_MAX - OUTGOING_VP_ADJ_PC_MIN;
+            }
+            outgoingVpAdjScore = 1 - outgoingVpAdjScore;
+            if (outgoingVpAdjScore < 0) {
+              outgoingVpAdjScore = 0;
+            }
+            if (outgoingVpAdjScore > 1) {
+              outgoingVpAdjScore = 1;
+            }
+            console.log(' - - outgoing VP adjustment score for bVP ' + voterInfos.bVP + '%, score = ' + outgoingVpAdjScore);
+            // record outgoing vote variances
+            if (voterInfos.outgoing_voter_list_local.length > 0) {
+              voterInfos.outgoing_vari_local_score = voterInfos.outgoing_voter_list_local_weight_sum / voterInfos.outgoing_voter_list_local.length;
+              console.log(' - - outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_local_weight_sum + ' / size ' +
+                  voterInfos.outgoing_voter_list_local.length + ') = ' + voterInfos.outgoing_vari_local_score);
+            }
+            if (voterInfos.outgoing_voter_list.length > 0) {
+              voterInfos.outgoing_vari_score += voterInfos.outgoing_voter_list_weight_sum / voterInfos.outgoing_voter_list.length;
+              console.log(' - - outgoing vari local score (sum ' + voterInfos.outgoing_voter_list_weight_sum + ' / size ' +
+                  voterInfos.outgoing_voter_list.length + ') = ' + (voterInfos.outgoing_voter_list_weight_sum / voterInfos.outgoing_voter_list.length) +
+                  ', running total ' + voterInfos.outgoing_vari_score);
+            }
+            // create combination score
+            var score = voterInfos.opt_period_score * OPT_PERIOD_SCORE_FACTOR;
+            score += voterInfos.outgoing_vp_adj_score * OUTGOING_VP_ADJ_SCORE_FACTOR;
+            score += voterInfos.outgoing_vari_local_score * OUTGOING_VARI_SCORE_FACTOR;
+            console.log(' - - - combined score: ' + score);
             if (score > 0) {
-              voterInfos.score += (score / OPTIMAL_NUM_VOTES);
-              console.log(' - - - added adjusted score of ' + (score / OPTIMAL_NUM_VOTES) + ' resulting in ' + voterInfos.score + ' total score for ' + opDetail.voter);
+              if (score > 1) {
+                score = 1;
+              }
+              console.log(' - - - saved as score: ' + score);
+              voterInfos.score += score;
+            } else {
+              console.log(' - - - not saving negative score');
             }
             // finally, record this self vote
             recordSelfVote(voterInfos, opDetail, thisBlockMoment);
 
             var updatedExistingQueueVoter = false;
-            for (var m = 0; m < queue.length; m++) {
+            for (m = 0; m < queue.length; m++) {
               if (queue[m].voter.localeCompare(opDetail.voter) === 0) {
                 queue[m] = voterInfos;
                 // console.log(' - - voter already in queue, updating');
@@ -253,16 +319,24 @@ function recordSelfVote (voterInfos, opDetail, blockMoment) {
     voterInfos = {
       voter: opDetail.voter,
       score: 0,
+      opt_period_score: 0,
+      outgoing_vp_adj_score: 0,
+      outgoing_vari_score: 0,
+      outgoing_vari_local_score: 0,
       bVP: 98,
       svt: blockMoment.valueOf(),
-      last_vote_time: blockMoment.valueOf()
+      last_vote_time: blockMoment.valueOf(),
+      outgoing_voter_list: [],
+      outgoing_voter_list_weight_sum: 0,
+      outgoing_voter_list_local: [],
+      outgoing_voter_list_local_weight_sum: 0
     };
   } else {
     voterInfos.bVP = 98;
     voterInfos.svt = blockMoment.valueOf();
     voterInfos.last_vote_time = blockMoment.valueOf();
+    voterInfos.outgoing_voter_list_local = [];
   }
-  wait.for(lib.saveDb, lib.DB_VOTERS, voterInfos);
 }
 
 function calcVotingPowerRegen (fromTimestamp, toTimestamp) {
