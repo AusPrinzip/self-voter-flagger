@@ -240,7 +240,7 @@ function doProcess (startAtBlockNum, callback) {
             // attenuate by voting weight
             optPeriodScore *= (opDetail.weight / 10000);
             console.log(' - - score after weight adjustment of ' + (opDetail.weight / 100) + '% = ' + optPeriodScore);
-            voterInfos.opt_period_score = optPeriodScore;
+            voterInfos.opt_period_score += optPeriodScore;
             // reduce score by adjusted amount of VP lost from outward votes
             var outgoingVpAdjScore = voterInfos.bVP - OUTGOING_VP_ADJ_PC_MIN;
             if (outgoingVpAdjScore !== 0) {
@@ -254,25 +254,29 @@ function doProcess (startAtBlockNum, callback) {
               outgoingVpAdjScore = 1;
             }
             console.log(' - - outgoing VP adjustment score for bVP ' + voterInfos.bVP + '%, score = ' + outgoingVpAdjScore);
-            voterInfos.outgoing_vp_adj_score = outgoingVpAdjScore;
+            voterInfos.outgoing_vp_adj_score += outgoingVpAdjScore;
             // record outgoing vote variances
+            var outgoingVariLocalScore = 0;
+            var outgoingVariAbsLocalScore = 0;
             if (voterInfos.outgoing_voter_list_local.length > 0) {
-              voterInfos.outgoing_vari_local_score = voterInfos.outgoing_voter_list_local.length / voterInfos.outgoing_voter_list_local_weight_sum;
-              voterInfos.outgoing_vari_abs_local_score = voterInfos.outgoing_voter_list_local.length > OUTGOING_VARI_LOCAL_GOOD_AMT ? 1 : voterInfos.outgoing_voter_list_local.length / OUTGOING_VARI_LOCAL_GOOD_AMT;
+              outgoingVariLocalScore = voterInfos.outgoing_voter_list_local.length / voterInfos.outgoing_voter_list_local_weight_sum;
+              voterInfos.outgoing_vari_local_score += outgoingVariLocalScore;
+              outgoingVariAbsLocalScore = voterInfos.outgoing_voter_list_local.length > OUTGOING_VARI_LOCAL_GOOD_AMT ? 1 : voterInfos.outgoing_voter_list_local.length / OUTGOING_VARI_LOCAL_GOOD_AMT;
+              voterInfos.outgoing_vari_abs_local_score += outgoingVariAbsLocalScore;
               console.log(' - - outgoing vari local score (size ' + voterInfos.outgoing_voter_list_local.length + ' / sum ' +
-                  voterInfos.outgoing_voter_list_local_weight_sum + ') = ' + voterInfos.outgoing_vari_local_score);
+                  voterInfos.outgoing_voter_list_local_weight_sum + ') = ' + outgoingVariLocalScore);
               console.log(' - - outgoing vari abs local score (size ' + voterInfos.outgoing_voter_list_local.length + ' / TARGET_AMT ' +
-                  OUTGOING_VARI_LOCAL_GOOD_AMT + ') = ' + voterInfos.outgoing_vari_abs_local_score);
+                  OUTGOING_VARI_LOCAL_GOOD_AMT + ') = ' + outgoingVariAbsLocalScore);
             }
             if (voterInfos.outgoing_voter_list.length > 0) {
               console.log(' - - tracking outgoing vari local score (size ' + voterInfos.outgoing_voter_list.length + ' / sum ' +
                   voterInfos.outgoing_voter_list_weight_sum + ') = raw ' + (voterInfos.outgoing_voter_list.length / voterInfos.outgoing_voter_list_weight_sum));
             }
             // create combination score
-            var score = voterInfos.opt_period_score * OPT_PERIOD_SCORE_FACTOR;
-            score += voterInfos.outgoing_vp_adj_score * OUTGOING_VP_ADJ_SCORE_FACTOR;
-            score += voterInfos.outgoing_vari_local_score * OUTGOING_VARI_SCORE_FACTOR;
-            score += voterInfos.outgoing_vari_abs_local_score * OUTGOING_VARI_ABS_SCORE_FACTOR;
+            var score = optPeriodScore * OPT_PERIOD_SCORE_FACTOR;
+            score += outgoingVpAdjScore * OUTGOING_VP_ADJ_SCORE_FACTOR;
+            score += outgoingVariLocalScore * OUTGOING_VARI_SCORE_FACTOR;
+            score += outgoingVariAbsLocalScore * OUTGOING_VARI_ABS_SCORE_FACTOR;
             console.log(' - - - combined score: ' + score);
             if (score > 0) {
               if (score > 1) {
