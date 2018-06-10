@@ -22,31 +22,32 @@ function main () {
 
 function doProcess (callback) {
   wait.launchFiber(function () {
+    // get most recent block moment
     var mostRecentBlockNum = lib.getLastInfos().lastBlock;
     if (mostRecentBlockNum === undefined) {
       console.log(' - - last scanned block information not available, exiting');
       callback();
       return;
     }
-
-    var headBlock = null;
     var tries = 0;
+    var mostRecentBlock;
     while (tries < lib.API_RETRIES) {
       tries++;
       try {
-        headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
+        mostRecentBlock = wait.for(lib.getBlockHeader, mostRecentBlockNum);
         break;
       } catch (err) {
         console.error(err);
-        console.log(' - failed to get head block ' + lib.getProperties().head_block_number + ', retrying if possible');
+        console.log(' - failed to get last processed block ' + mostRecentBlockNum + ', retrying if possible');
       }
     }
-    if (headBlock === undefined || headBlock === null) {
-      console.log(' - completely failed to get head block, exiting');
+    if (mostRecentBlock === undefined || mostRecentBlock === null) {
+      console.log(' - completely failed to get last processed block, exiting');
       callback();
       return;
     }
-    var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
+    var mostRecentBlockMoment = moment(mostRecentBlock.timestamp, moment.ISO_8601);
+    // get moment to update at or after
     if (lib.getLastInfos().update_time === undefined ||
         lib.getLastInfos().update_time === null) {
       console.log(' - Update time not defined, setting to default of ' + process.env.DAYS_UNTIL_UPDATE + ' days from now');
@@ -55,8 +56,8 @@ function doProcess (callback) {
       return;
     }
     var updateTimeMoment = moment(lib.getLastInfos().update_time, moment.ISO_8601);
-
-    if (updateTimeMoment.isBefore(latestBlockMoment)) {
+    // check if should update
+    if (updateTimeMoment.isBefore(mostRecentBlockMoment)) {
       console.log(' - updating flag list from queue...');
       // update
       var queue = wait.for(lib.getAllRecordsFromDb, lib.DB_QUEUE);
