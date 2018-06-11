@@ -200,6 +200,7 @@ function doProcess (startAtBlockNum, callback) {
                   return;
                 }
                 voterInfos.outgoing_voter_list.push(opDetail.author);
+                voterInfos.outgoing_voter_list_count = voterInfos.outgoing_voter_list.length;
               }
               voterInfos.outgoing_voter_list_weight_sum += opDetail.weight / 10000;
               // case #2, if previous self vote exists and vote is outward vote
@@ -365,6 +366,7 @@ function recordSelfVote (voterInfos, opDetail, blockMoment) {
       svt: blockMoment.valueOf(),
       last_vote_time: blockMoment.valueOf(),
       outgoing_voter_list: [],
+      outgoing_voter_list_count: 0,
       outgoing_voter_list_weight_sum: 0,
       outgoing_voter_list_local: [],
       outgoing_voter_list_local_weight_sum: 0
