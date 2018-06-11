@@ -374,6 +374,7 @@ function recordSelfVote (voterInfos, opDetail, blockMoment) {
     voterInfos.svt = blockMoment.valueOf();
     voterInfos.last_vote_time = blockMoment.valueOf();
     voterInfos.outgoing_voter_list_local = [];
+    voterInfos.outgoing_voter_list_local_weight_sum = 0;
   }
   return voterInfos;
 }
