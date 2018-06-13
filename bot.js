@@ -176,7 +176,7 @@ function doProcess (startAtBlockNum, callback) {
                 }
                 voterInfos.outgoing_voter_list_local.push(opDetail.author);
               }
-              voterInfos.outgoing_voter_list_local_weight_sum += opDetail.weight / 10000;
+              voterInfos.outgoing_voter_list_local_weight_sum += (opDetail.weight / 10000) * (voterInfos.bVP / 100);
               // general
               match = false;
               for (m = 0; m < voterInfos.outgoing_voter_list.length; m++) {
@@ -202,7 +202,7 @@ function doProcess (startAtBlockNum, callback) {
                 voterInfos.outgoing_voter_list.push(opDetail.author);
                 voterInfos.outgoing_voter_list_count = voterInfos.outgoing_voter_list.length;
               }
-              voterInfos.outgoing_voter_list_weight_sum += opDetail.weight / 10000;
+              voterInfos.outgoing_voter_list_weight_sum += (opDetail.weight / 10000) * (voterInfos.bVP / 100);
               // case #2, if previous self vote exists and vote is outward vote
               // reduce bVP by amount of vote
               voterInfos.bVP *= 0.98 * (opDetail.weight / 10000);

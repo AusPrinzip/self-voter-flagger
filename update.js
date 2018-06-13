@@ -58,14 +58,18 @@ function doProcess (callback) {
     var updateTimeMoment = moment(lib.getLastInfos().update_time, moment.ISO_8601);
     // check if should update
     if (updateTimeMoment.isBefore(mostRecentBlockMoment)) {
-      console.log(' - updating flag list from queue...');
-      // update
+      // DO UPDATE
+      // get queue
       var queue = wait.for(lib.getAllRecordsFromDb, lib.DB_QUEUE);
       if (queue === undefined || queue === null || queue.length === 0) {
         console.log(' - - nothing in queue! Exiting');
         callback();
         return;
       }
+      // apply final score adjustment based on entire period stats
+      // TODO
+      // save queue to flaglist
+      console.log(' - updating flag list from queue...');
       queue.sort(function (a, b) {
         return b.score - a.score;
       });
