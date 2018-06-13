@@ -369,9 +369,13 @@ function recordSelfVote (voterInfos, opDetail, blockMoment) {
       outgoing_voter_list_count: 0,
       outgoing_voter_list_weight_sum: 0,
       outgoing_voter_list_local: [],
-      outgoing_voter_list_local_weight_sum: 0
+      outgoing_voter_list_local_weight_sum: 0,
+      self_vote_weight_sum: opDetail.weight / 10000
     };
   } else {
+    // before bVP reset, use bVP
+    voterInfos.self_vote_weight_sum += (opDetail.weight / 10000) * (voterInfos.bVP / 100);
+    // then continue
     voterInfos.bVP = 98;
     voterInfos.svt = blockMoment.valueOf();
     voterInfos.last_vote_time = blockMoment.valueOf();
