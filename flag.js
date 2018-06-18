@@ -121,6 +121,12 @@ function doProcess (callback) {
     var finish = false;
     for (var i = 0; i < flaglist.length; i++) {
       var voterDetails = flaglist[i];
+      if (voterDetails.posts === undefined ||
+          voterDetails.posts == null ||
+          voterDetails.posts.length === 0) {
+        console.log(' - voter: ' + voterDetails.voter + ' has no recorded posts');
+        continue;
+      }
       console.log(' - voter: ' + voterDetails.voter + ' has ' + voterDetails.posts.length + ' recorded posts');
 
       for (var j = 0; j < voterDetails.posts.length; j++) {
