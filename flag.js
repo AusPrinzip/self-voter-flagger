@@ -116,7 +116,7 @@ function doProcess (callback) {
     }
     flaglist.sort((a, b) => {
       // sort descending
-      return b.total_extrapolated_roi - a.total_extrapolated_roi;
+      return b.score - a.score;
     });
     var finish = false;
     for (var i = 0; i < flaglist.length; i++) {
