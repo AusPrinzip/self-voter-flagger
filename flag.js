@@ -263,6 +263,7 @@ function doProcess (callback) {
 
         if (percentageInt === 0) {
           console.log(' - - - percentage less than abs(0.01 %), skip.');
+          flaglist[i].posts[j].flagged = true;
           continue;
         }
 
