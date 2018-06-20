@@ -118,6 +118,7 @@ function doProcess (callback) {
       // sort descending
       return b.score - a.score;
     });
+    var endTime = moment(new Date()).add(Number(process.env.MAX_MINS_TO_RUN), 'minute');
     var finish = false;
     for (var i = 0; i < flaglist.length; i++) {
       var voterDetails = flaglist[i];
@@ -130,6 +131,11 @@ function doProcess (callback) {
       console.log(' - voter: ' + voterDetails.voter + ' has ' + voterDetails.posts.length + ' recorded posts');
 
       for (var j = 0; j < voterDetails.posts.length; j++) {
+        if (moment(new Date()).isAfter(endTime)) {
+          console.log('Max time reached, stopping');
+          finish = true;
+          break;
+        }
         var postDetails = voterDetails.posts[j];
 
         if (postDetails.flagged !== undefined &&
