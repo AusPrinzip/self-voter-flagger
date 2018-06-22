@@ -340,15 +340,16 @@ function doProcess (callback) {
               commented = true;
               break;
             } catch (err) {
-              if (err.message !== undefined &&
-                  err.message != null &&
-                  err.message.indexOf('STEEM_VOTE_DUST_THRESHOLD') >= 0) {
-                console.log(' - STEEM_VOTE_DUST_THRESHOLD error!');
+              if (err.data !== undefined &&
+                  err.data.name !== undefined &&
+                  err.data.name.indexOf('assert_exception') >= 0) {
+                console.log(' - assert_exception error!');
                 failedOnHandledError = true;
                 break;
               }
               console.error(err);
               console.log(' - failed to voter, retrying if possible');
+              wait.for(lib.timeoutWait, 2000);
             }
           }
           if (failedOnHandledError) {
