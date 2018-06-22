@@ -323,6 +323,7 @@ function doProcess (callback) {
           }
           var commented = false;
           tries = 0;
+          var failedOnHandledError = false;
           while (tries < lib.API_RETRIES) {
             tries++;
             try {
@@ -339,9 +340,19 @@ function doProcess (callback) {
               commented = true;
               break;
             } catch (err) {
+              if (err.message !== undefined &&
+                  err.message != null &&
+                  err.indexOf('STEEM_VOTE_DUST_THRESHOLD') >= 0) {
+                flaglist[i].posts[j].flagged = true;
+                failedOnHandledError = true;
+                break;
+              }
               console.error(err);
               console.log(' - failed to voter, retrying if possible');
             }
+          }
+          if (failedOnHandledError) {
+            continue;
           }
           if (!commented) {
             console.log(' - - completely failed to post comment');
