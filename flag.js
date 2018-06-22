@@ -299,7 +299,8 @@ function doProcess (callback) {
             } catch (err) {
               JSON.stringify(err, null, 2);
               if (err !== undefined &&
-                  err.indexOf('assert_exception') >= 0) {
+                  err.name !== undefined &&
+                  err.name.indexOf('assert_exception') >= 0) {
                 console.log(' - assert_exception error!');
                 failedOnHandledError = true;
                 break;
