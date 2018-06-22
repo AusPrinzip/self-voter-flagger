@@ -297,7 +297,7 @@ function doProcess (callback) {
               voted = true;
               break;
             } catch (err) {
-              JSON.stringify(err, null, 2);
+              console.log(JSON.stringify(err, null, 2));
               if (err !== undefined &&
                   err.name !== undefined &&
                   err.name.indexOf('assert_exception') >= 0) {
@@ -305,6 +305,7 @@ function doProcess (callback) {
                 failedOnHandledError = true;
                 break;
               }
+              wait.for(lib.timeoutWait, 2000);
               // console.error(err);
               console.log(' - failed to voter, retrying if possible');
             }
@@ -355,7 +356,6 @@ function doProcess (callback) {
             } catch (err) {
               console.error(err);
               console.log(' - failed to voter, retrying if possible');
-              wait.for(lib.timeoutWait, 2000);
             }
           }
           if (!commented) {
