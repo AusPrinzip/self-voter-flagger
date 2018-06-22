@@ -343,7 +343,7 @@ function doProcess (callback) {
               if (err.message !== undefined &&
                   err.message != null &&
                   err.indexOf('STEEM_VOTE_DUST_THRESHOLD') >= 0) {
-                flaglist[i].posts[j].flagged = true;
+                console.log(' - STEEM_VOTE_DUST_THRESHOLD error!');
                 failedOnHandledError = true;
                 break;
               }
@@ -352,6 +352,8 @@ function doProcess (callback) {
             }
           }
           if (failedOnHandledError) {
+            flaglist[i].posts[j].flagged = true;
+            console.log(' - - handled error, coninuing');
             continue;
           }
           if (!commented) {
