@@ -340,7 +340,7 @@ function doProcess (callback) {
               commented = true;
               break;
             } catch (err) {
-              JSON.stringify(err);
+              JSON.stringify(err, null, 2);
               if (err !== undefined &&
                   err.indexOf('assert_exception') >= 0) {
                 console.log(' - assert_exception error!');
