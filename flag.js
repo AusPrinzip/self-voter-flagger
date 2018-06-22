@@ -340,9 +340,8 @@ function doProcess (callback) {
               commented = true;
               break;
             } catch (err) {
-              if (err.data !== undefined &&
-                  err.data.name !== undefined &&
-                  err.data.name.indexOf('assert_exception') >= 0) {
+              if (err.name !== undefined &&
+                  err.name.indexOf('assert_exception') >= 0) {
                 console.log(' - assert_exception error!');
                 failedOnHandledError = true;
                 break;
