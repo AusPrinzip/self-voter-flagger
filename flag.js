@@ -340,13 +340,14 @@ function doProcess (callback) {
               commented = true;
               break;
             } catch (err) {
+              JSON.stringify(err);
               if (err !== undefined &&
                   err.indexOf('assert_exception') >= 0) {
                 console.log(' - assert_exception error!');
                 failedOnHandledError = true;
                 break;
               }
-              console.error(err);
+              // console.error(err);
               console.log(' - failed to voter, retrying if possible');
               wait.for(lib.timeoutWait, 2000);
             }
