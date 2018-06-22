@@ -282,6 +282,7 @@ function doProcess (callback) {
             process.env.ACTIVE.localeCompare('true') === 0) {
           var voted = false;
           tries = 0;
+          var failedOnHandledError = false;
           while (tries < lib.API_RETRIES) {
             tries++;
             try {
@@ -296,9 +297,21 @@ function doProcess (callback) {
               voted = true;
               break;
             } catch (err) {
-              console.error(err);
+              JSON.stringify(err, null, 2);
+              if (err !== undefined &&
+                  err.indexOf('assert_exception') >= 0) {
+                console.log(' - assert_exception error!');
+                failedOnHandledError = true;
+                break;
+              }
+              // console.error(err);
               console.log(' - failed to voter, retrying if possible');
             }
+          }
+          if (failedOnHandledError) {
+            flaglist[i].posts[j].flagged = true;
+            console.log(' - - handled error, coninuing');
+            continue;
           }
           if (!voted) {
             console.log(' - - - fatal error, stopping');
@@ -323,7 +336,6 @@ function doProcess (callback) {
           }
           var commented = false;
           tries = 0;
-          var failedOnHandledError = false;
           while (tries < lib.API_RETRIES) {
             tries++;
             try {
@@ -340,22 +352,10 @@ function doProcess (callback) {
               commented = true;
               break;
             } catch (err) {
-              JSON.stringify(err, null, 2);
-              if (err !== undefined &&
-                  err.indexOf('assert_exception') >= 0) {
-                console.log(' - assert_exception error!');
-                failedOnHandledError = true;
-                break;
-              }
-              // console.error(err);
+              console.error(err);
               console.log(' - failed to voter, retrying if possible');
               wait.for(lib.timeoutWait, 2000);
             }
-          }
-          if (failedOnHandledError) {
-            flaglist[i].posts[j].flagged = true;
-            console.log(' - - handled error, coninuing');
-            continue;
           }
           if (!commented) {
             console.log(' - - completely failed to post comment');
