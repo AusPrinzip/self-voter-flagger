@@ -297,16 +297,18 @@ function doProcess (callback) {
               voted = true;
               break;
             } catch (err) {
-              console.log(JSON.stringify(err, null, 2));
+              // console.log(JSON.stringify(err, null, 2));
               if (err !== undefined &&
-                  err.name !== undefined &&
-                  err.name.indexOf('assert_exception') >= 0) {
+                  err.cause !== undefined &&
+                  err.cause.data !== undefined &&
+                  err.cause.data.name !== undefined &&
+                  err.cause.data.name.indexOf('assert_exception') >= 0) {
                 console.log(' - assert_exception error!');
                 failedOnHandledError = true;
                 break;
               }
               wait.for(lib.timeoutWait, 2000);
-              // console.error(err);
+              console.error(err);
               console.log(' - failed to voter, retrying if possible');
             }
           }
