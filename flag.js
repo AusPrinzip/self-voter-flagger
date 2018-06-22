@@ -342,7 +342,7 @@ function doProcess (callback) {
             } catch (err) {
               if (err.message !== undefined &&
                   err.message != null &&
-                  err.indexOf('STEEM_VOTE_DUST_THRESHOLD') >= 0) {
+                  err.message.indexOf('STEEM_VOTE_DUST_THRESHOLD') >= 0) {
                 console.log(' - STEEM_VOTE_DUST_THRESHOLD error!');
                 failedOnHandledError = true;
                 break;
