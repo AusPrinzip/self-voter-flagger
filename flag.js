@@ -90,7 +90,7 @@ function doProcess (callback) {
 
     // get bot account info
     console.log(' - BOT_ACCOUNTS: ' + JSON.stringify(BOT_ACCOUNTS));
-    for (var i = 0; i < BOT_ACCOUNTS; i++) {
+    for (var i = 0; i < BOT_ACCOUNTS.length; i++) {
       var botAccount = null;
       tries = 0;
       while (tries < lib.API_RETRIES) {
@@ -342,7 +342,7 @@ function doProcess (callback) {
             });
             // debug logging
             console.log(' - - ordered cleared bot list with votingpower, using first');
-            for (m = 0; m < botlistCleared; m++) {
+            for (m = 0; m < botlistCleared.length; m++) {
               console.log(' - - - ' + botlistCleared[m].bot + ', votingpower = ' + botlistCleared[m].votingpower);
             }
             bot = botlistCleared[0];
