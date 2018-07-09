@@ -6,6 +6,13 @@ const wait = require('wait.for');
 const lib = require('./lib.js');
 const sprintf = require('sprintf-js').sprintf;
 
+const MIN_BOT_SP = 450;
+const MIN_VOTINGPOWER_BASE = 0.5; // at 100% VP
+const MAX_VOTINGPOWER = 150;
+
+const BOT_ACCOUNTS = process.env.STEEM_USER.split(',');
+const BOT_KEYS = process.env.POSTING_KEY_PRV.split(',');
+
 function main () {
   console.log(' *** FLAG.js');
   process.on('unhandledRejection', (reason, p) => {
@@ -22,33 +29,20 @@ function main () {
   });
 }
 
+var botlist = [];
 var flaglist = [];
 
 function doProcess (callback) {
   wait.launchFiber(function () {
     // set up initial variables
-    console.log('Getting blockchain info');
-    var headBlock = null;
-    var tries = 0;
-    while (tries < lib.API_RETRIES) {
-      tries++;
-      try {
-        headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
-        break;
-      } catch (err) {
-        console.error(err);
-        console.log(' - failed to get head block ' + lib.getProperties().head_block_number + ', retrying if possible');
-      }
-    }
-    if (headBlock === undefined || headBlock === null) {
-      console.log(' - completely failed to get head block, exiting');
+    var latestBlockMoment = getLatestBlockMoment();
+    if (latestBlockMoment == null) {
       callback();
       return;
     }
-    var latestBlockMoment = moment(headBlock.timestamp, moment.ISO_8601);
 
     var rewardFundInfo = null;
-    tries = 0;
+    var tries = 0;
     while (tries < lib.API_RETRIES) {
       tries++;
       try {
@@ -94,6 +88,55 @@ function doProcess (callback) {
     var steemPerVest = lib.getProperties().total_vesting_fund_steem.replace(' STEEM', '') /
         lib.getProperties().total_vesting_shares.replace(' VESTS', '');
 
+    // get bot account info
+    for (var i = 0; i < BOT_ACCOUNTS; i++) {
+      var botAccount = null;
+      tries = 0;
+      while (tries < lib.API_RETRIES) {
+        tries++;
+        try {
+          botAccount = wait.for(lib.getSteemAccounts, BOT_ACCOUNTS[i]);
+          break;
+        } catch (err) {
+          console.error(err);
+          console.log(' - failed to get bot account' + BOT_ACCOUNTS[i] + ', retrying if possible');
+        }
+      }
+      if (botAccount === undefined || botAccount === null || botAccount.length === 0) {
+        console.log(' - completely failed to get bot account' + BOT_ACCOUNTS[i] + ', continuing to next account');
+        continue;
+      }
+      try {
+        var sp = lib.getSteemPowerFromVest(
+            Number(botAccount[0].vesting_shares.split(' ')[0]) +
+            Number(botAccount[0].received_vesting_shares.split(' ')[0]) -
+            Number(botAccount[0].delegated_vesting_shares.split(' ')[0]));
+        console.log(' - - bot ' + BOT_ACCOUNTS[i] + ' SP: ' + sp);
+        if (sp < MIN_BOT_SP) {
+          console.log(' - - bot ' + BOT_ACCOUNTS[i] + ' SP too low, skipping');
+        } else {
+          console.log(' - - bot ' + BOT_ACCOUNTS[i] + ' added to list');
+          var bot = {
+            bot: BOT_ACCOUNTS[i],
+            key: BOT_KEYS[i],
+            sp: sp,
+            vp: 0
+          };
+          bot = recalcVotingPowerOfBot(bot, latestBlockMoment);
+          botlist.push(bot);
+        }
+      } catch (err) {
+        console.error(err);
+        console.log(' - couldnt parse SP for bot account' + BOT_ACCOUNTS[i] + ', continuing to next account');
+        continue;
+      }
+    }
+    if (botlist.length === 0) {
+      console.log(' - fatal error, no SP in bots, cant vote, exiting');
+      callback();
+      return;
+    }
+
     // get queue
     console.log('getting flaglist...');
     try {
@@ -120,7 +163,7 @@ function doProcess (callback) {
     });
     var endTime = moment(new Date()).add(Number(process.env.MAX_MINS_TO_RUN), 'minute');
     var finish = false;
-    for (var i = 0; i < flaglist.length; i++) {
+    for (i = 0; i < flaglist.length; i++) {
       var voterDetails = flaglist[i];
       if (voterDetails.posts === undefined ||
           voterDetails.posts == null ||
@@ -231,45 +274,88 @@ function doProcess (callback) {
           continue;
         }
 
-        // check VP
-        var vp = recalcVotingPower(latestBlockMoment);
-        console.log(' - - VP is at ' + (vp / 100).toFixed(2) + ' %');
-        if ((vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
-          console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, exiting');
-          finish = true;
-          break;
+        // choose which bot to use
+        bot = null;
+        if (botlist.length === 1) {
+          bot = botlist[0];
+          bot = recalcVotingPower(bot, latestBlockMoment);
+          bot = {
+            bot: bot.bot,
+            key: bot.key,
+            vp: bot.vp,
+            votingpower: 0
+          };
+          console.log(' - - VP is at ' + (bot.vp / 100).toFixed(2) + ' %');
+          if ((bot.vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
+            console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, exiting');
+            finish = true; // finish as only one bot with any SP
+            break;
+          }
+          var spScaledVests = bot.sp / steemPerVest;
+          var oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
+          bot.votingpower = ((oneval / (100 * bot.vp)) * lib.VOTE_POWER_1_PC) / 100;
+          bot.votingpower *= 0.85;
+
+          console.log(' - - strength to vote at: ' + bot.votingpower.toFixed(2) + ' %');
+
+          if (bot.votingpower > 100) {
+            console.log(' - - - cant vote at ' + bot.votingpower.toFixed(2) + '%, capping at 100%');
+            bot.votingpower = 100;
+          }
+        } else {
+          latestBlockMoment = getLatestBlockMoment();
+          var botlistCleared = [];
+          for (var k = 0; k < botlist.length; k++) {
+            bot[k] = recalcVotingPowerOfBot(bot[k], latestBlockMoment);
+            console.log(' - - ' + bot.bot + 'VP is at ' + (bot.vp / 100).toFixed(2) + ' %');
+            if ((bot[k].vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
+              console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, exiting');
+              finish = true;
+              break;
+            }
+            spScaledVests = bot[k].sp / steemPerVest;
+            oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
+            var votingpower = ((oneval / (100 * bot[k].vp)) * lib.VOTE_POWER_1_PC) / 100;
+            votingpower *= 0.85;
+            console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
+            if (votingpower < ((MIN_VOTINGPOWER_BASE * (100 / bot[k].vp)))) {
+              console.log(' - - vote too small for bot ' + bot[k].bot + ', skipping consideration');
+            } else if (votingpower > MAX_VOTINGPOWER && bot[k].bot.localeCompare(BOT_ACCOUNTS[0]) !== 0) { // dont apply max condition if is main bot, always keep as fallback
+              console.log(' - - vote too large for bot ' + bot[k].bot + ', skipping consideration');
+            } else {
+              botlistCleared.push({
+                bot: bot[k].bot,
+                key: bot[k].key,
+                vp: bot[k].vp,
+                votingpower: votingpower
+              });
+            }
+          }
+          bot = null;
+          if (botlistCleared.length === 1) {
+            console.log(' - - - only one suitable bot found, defaulting to ' + botlistCleared[0].bot);
+            bot = botlistCleared[0];
+          } else if (botlistCleared.length > 1) {
+            botlistCleared.sort(function (a, b) {
+              return (100 - a.votingpower) - (100 - b.votingpower);
+            });
+            // debug logging
+            console.log(' - - ordered cleared bot list with votingpower, using first');
+            for (m = 0; m < botlistCleared; m++) {
+              console.log(' - - - ' + botlistCleared[m].bot + ', votingpower = ' + botlistCleared[m].votingpower);
+            }
+            bot = botlistCleared[0];
+          }
         }
-
-        var vestingSharesParts = lib.getAccount().vesting_shares.split(' ');
-        var vestingSharesNum = Number(vestingSharesParts[0]);
-        var receivedSharesParts = lib.getAccount().received_vesting_shares.split(' ');
-        var receivedSharesNum = Number(receivedSharesParts[0]);
-        var delegatedSharesParts = lib.getAccount().delegated_vesting_shares.split(' ');
-        var delegatedSharesNum = Number(delegatedSharesParts[0]);
-        var totalVests = vestingSharesNum + receivedSharesNum - delegatedSharesNum;
-
-        var steempower = lib.getSteemPowerFromVest(totalVests);
-        // console.log('steem power: ' + steempower);
-        var spScaledVests = steempower / steemPerVest;
-        var oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
-        var votingpower = ((oneval / (100 * vp)) * lib.VOTE_POWER_1_PC) / 100;
-
-        console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
-
-        if (votingpower > 100) {
-          console.log(' - - - cant vote at ' + votingpower.toFixed(2) + '%, capping at 100%');
-          votingpower = 100;
+        if (bot == null) {
+          console.log(' - couldnt find a bot to use, continuing');
+          continue;
         }
-
-        votingpower *= 0.85;
-
-        console.log(' - - modifying vote percentage to 85% of full power counter, resulting at ' + votingpower);
 
         var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
-
         if (percentageInt === 0) {
-          console.log(' - - - percentage less than abs(0.01 %), skip.');
-          flaglist[i].posts[j].flagged = true;
+          console.log(' - - - percentage less than abs(0.01 %), skip (this denotes an error, should have been caught)');
+          // flaglist[i].posts[j].flagged = true;
           continue;
         }
 
@@ -287,8 +373,8 @@ function doProcess (callback) {
             tries++;
             try {
               var voteResult = wait.for(steem.broadcast.vote,
-                process.env.POSTING_KEY_PRV,
-                process.env.STEEM_USER,
+                bot.key,
+                bot.bot,
                 voterDetails.voter,
                 postDetails.permlink,
                 percentageInt);
@@ -344,10 +430,10 @@ function doProcess (callback) {
             tries++;
             try {
               var commentResult = wait.for(steem.broadcast.comment,
-                process.env.POSTING_KEY_PRV,
+                bot.key,
                 voterDetails.voter,
                 postDetails.permlink,
-                process.env.STEEM_USER,
+                bot.bot,
                 commentPermlink,
                 'sadkitten comment',
                 commentMsg,
@@ -404,18 +490,38 @@ function doProcess (callback) {
   });
 }
 
-function recalcVotingPower (latestBlockMoment) {
+function getLatestBlockMoment () {
+  var headBlock = null;
+  var tries = 0;
+  while (tries < lib.API_RETRIES) {
+    tries++;
+    try {
+      headBlock = wait.for(lib.getBlockHeader, lib.getProperties().head_block_number);
+      break;
+    } catch (err) {
+      console.error(err);
+      console.log(' - failed to get head block ' + lib.getProperties().head_block_number + ', retrying if possible');
+    }
+  }
+  if (headBlock === undefined || headBlock === null) {
+    console.log(' - completely failed to get head block, exiting');
+    return null;
+  }
+  return moment(headBlock.timestamp, moment.ISO_8601);
+}
+
+function recalcVotingPowerOfBot (bot, latestBlockMoment) {
   // update account
   var accounts = null;
   var tries = 0;
   while (tries < lib.API_RETRIES) {
     tries++;
     try {
-      accounts = wait.for(lib.getSteemAccounts, process.env.STEEM_USER);
+      accounts = wait.for(lib.getSteemAccounts, bot.bot);
       break;
     } catch (err) {
       console.error(err);
-      console.log(' - failed to get account for bot, retrying if possible');
+      console.log(' - failed to get account for bot' + bot.bot + ', retrying if possible');
     }
   }
   if (accounts === undefined || accounts === null) {
@@ -423,7 +529,11 @@ function recalcVotingPower (latestBlockMoment) {
     return 0;
   }
   var account = accounts[0];
-  lib.setAccount(accounts[0]);
+  bot.vp = recalcVotingPower(account, latestBlockMoment);
+  return bot;
+}
+
+function recalcVotingPower (account, latestBlockMoment) {
   var vp = account.voting_power;
   var lastVoteTime = moment(account.last_vote_time);
   var secondsDiff = (latestBlockMoment.valueOf() - lastVoteTime.valueOf()) / 1000;

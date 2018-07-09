@@ -21,7 +21,6 @@ const API_RETRIES = 10;
 
 var db;
 
-var mAccount = null;
 var mProperties = null;
 var mChainInfo = null;
 var mLastInfos = null;
@@ -54,10 +53,6 @@ function init (callback) {
     console.log('global properties: ' + JSON.stringify(mProperties));
     mChainInfo = wait.for(getChainProperties);
     console.log('chain info: ' + JSON.stringify(mChainInfo));
-    // get Steem Power of bot account
-    var accounts = wait.for(getSteemAccounts, process.env.STEEM_USER);
-    mAccount = accounts[0];
-    console.log('account: ' + JSON.stringify(mAccount));
     callback();
   });
 }
@@ -342,13 +337,11 @@ module.exports.DB_UPDATES = DB_UPDATES;
 
 // getters
 
-module.exports.getAccount = function () { return mAccount; };
 module.exports.getProperties = function () { return mProperties; };
 module.exports.getLastInfos = function () { return mLastInfos; };
 
 // setters
 module.exports.setLastInfos = function (lastInfos) { mLastInfos = lastInfos; };
-module.exports.setAccount = function (account) { mAccount = account; };
 
 // functions
 
