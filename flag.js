@@ -307,27 +307,26 @@ function doProcess (callback) {
           latestBlockMoment = getLatestBlockMoment();
           var botlistCleared = [];
           for (var k = 0; k < botlist.length; k++) {
-            bot[k] = recalcVotingPowerOfBot(bot[k], latestBlockMoment);
+            botlist[k] = recalcVotingPowerOfBot(botlist[k], latestBlockMoment);
             console.log(' - - ' + bot.bot + 'VP is at ' + (bot.vp / 100).toFixed(2) + ' %');
-            if ((bot[k].vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
-              console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, exiting');
-              finish = true;
-              break;
+            if ((botlist[k].vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
+              console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, trying next bot');
+              continue;
             }
-            spScaledVests = bot[k].sp / steemPerVest;
+            spScaledVests = botlist[k].sp / steemPerVest;
             oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
-            var votingpower = ((oneval / (100 * bot[k].vp)) * lib.VOTE_POWER_1_PC) / 100;
+            var votingpower = ((oneval / (100 * botlist[k].vp)) * lib.VOTE_POWER_1_PC) / 100;
             votingpower *= 0.85;
             console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
-            if (votingpower < ((MIN_VOTINGPOWER_BASE * (100 / bot[k].vp)))) {
-              console.log(' - - vote too small for bot ' + bot[k].bot + ', skipping consideration');
-            } else if (votingpower > MAX_VOTINGPOWER && bot[k].bot.localeCompare(BOT_ACCOUNTS[0]) !== 0) { // dont apply max condition if is main bot, always keep as fallback
-              console.log(' - - vote too large for bot ' + bot[k].bot + ', skipping consideration');
+            if (votingpower < ((MIN_VOTINGPOWER_BASE * (100 / botlist[k].vp)))) {
+              console.log(' - - vote too small for bot ' + botlist[k].bot + ', skipping consideration');
+            } else if (votingpower > MAX_VOTINGPOWER && botlist[k].bot.localeCompare(BOT_ACCOUNTS[0]) !== 0) { // dont apply max condition if is main bot, always keep as fallback
+              console.log(' - - vote too large for bot ' + botlist[k].bot + ', skipping consideration');
             } else {
               botlistCleared.push({
-                bot: bot[k].bot,
-                key: bot[k].key,
-                vp: bot[k].vp,
+                bot: botlist[k].bot,
+                key: botlist[k].key,
+                vp: botlist[k].vp,
                 votingpower: votingpower
               });
             }
