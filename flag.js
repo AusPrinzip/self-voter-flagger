@@ -37,6 +37,7 @@ function doProcess (callback) {
     // set up initial variables
     var latestBlockMoment = getLatestBlockMoment();
     if (latestBlockMoment == null) {
+      console.log(' - failed to get latest block moment, exiting');
       callback();
       return;
     }
@@ -275,6 +276,12 @@ function doProcess (callback) {
           continue;
         }
 
+        latestBlockMoment = getLatestBlockMoment();
+        if (latestBlockMoment == null) {
+          console.log(' - failed to get latest block moment, finishing');
+          finish = true;
+          return;
+        }
         // choose which bot to use
         bot = null;
         if (botlist.length === 1) {
@@ -304,7 +311,6 @@ function doProcess (callback) {
             bot.votingpower = 100;
           }
         } else {
-          latestBlockMoment = getLatestBlockMoment();
           var botlistCleared = [];
           for (var k = 0; k < botlist.length; k++) {
             botlist[k] = recalcVotingPowerOfBot(botlist[k], latestBlockMoment);
