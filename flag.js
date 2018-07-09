@@ -354,8 +354,9 @@ function doProcess (callback) {
           }
         }
         if (bot == null) {
-          console.log(' - couldnt find a bot to use, continuing');
-          continue;
+          console.log(' - couldnt find a bot to use, exiting');
+          finish = true;
+          break;
         }
 
         var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
