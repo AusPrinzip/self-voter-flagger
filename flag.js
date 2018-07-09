@@ -89,6 +89,7 @@ function doProcess (callback) {
         lib.getProperties().total_vesting_shares.replace(' VESTS', '');
 
     // get bot account info
+    console.log(' - BOT_ACCOUNTS: ' + JSON.stringify(BOT_ACCOUNTS));
     for (var i = 0; i < BOT_ACCOUNTS; i++) {
       var botAccount = null;
       tries = 0;
