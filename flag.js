@@ -314,7 +314,7 @@ function doProcess (callback) {
           var botlistCleared = [];
           for (var k = 0; k < botlist.length; k++) {
             botlist[k] = recalcVotingPowerOfBot(botlist[k], latestBlockMoment);
-            console.log(' - - ' + botlist[k].bot + 'VP is at ' + (botlist[k].vp / 100).toFixed(2) + ' %');
+            console.log(' - - - ' + botlist[k].bot + ' VP is at ' + (botlist[k].vp / 100).toFixed(2) + ' %');
             if ((botlist[k].vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
               console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, trying next bot');
               continue;
