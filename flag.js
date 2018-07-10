@@ -332,16 +332,11 @@ function doProcess (callback) {
               maxVotingPower = votingpower;
             }
             console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
-            var minVotingPower = MIN_VOTINGPOWER_BASE * (100 / (botlist[k].vp / 100));
-            console.log(' - - - is ' + votingpower + ' < ' + minVotingPower + ' ?');
-            if (votingpower < minVotingPower) {
-              console.log(' - - - - YES');
+            if (votingpower < (MIN_VOTINGPOWER_BASE * (100 / (botlist[k].vp / 100)))) {
               console.log(' - - vote too small for bot ' + botlist[k].bot + ', skipping consideration');
             } else if (votingpower > MAX_VOTINGPOWER && botlist[k].bot.localeCompare(BOT_ACCOUNTS[0]) !== 0) { // dont apply max condition if is main bot, always keep as fallback
-              console.log(' - - - - NO');
               console.log(' - - vote too large for bot ' + botlist[k].bot + ', skipping consideration');
             } else {
-              console.log(' - - - - NO');
               botlistCleared.push({
                 bot: botlist[k].bot,
                 key: botlist[k].key,
