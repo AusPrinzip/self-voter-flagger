@@ -327,11 +327,16 @@ function doProcess (callback) {
             var votingpower = ((oneval / (100 * botlist[k].vp)) * lib.VOTE_POWER_1_PC) / 100;
             votingpower *= 0.85;
             console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
-            if (votingpower < ((MIN_VOTINGPOWER_BASE * (100 / botlist[k].vp)))) {
+            var minVotingPower = MIN_VOTINGPOWER_BASE * (100 / botlist[k].vp);
+            console.log(' - - - is ' + votingpower + ' < ' + minVotingPower + ' ?');
+            if (votingpower < minVotingPower) {
+              console.log(' - - - - YES');
               console.log(' - - vote too small for bot ' + botlist[k].bot + ', skipping consideration');
             } else if (votingpower > MAX_VOTINGPOWER && botlist[k].bot.localeCompare(BOT_ACCOUNTS[0]) !== 0) { // dont apply max condition if is main bot, always keep as fallback
+              console.log(' - - - - NO');
               console.log(' - - vote too large for bot ' + botlist[k].bot + ', skipping consideration');
             } else {
+              console.log(' - - - - NO');
               botlistCleared.push({
                 bot: botlist[k].bot,
                 key: botlist[k].key,
