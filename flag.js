@@ -433,7 +433,7 @@ function doProcess (callback) {
           // comment on post
           var message = '@' + voterDetails.voter + ' self votes are being countered by @sadkitten for 1 week starting %s because they are one of the highest self voters of the previous week. For more details see [this post](https://steemit.com/steemit/@sadkitten/self-voter-return-on-investment-svroi-notoriety-flagging-bot).';
           var commentMsg = sprintf(message,
-            moment(lib.getLastInfos().update_time, moment.ISO_8601).subtract(Number(process.env.DAYS_UNTIL_UPDATE), 'day').format('dddd, MMMM Do YYYY, h:mm'));
+            moment(lib.getLastInfos().update_time, moment.ISO_8601).subtract(Number(process.env.DAYS_UNTIL_UPDATE), 'day').format('dddd, MMMM Do YYYY'));
           console.log('Commenting: ' + commentMsg);
           var commentPermlink = steem.formatter.commentPermlink(voterDetails.voter, postDetails.permlink)
             .toLowerCase()
