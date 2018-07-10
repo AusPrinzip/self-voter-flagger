@@ -366,7 +366,7 @@ function doProcess (callback) {
           continue;
         }
 
-        var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
+        var percentageInt = parseInt(bot.votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
         if (percentageInt === 0) {
           console.log(' - - - percentage less than abs(0.01 %), skip (this denotes an error, should have been caught)');
           // flaglist[i].posts[j].flagged = true;
