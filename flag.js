@@ -332,7 +332,7 @@ function doProcess (callback) {
               maxVotingPower = votingpower;
             }
             console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
-            var minVotingPower = MIN_VOTINGPOWER_BASE * (100 / botlist[k].vp);
+            var minVotingPower = MIN_VOTINGPOWER_BASE * (100 / (botlist[k].vp / 100));
             console.log(' - - - is ' + votingpower + ' < ' + minVotingPower + ' ?');
             if (votingpower < minVotingPower) {
               console.log(' - - - - YES');
