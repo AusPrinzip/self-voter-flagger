@@ -284,6 +284,7 @@ function doProcess (callback) {
         }
         // choose which bot to use
         bot = null;
+        var maxVotingPower = 0;
         if (botlist.length === 1) {
           bot = botlist[0];
           bot = recalcVotingPower(bot, latestBlockMoment);
@@ -310,6 +311,7 @@ function doProcess (callback) {
             console.log(' - - - cant vote at ' + bot.votingpower.toFixed(2) + '%, capping at 100%');
             bot.votingpower = 100;
           }
+          maxVotingPower = bot.votingpower;
         } else {
           var botlistCleared = [];
           var allBotsUnderVP = true;
@@ -326,6 +328,9 @@ function doProcess (callback) {
             oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
             var votingpower = ((oneval / (100 * botlist[k].vp)) * lib.VOTE_POWER_1_PC) / 100;
             votingpower *= 0.85;
+            if (votingpower > maxVotingPower) {
+              maxVotingPower = votingpower;
+            }
             console.log(' - - strength to vote at: ' + votingpower.toFixed(2) + ' %');
             var minVotingPower = MIN_VOTINGPOWER_BASE * (100 / botlist[k].vp);
             console.log(' - - - is ' + votingpower + ' < ' + minVotingPower + ' ?');
@@ -367,7 +372,12 @@ function doProcess (callback) {
           }
         }
         if (bot == null) {
-          console.log(' - couldnt find a bot to use, trying next post to flag');
+          if (maxVotingPower < 0.01) {
+            console.log(' - voting power to cast too small for any bot, marking flagged to skip');
+            flaglist[i].posts[j].flagged = true;
+          } else {
+            console.log(' - couldnt find a bot to use, trying next post to flag');
+          }
           continue;
         }
 
