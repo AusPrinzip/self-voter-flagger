@@ -312,12 +312,15 @@ function doProcess (callback) {
           }
         } else {
           var botlistCleared = [];
+          var allBotsUnderVP = true;
           for (var k = 0; k < botlist.length; k++) {
             botlist[k] = recalcVotingPowerOfBot(botlist[k], latestBlockMoment);
             console.log(' - - - ' + botlist[k].bot + ' VP is at ' + (botlist[k].vp / 100).toFixed(2) + ' %');
             if ((botlist[k].vp / 100).toFixed(2) < Number(process.env.MIN_VP)) {
               console.log(' - - VP less than min of ' + Number(process.env.MIN_VP) + ' %, trying next bot');
               continue;
+            } else {
+              allBotsUnderVP = false;
             }
             spScaledVests = botlist[k].sp / steemPerVest;
             oneval = ((selfVotePayout * 10000 * 52) / (spScaledVests * 100 * rewardPool * sbdPerSteem));
@@ -337,6 +340,11 @@ function doProcess (callback) {
               });
             }
           }
+          if (allBotsUnderVP) {
+            console.log(' - no VP left in any bot, exiting');
+            finish = true;
+            break;
+          }
           bot = null;
           if (botlistCleared.length === 1) {
             console.log(' - - - only one suitable bot found, defaulting to ' + botlistCleared[0].bot);
@@ -354,9 +362,8 @@ function doProcess (callback) {
           }
         }
         if (bot == null) {
-          console.log(' - couldnt find a bot to use, exiting');
-          finish = true;
-          break;
+          console.log(' - couldnt find a bot to use, trying next post to flag');
+          continue;
         }
 
         var percentageInt = parseInt(votingpower.toFixed(2) * lib.VOTE_POWER_1_PC);
