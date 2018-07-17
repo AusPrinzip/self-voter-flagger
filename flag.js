@@ -6,7 +6,7 @@ const wait = require('wait.for');
 const lib = require('./lib.js');
 const sprintf = require('sprintf-js').sprintf;
 
-const MIN_BOT_SP = 450;
+const MIN_BOT_SP = 100;
 const MIN_VOTINGPOWER_BASE = 0.5; // at 100% VP
 const MAX_VOTINGPOWER = 150;
 
