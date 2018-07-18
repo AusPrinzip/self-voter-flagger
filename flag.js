@@ -454,10 +454,10 @@ function doProcess (callback) {
             tries++;
             try {
               var commentResult = wait.for(steem.broadcast.comment,
-                bot.key,
+                BOT_KEYS[0],
                 voterDetails.voter,
                 postDetails.permlink,
-                bot.bot,
+                BOT_ACCOUNTS[0],
                 commentPermlink,
                 'sadkitten comment',
                 commentMsg,
