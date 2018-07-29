@@ -436,7 +436,7 @@ function doProcess (callback) {
           wait.for(lib.timeoutWait, 3500);
           console.log(' - - - finished waiting');
           // comment on post
-          var message = '@sadkitten is countering 85% of @' + voterDetails.voter + ' self-votes for 1 week starting Thursday, July 26th 2018 because it is part of last week’s top self-voters. For more details see [this post](https://steemit.com/steemit/@sadkitten/self-voter-return-on-investment-svroi-notoriety-flagging-bot).';
+          var message = '@sadkitten is countering 85% of @' + voterDetails.voter + ' self-votes for 1 week starting %s because it is part of last week’s top self-voters. For more details see [this post](https://steemit.com/steemit/@sadkitten/self-voter-return-on-investment-svroi-notoriety-flagging-bot).';
           var commentMsg = sprintf(message,
             moment(lib.getLastInfos().update_time, moment.ISO_8601).subtract(Number(process.env.DAYS_UNTIL_UPDATE), 'day').format('dddd, MMMM Do YYYY'));
           console.log('Commenting: ' + commentMsg);
