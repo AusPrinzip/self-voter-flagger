@@ -67,14 +67,21 @@ function doProcess (callback) {
         return;
       }
       // apply final score adjustment based on entire period stats
-      // TODO
+      console.log(' - adjusting scores based on weekly stats for outgoing votes...');
+      for (var i = 0; i < queue.length; i++) {
+        queue.outgoing_adjust_total = Math.min((queue.outgoing_voter_list_count === 0 ? 0
+          : (queue.outgoing_voter_list_count / queue.self_vote_weight_sum) * queue.outgoing_voter_list_weight_sum) * 70,
+          45);
+        queue.old_score = queue.score;
+        queue.score -= queue.outgoing_adjust_total;
+      }
       // save queue to flaglist
-      console.log(' - updating flag list from queue...');
+      console.log(' - sorting flag list...');
       queue.sort(function (a, b) {
         return b.score - a.score;
       });
       wait.for(lib.dropDb, lib.DB_FLAGLIST);
-      for (var i = 0; i < queue.length; i++) {
+      for (i = 0; i < queue.length; i++) {
         queue.posts = [];
         wait.for(lib.saveDb, lib.DB_FLAGLIST, queue[i]);
       }
