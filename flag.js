@@ -384,7 +384,9 @@ function doProcess (callback) {
         }
 
         // flip sign on percentage to turn into flagger
-        percentageInt *= -1;
+        if (percentageInt > 0) {
+          percentageInt *= -1;
+        }
 
         console.log(' - - voting...');
         if (process.env.ACTIVE !== undefined &&
