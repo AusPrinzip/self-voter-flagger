@@ -69,11 +69,11 @@ function doProcess (callback) {
       // apply final score adjustment based on entire period stats
       console.log(' - adjusting scores based on weekly stats for outgoing votes...');
       for (var i = 0; i < queue.length; i++) {
-        queue.outgoing_adjust_total = Math.min((queue.outgoing_voter_list_count === 0 ? 0
-          : (queue.outgoing_voter_list_count / queue.self_vote_weight_sum) * queue.outgoing_voter_list_weight_sum) * 70,
+        queue[i].outgoing_adjust_total = Math.min((queue[i].outgoing_voter_list_count === 0 ? 0
+          : (queue[i].outgoing_voter_list_count / queue[i].self_vote_weight_sum) * queue[i].outgoing_voter_list_weight_sum) * 70,
           45);
-        queue.old_score = queue.score;
-        queue.score -= queue.outgoing_adjust_total;
+        queue[i].old_score = queue[i].score;
+        queue[i].score -= queue[i].outgoing_adjust_total;
       }
       // save queue to flaglist
       console.log(' - sorting flag list...');

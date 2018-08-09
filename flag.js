@@ -167,6 +167,10 @@ function doProcess (callback) {
     var finish = false;
     for (i = 0; i < flaglist.length; i++) {
       var voterDetails = flaglist[i];
+      // dont process user if score less than zero
+      if (voterDetails.score < 0) {
+        continue;
+      }
       if (voterDetails.posts === undefined ||
           voterDetails.posts == null ||
           voterDetails.posts.length === 0) {
