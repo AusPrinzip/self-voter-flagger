@@ -57,6 +57,9 @@ function doProcess (callback) {
     }
     var updateTimeMoment = moment(lib.getLastInfos().update_time, moment.ISO_8601);
     // check if should update
+    console.log(' - most recent block moment: ' + mostRecentBlockMoment.format('dddd, MMMM Do YYYY - HH:mm'));
+    console.log(' - time to update moment: ' + updateTimeMoment.format('dddd, MMMM Do YYYY - HH:mm'));
+    console.log(' - - is update moment before most recent block moment?');
     if (updateTimeMoment.isBefore(mostRecentBlockMoment)) {
       // DO UPDATE
       // get queue
