@@ -85,7 +85,7 @@ function doProcess (callback) {
       });
       wait.for(lib.dropDb, lib.DB_FLAGLIST);
       for (i = 0; i < queue.length; i++) {
-        queue.posts = [];
+        queue[i].posts = [];
         wait.for(lib.saveDb, lib.DB_FLAGLIST, queue[i]);
       }
       // make new update time
