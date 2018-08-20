@@ -9,6 +9,7 @@ const sprintf = require('sprintf-js').sprintf;
 const MIN_BOT_SP = 100;
 const MIN_VOTINGPOWER_BASE = 0.5; // at 100% VP
 const MAX_VOTINGPOWER = 150;
+const SCORE_BOTTOM = -30;
 
 const BOT_ACCOUNTS = process.env.STEEM_USER.split(',');
 const BOT_KEYS = process.env.POSTING_KEY_PRV.split(',');
@@ -168,7 +169,7 @@ function doProcess (callback) {
     for (i = 0; i < flaglist.length; i++) {
       var voterDetails = flaglist[i];
       // dont process user if score less than zero
-      if (voterDetails.score < 0) {
+      if (voterDetails.score < SCORE_BOTTOM) {
         continue;
       }
       if (voterDetails.posts === undefined ||
